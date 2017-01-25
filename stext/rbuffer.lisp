@@ -170,10 +170,10 @@
 
 
 ;;of limited use, only good for top subranges inserted at end...
-(defun stream-delimit (bufstrm data register)
-  (with-slots (flush) bufstrm
+(defun stream-delimit (bufstrm range register)
+  (with-slots (flush (root range:root)) bufstrm
     (funcall flush)
-    (range:new bufstrm (range:root bufstrm) data register)))
+    (range:new (if range range (range:make-range)) root  root)))
 
 (defun stream-anchor (bufstrm)
   (with-slots (flush) bufstrm

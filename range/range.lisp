@@ -17,7 +17,7 @@ We maintain a right-to-left list of widths in the buffer.  Since most of the act
 
 
 (defclass ranges ()
-  ((root      :initform (make-range :data t)  :accessor root) ;; root node
+  ((root      :initform (make-range)  :accessor root) ;; root node
    (ht        :initform (make-hash-table :test 'eq)
 	      :accessor ht))     ;; register obj->node
 )
@@ -25,21 +25,15 @@ We maintain a right-to-left list of widths in the buffer.  Since most of the act
 (defstruct (range
 	     (:conc-name nil)
 	     (:print-function (lambda (o s k) (declare (ignore k))
-					   (format s "<~A ~A>"
+					   (format s "<~A >"
 						   (width o)
-						   (data o)
 						   ))))
   
-  ;;
   (width 0   :type fixnum)
-  (data  nil :type t)
   (l     nil :type (or null range))
   (dad   nil :type (or null range))
-  (child nil :type (or null range))
-  )
+  (child nil :type (or null range)))
 
-(defun make-top ()
-  (make-range :data t))
 ;;
 ;; NEW
 ;;
@@ -47,21 +41,13 @@ We maintain a right-to-left list of widths in the buffer.  Since most of the act
 ;; can ever find!
 ;;
 ;; Special case: if the child is a null-node, just take posession of it.
-(defun new (ranges dad &optional (data nil) (register nil))
+(defun new (range ranges dad &optional (register nil))
   "Insert a new range in parent's right side. Return it"
   (with-slots ((dad-child child)) dad
-    (let ((range
-	   (if (and dad-child ;special case - assume identity of null child
-		    (zerop (width dad-child))
-		    (null  (data  dad-child)))
-	       (progn (setf (data dad-child) data))
-	       (setf dad-child
-		     (make-range :dad dad :data data
-				 :l dad-child)))))
-      (and register
-	   data			; do not insert null data!
-	   (setf (gethash data (ht ranges)) range))
-      range)))
+    (setf (dad range) dad
+	  (l   range) dad-child
+	  dad-child range)
+    range))
 
 (defun end (range)
   "find the absolute end position of the range"
@@ -136,7 +122,7 @@ We maintain a right-to-left list of widths in the buffer.  Since most of the act
 (defparameter *a* nil)
 (defparameter *b* nil)
 (defparameter *tab* (make-instance 'ranges))
-(setf *a* (widen (new *tab* (root *tab*) 'a) 10))
-(setf *b* (widen(new *tab* (root *tab*) 'b) 20))
+(setf *a* (widen (new (make-range) *tab* (root *tab*)) 10))
+(setf *b* (widen (new (make-range) *tab* (root *tab*)) 20))
 
 

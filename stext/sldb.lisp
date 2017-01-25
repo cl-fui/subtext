@@ -1,8 +1,8 @@
 (in-package :stext)
 
-(defstruct pcondition )
-(defstruct prestart id)
-(defstruct pframe id open)
+(defstruct (pcondition (:include range:range)) )
+(defstruct (prestart   (:include range:range)) id)
+(defstruct (pframe     (:include range:range)) id open)
 ;;OK (ql:quickload :stext)(in-package :stext)
 
 (defun sldb-button ( view anchor text)
@@ -59,10 +59,9 @@
 
 (defmethod -on-button-press ((sldb sldb) iter event)
   (mvb (range off) (range:at sldb (gti-get-offset iter))
-       (let ((rdata (range:data range)))
-	 (typecase rdata
-	   (prestart (sldb-invoke-restart sldb (prestart-id rdata)))
-	   (pframe (sldb-frame-toggle sldb range)))))
+       (typecase range
+	 (prestart (sldb-invoke-restart sldb (prestart-id range)))
+	 (pframe (sldb-frame-toggle sldb range))))
  
 )
 ;;; Return a list (LOCALS TAGS) for vars and catch tags in the frame INDEX.
@@ -70,25 +69,24 @@
 ;;;TAGS has is a list of strings.
 (defun sldb-frame-toggle (sldb range)
   (with-slots (connection sldb-thread) sldb
-    (with-slots ((data range:data)) range
-      (with-slots (id open) data
-	(swa:emacs-rex
-	 connection
-	 (format nil "(swank:frame-locals-and-catch-tags ~A)" id)
-	 :thread sldb-thread
-	 :proc
-	 (lambda (connection reply id)
-	   (unless open
-	     (mvb (start end) (range:bounds range)
-		  (file-position sldb (1- end))
-		  (format sldb "~%     Locals:")
-		  (loop for item in (first (second reply)) do
-		       (format sldb "~%       ~A = ~A" (second item) (sixth item)))
-		  (finish-output sldb)
-		  (setf open t)
-		  ;;(print (first (second reply)) sldb)
-		  ;;(print (second (second reply)) sldb)
-		  )))))))
+    (with-slots (id open) range
+      (swa:emacs-rex
+       connection
+       (format nil "(swank:frame-locals-and-catch-tags ~A)" id)
+       :thread sldb-thread
+       :proc
+       (lambda (connection reply id)
+	 (unless open
+	   (mvb (start end) (range:bounds range)
+		(file-position sldb (1- end))
+		(format sldb "~%     Locals:")
+		(loop for item in (first (second reply)) do
+		     (format sldb "~%       ~A = ~A" (second item) (sixth item)))
+		(finish-output sldb)
+		(setf open t)
+		;;(print (first (second reply)) sldb)
+		;;(print (second (second reply)) sldb)
+		))))))
   )
 (defun make-wsldb (connection thread level condition restarts frames continuations)
   (let* ((sldb (make-instance

@@ -1,16 +1,10 @@
 (in-package :stext)
 
 
-(defclass presentable () ())
-
-(defgeneric prez-on-button-press (prez pbuf range  button))
-
-(defclass p-entry  (presentable) ())
-(defclass p-pres   (presentable)
-  ((id         :initarg :id     :accessor pres-id)))
-(defclass p-input  (presentable)
-  ((id         :initarg :id     :accessor input-id)
-   (tag        :initarg :tag    :accessor input-tag)))
+(defstruct (p-entry  (:include range:range)) )
+(defstruct (p-pres   (:include range:range)) id )
+(defstruct (p-input  (:include range:range)) id tag )
+(defstruct (p-prompt (:include range:range)) )
 
 
 ;;OK (ql:quickload :stext)(in-package :stext)
@@ -33,7 +27,7 @@
 
 
 
-(defclass p-prompt (presentable) ())
+
 
 
 (defun init-swank (pbuf)
@@ -51,11 +45,11 @@
  
     ;;feed the engine
     (defun prompt (swank)
-      (stream-delimit pbuf (make-instance 'p-prompt) nil)
+      (stream-delimit pbuf (make-p-prompt) nil)
       (with-tag pbuf "prompt"
 	(fresh-line pbuf)
 	(format pbuf "~A> " (swa:prompt swank)))
-      (stream-delimit pbuf (make-instance 'p-entry) nil))
+      (stream-delimit pbuf (make-p-entry) nil))
         
     ;;---------------------------------------------
     ;; callback evaluated upon processing of a command line
@@ -69,7 +63,7 @@
       (princ string pbuf))
 
     (defun sw-presentation-start (connection id stream)
-      (stream-delimit pbuf (make-instance 'p-pres :id id) nil) ;for now,just delimit with presentation id
+      (stream-delimit pbuf (make-p-pres :id id) nil) ;for now,just delimit with presentation id
       )
     
     (defun sw-presentation-end (connection id stream)
@@ -86,7 +80,7 @@
     ;; Input requested (read-line?).  Keep the id and tag in a range to return
     ;; later, when <enter> is processed.
     (defun sw-read-string (connection id tag)
-      (stream-delimit pbuf (make-instance 'p-input :id id :tag tag) nil)
+      (stream-delimit pbuf (make-p-input :id id :tag tag) nil)
       )
 
     ;; We shall keep the debuggers around in a hashtable, keyed by both thread
@@ -145,10 +139,10 @@
 	   (with-slots (swank) pbuf
 	     (let* ((range (range:at pbuf (gtb-get-char-count pbuf)))
 		    (string (range-text pbuf range))
-		    (data (range:data range)))
-	       (typecase data
+		    )
+	       (typecase range
 		 (p-input ;;(:emacs-return-string 1 5 "88\n")
-		  (with-slots (id tag) data
+		  (with-slots (id tag) range
 		    (swa:emacs-return-string swank string id tag)))
 		 (p-entry
 		  (swa:eval (swank pbuf) ;try to parse string, may be null
@@ -235,7 +229,7 @@
   (when replacement; could be nill on startup...
     (with-slots ( histid) pbuf
       (let ((range (range:at pbuf (gtb-cursor-position pbuf))))
-	(when (eq 'p-entry (type-of (range:data range)))
+	(when (eq 'p-entry (type-of range))
 	  ;; we only work on p-entry ranges
 	  (mvb (start end) (range-iters pbuf range)
 	       ;;(print start) (print end)
@@ -267,9 +261,5 @@
 	)))
 
 
-(defmethod -on-button-press ((pbuf swarepl) iter event)
-  (bufstat-prim pbuf (gti-get-offset iter))
-  (let ((button (gdk-event-button-button event)))
-    (let ((range (range:at pbuf (gti-get-offset iter))))
-      (prez-on-button-press (range:data range) pbuf range button)) ))
+
 
