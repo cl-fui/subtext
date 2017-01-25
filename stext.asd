@@ -15,6 +15,10 @@
                (:file "package")
 	       (:file "stext")
 
+	       (:file "eli/keysyms")
+	       (:file "eli/keystroke")
+	       (:file "eli/keymap")
+
 	       (:file "swank/swank-protocol")
 	       (:file "swank/utf8")
 
@@ -27,6 +31,9 @@
 
 	       (:file "stext/modeline")
 	       (:file "stext/window")
+
+	       (:file "stext/minibuf")
+	       (:file "stext/frame")
 	       
 ;;	       (:file "stext/gtk-stream")
 ;;	       (:file "stext/gtk-in-stream")

@@ -82,3 +82,12 @@
       
       (gtk-container-add top window)
       (gtk-widget-show-all top))))
+
+(defun t3 ( &key (stdout *standard-output*))
+  "final"
+  (within-main-loop
+   ;; (setf *ui-thread* (bt:current-thread))
+    (setf *standard-output* stdout) ;re-enable output
+    (let ((top (make-frame (make-window (make-wtxt (make-instance 'swarepl)))))) 
+      
+      (gtk-widget-show-all top))))

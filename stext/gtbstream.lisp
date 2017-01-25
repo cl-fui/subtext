@@ -52,7 +52,7 @@
 	    (declare (type character char))
 	    (declare (type fixnum index))
 	    (declare (type (simple-string 256) lbuf ))
-	    (format t "~%Emitting ~C into ~A at ~A" char stream index)
+	    ;;(format t "~%Emitting ~C into ~A at ~A" char stream index)
 	    (setf (schar lbuf index) char)
 	    (incf index)
 	    (when (or (char= char #\newline)
@@ -71,7 +71,7 @@
 	    ;; Uses iter
 	    (declare (type fixnum index))
 	    (declare (type (simple-string 256) lbuf ))
-	    (format t "~%Flush ~A characters from ~A~&" index stream )
+	    ;;(format t "~%Flush ~A characters from ~A~&" index stream )
 	    (with-slots ( iter point ) stream
 	      (unless (zerop index)
 		(setf (schar lbuf index) (code-char 0);null-terminate lbuf

@@ -50,17 +50,11 @@
  
     ;;feed the engine
     (defun prompt (swank)
-      (print "1")
       (stream-delimit pbuf (make-instance 'p-prompt) nil)
-      (print "2")
       (with-tag pbuf "prompt"
 	(fresh-line pbuf)
-	(print "3")
-	(trace )
 	(format pbuf "~A> " (swa:prompt swank)))
-      (print "4")
-      (stream-delimit pbuf (make-instance 'p-entry) nil)
-      (print "5"))
+      (stream-delimit pbuf (make-instance 'p-entry) nil))
         
     ;;---------------------------------------------
     ;; callback evaluated upon processing of a command line
@@ -129,11 +123,37 @@
 ;;------------------------------------------------------------------------------
 (defmethod initialize-instance :after ((pbuf swarepl) &key)
   (print "initialize-instance: swarepl")
+  (setf *pbuf* pbuf)
 ;;  (format *pbuf* "fuck")
 ;;  (funcall (flush *pbuf*))
   (with-slots (swank) pbuf
     (setf swank (swa:make-connection "localhost" 5000))
     (init-swank pbuf))
+  ;; install <enter> key binding
+  (labels
+      ((pbuf-idle-entry () ;in-scope for pbuf!
+	 (with-slots (swank) pbuf
+	   (let* ((range (range:at pbuf (gtb-get-char-count pbuf)))
+		  (string (range-text pbuf range))
+		  (data (range:data range)))
+	     (typecase data
+	       (p-input ;;(:emacs-return-string 1 5 "88\n")
+		(with-slots (id tag) data
+		  (swa:emacs-return-string swank string id tag)))
+	       (p-entry
+		(swa:eval (swank pbuf) ;try to parse string, may be null
+			  (pbuf-parse-string string) #'prompt-proc)))))
+	 nil)); remove thyself
+    (keymap-define-key
+     *global-keymap* #xFF0D
+     (lambda ()
+       (let ((iter (gtb-get-iter-at-mark pbuf (gtb-get-insert pbuf))))
+	 ;; only allow input at the end!
+	 (if (gti-is-end iter)
+	     (gdk-threads-add-idle #'pbuf-idle-entry)))
+       nil; let gtk insert the <enter> into the buffer...
+       )))
+  
   pbuf)
 ;;------------------------------------------------------------------------------
 
@@ -242,32 +262,3 @@
     (let ((range (range:at pbuf (gti-get-offset iter))))
       (prez-on-button-press (range:data range) pbuf range button)) ))
 
-(defmethod -on-key-press ((pbuf swarepl)  event from)
-  (format t "swarepl: on-key-press~&~A~&" event)
-  ;;---------------------------------------------
-  ;; idle rpbufine that runs once on <enter>.
-  ;;
-  (labels
-      ((pbuf-idle-entry () ;in-scope for pbuf!
-	 (with-slots (swank) pbuf
-	   (let* ((range (range:at pbuf (gtb-get-char-count pbuf)))
-		  (string (range-text pbuf range))
-		  (data (range:data range)))
-	     (typecase data
-	       (p-input ;;(:emacs-return-string 1 5 "88\n")
-		(with-slots (id tag) data
-		  (swa:emacs-return-string swank string id tag)))
-	       (p-entry
-		(swa:eval (swank pbuf) ;try to parse string, may be null
-			  (pbuf-parse-string string) #'prompt-proc)))))
-	 nil)); remove thyself
-    (when (= (gdk-event-key-keyval event) #xFF0D)
-      (let ((iter (gtb-get-iter-at-mark pbuf (gtb-get-insert pbuf))))
-	;; only allow input at the end!
-	(if (gti-is-end iter)
-	    (gdk-threads-add-idle #'pbuf-idle-entry )))))
-  nil; allow key processing
-  )
-
-(defun insert-char (pbuf char)
-  )

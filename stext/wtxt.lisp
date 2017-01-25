@@ -37,8 +37,9 @@
 
 (defmethod -on-key-press ((wtxt wtxt) event from) ;this particular view just passes them to buffer
   (print "wtxt:on-key-press")
-  (format t "~%buffer is ~A" (gtk-text-view-buffer wtxt))
-  (-on-key-press (gtk-text-view-buffer wtxt) event from))
+  (format t "~%buffer is ~A" (type-of (gtk-text-view-buffer wtxt)))
+  (-on-key-press (gtk-text-view-buffer wtxt) event from)
+  (format t "~&sent~&"))
 
 
 ;; These are sent from the wtxt to the dynamically current buffer
