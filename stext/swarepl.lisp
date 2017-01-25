@@ -1,0 +1,273 @@
+(in-package :stext)
+
+
+(defclass presentable () ())
+
+(defgeneric prez-on-button-press (prez pbuf range  button))
+
+(defclass p-entry  (presentable) ())
+(defclass p-pres   (presentable)
+  ((id         :initarg :id     :accessor pres-id)))
+(defclass p-input  (presentable)
+  ((id         :initarg :id     :accessor input-id)
+   (tag        :initarg :tag    :accessor input-tag)))
+
+
+;;OK (ql:quickload :stext)(in-package :stext)
+(defclass swarepl (rbuffer)
+  ((swank :initform nil :accessor swank) ;swank communication channel
+   (sldbs :accessor sldbs :initform (make-hash-table)); track debuggers by '
+   )
+  (:metaclass gobject-class))
+
+(defun make-swarepl ()
+  (make-instance 'rview
+		 :buffer (setf *pbuf* (make-instance 'swarepl))))
+
+
+
+;; view invokes this on destruction...
+(defmethod -on-destroy ((pbuf swarepl))
+  (swa:disconnect (swank pbuf)))
+
+
+
+(defclass p-prompt (presentable) ())
+
+
+(defun init-swank (pbuf)
+  (with-slots (swank ) pbuf
+    (swa:connect swank #'our-fallback)
+    (swa:emacs-rex swank "(swank:connection-info)")
+    (swa:emacs-rex swank "(swank:swank-require '(swank-presentations swank-repl))")
+    (swa:emacs-rex swank  "(swank:init-presentations)")
+    ;; This one replies with package and prompt...
+    (swa:emacs-rex swank "(swank-repl:create-repl nil :coding-system \"utf-8-unix\")"
+		   :proc (lambda (conn reply id);REX-CALLBACK
+		     (declare (ignore id))
+		     (setf (swa:pkg conn) (first (second reply));symbol..
+			   (swa:prompt conn)  (second (second reply))) ))
+ 
+    ;;feed the engine
+    (defun prompt (swank)
+      (print "1")
+      (stream-delimit pbuf (make-instance 'p-prompt) nil)
+      (print "2")
+      (with-tag pbuf "prompt"
+	(fresh-line pbuf)
+	(print "3")
+	(trace )
+	(format pbuf "~A> " (swa:prompt swank)))
+      (print "4")
+      (stream-delimit pbuf (make-instance 'p-entry) nil)
+      (print "5"))
+        
+    ;;---------------------------------------------
+    ;; callback evaluated upon processing of a command line
+    (defun prompt-proc (swank reply id);REX-CALLBACK
+      (declare (ignore id))
+      (if (eq :abort (first reply))
+	  (gsafe (format  pbuf (second reply))))
+      (gsafe (prompt swank)))
+    (defun sw-write-string (connection string &optional stream)
+      (princ string pbuf))
+
+    (defun sw-presentation-start (connection id stream)
+      (stream-delimit pbuf (make-instance 'p-pres :id id) nil) ;for now,just delimit with presentation id
+      )
+    
+    (defun sw-presentation-end (connection id stream)
+      (finish-output pbuf)
+      (pbuf-tag-range pbuf  "pres")
+      (stream-delimit pbuf nil nil) ;for now,just delimit with presentation id
+      )
+    
+    (defun sw-new-package (connection name nickname)
+      (setf (swa:pkg connection) name
+	    (swa:prompt connection) nickname))
+    
+    ;;-----------------------------------------------------------------------
+    ;; Input requested (read-line?).  Keep the id and tag in a range to return
+    ;; later, when <enter> is processed.
+    (defun sw-read-string (connection id tag)
+      (stream-delimit pbuf (make-instance 'p-input :id id :tag tag) nil)
+      )
+
+    ;; We shall keep the debuggers around in a hashtable, keyed by both thread
+    ;; and debug level (TODO: is this really necessary?).
+    ;;
+    ;; First, debug is invoked with all kinds of useful data.  We will use this
+    ;; occasion to prepare an sldb (buffer) and a view stored right in sldb.
+    (defun sw-debug (connection thread level condition restarts frames conts)
+      (format t "SW-DEBUG: conn ~A thread ~A level ~A&" connection thread level)
+      (setf (gethash (+ level (* 1000 thread)) (sldbs pbuf))
+	    (make-sldb connection thread level condition restarts frames conts)))
+    ;; Then, this guy comes to activate the debugger.  We will create a window
+    ;; and a frame for it, and display it.
+    (defun sw-debug-activate (connection thread level &optional selectl)
+      (let ((sldb (gethash (+ level (* 1000 thread)) (sldbs pbuf))))
+	(when sldb
+	  (let ((frame
+		 (make-frame
+		  (make-window  (sldb-view sldb))
+		  :title (format nil "SLDB ~A ~A"thread level))))
+	    (setf (sldb-fr sldb) frame)
+	    (gtk-widget-show-all frame))
+	  (sldb-activate sldb))))
+    ;; Now when this returns, we destroy the widget and remove SLDB from the
+    ;; hashtable.  TODO: are all sub-widgets destroyes?
+    (defun sw-debug-return (connection thread level stepping)
+      (format t "sw-dbug-return: ~A ~A ~A~&" thread level stepping)
+      (let ((sldb (gethash (+ level (* 1000 thread)) (sldbs pbuf))))
+	(when sldb
+	  (gtk-widget-destroy (sldb-fr sldb) )
+	  (remhash (+ level (* 1000 thread)) (sldbs pbuf))))
+      )  
+    (prompt swank)))
+
+ 
+;;------------------------------------------------------------------------------
+(defmethod initialize-instance :after ((pbuf swarepl) &key)
+  (print "initialize-instance: swarepl")
+;;  (format *pbuf* "fuck")
+;;  (funcall (flush *pbuf*))
+  (with-slots (swank) pbuf
+    (setf swank (swa:make-connection "localhost" 5000))
+    (init-swank pbuf))
+  pbuf)
+;;------------------------------------------------------------------------------
+
+;; Before evaluating a string via SWANK, we read it here, discarding sexps
+;; just to make sure it is syntactically OK.  TODO: is this good enough?
+;; We rely on the behavior of read-from-string nil +eof+.  An actual EOF
+;; condition here means we have a malformed sexp...
+;; For consistency, we right-trim ws off (helps with history)
+;;
+(defparameter ws-bag (format nil " ~C~C" #\tab #\newline))
+(defun pbuf-parse-string (string)
+  "parse string, discarding sexps. When well-formed, return string after
+ right-trimming ws"
+  (mvb (result error)
+       (ignore-errors; on error (to wit EOF), malformed sexp... 
+	 (let ((+eof+ (gensym)))
+	   (loop named forms with start = 0 do ;exit on error or eof
+		(mvb (result at)
+		     (with-standard-io-syntax
+		       (read-from-string string nil +eof+ :start start))
+		     (when (eq result +eof+); eof here means done between forms
+		       (return-from forms (string-right-trim ws-bag string)))
+		     (setf start at)))))
+       (declare (ignorable error))
+       result))
+
+
+ 
+
+;;
+;;	    
+;;
+;;(let ((sexp 
+;;(case (car sexp) (:write-string `(swax:write-string ,(cdr sexp)))    (t (print message)))
+;;(swa:request-listener-eval *swank* "2")
+;;==============================================================================
+;; Prompt
+;; called from init, then, when swank return is processed by callback prompt-proc.
+
+
+(defun our-fallback (connection message)
+  "Process a message from swank. return result or nil."
+  (let ((fun (case (first message)
+	       (:write-string       #'sw-write-string)
+	       (:presentation-start #'sw-presentation-start)
+	       (:presentation-end   #'sw-presentation-end)
+	       (:new-package        #'sw-new-package)
+	       (:read-string        #'sw-read-string)
+	       (:debug              #'sw-debug)
+	       (:debug-activate     #'sw-debug-activate)
+	       (:debug-return       #'sw-debug-return)
+	       (t (format t "~%FALLBACK: UNKNOWN FORM:~%~A~&" message)
+		  nil))))
+    (and fun (gsafe (apply fun connection (rest message))))))
+
+
+(defun pbuf-yank (pbuf)
+  ;;(print "pasting")
+  
+  (gtb-paste-clipboard pbuf (gtk-clipboard-get "PRIMARY")
+		       :default-editable t)
+  )
+
+;;======================================================================
+;; history for repl
+;;
+(defun pbuf-hist-prim (pbuf replacement)
+  (when replacement; could be nill on startup...
+    (with-slots ( histid) pbuf
+      (let ((range (range:at pbuf (gtb-cursor-position pbuf))))
+	(when (eq 'p-entry (type-of (range:data range)))
+	  ;; we only work on p-entry ranges
+	  (mvb (start end) (range-iters pbuf range)
+	       ;;(print start) (print end)
+	       (unless (gti-equal start end)
+		 (gtb-delete pbuf start end))
+	       (gtb-insert pbuf replacement :position start)))))))
+
+(defun pbuf-c-up (pbuf)
+  (pbuf-hist-prim pbuf (swa:history-back (swank pbuf))))
+
+(defun pbuf-c-down (pbuf)
+  (pbuf-hist-prim pbuf (swa:history-forward (swank pbuf))))
+
+(defmethod prez-on-button-press ((prez null) pbuf range button)
+  (print "prez null")
+  nil)
+(defmethod prez-on-button-press ((prez t) pbuf range button)
+  (print "prez t")
+  nil)
+
+
+(defmethod prez-on-button-press ((it p-prompt) pbuf range button)
+  (if (= button 1)
+      nil ;default handler
+      (progn
+	(popup-menu '(("fuck") ("duck")) :button button)
+	(print "prez pressed promjpt")
+	t; we handle
+	)))
+
+
+(defmethod -on-button-press ((pbuf swarepl) iter event)
+  (bufstat-prim pbuf (gti-get-offset iter))
+  (let ((button (gdk-event-button-button event)))
+    (let ((range (range:at pbuf (gti-get-offset iter))))
+      (prez-on-button-press (range:data range) pbuf range button)) ))
+
+(defmethod -on-key-press ((pbuf swarepl)  event from)
+  (format t "swarepl: on-key-press~&~A~&" event)
+  ;;---------------------------------------------
+  ;; idle rpbufine that runs once on <enter>.
+  ;;
+  (labels
+      ((pbuf-idle-entry () ;in-scope for pbuf!
+	 (with-slots (swank) pbuf
+	   (let* ((range (range:at pbuf (gtb-get-char-count pbuf)))
+		  (string (range-text pbuf range))
+		  (data (range:data range)))
+	     (typecase data
+	       (p-input ;;(:emacs-return-string 1 5 "88\n")
+		(with-slots (id tag) data
+		  (swa:emacs-return-string swank string id tag)))
+	       (p-entry
+		(swa:eval (swank pbuf) ;try to parse string, may be null
+			  (pbuf-parse-string string) #'prompt-proc)))))
+	 nil)); remove thyself
+    (when (= (gdk-event-key-keyval event) #xFF0D)
+      (let ((iter (gtb-get-iter-at-mark pbuf (gtb-get-insert pbuf))))
+	;; only allow input at the end!
+	(if (gti-is-end iter)
+	    (gdk-threads-add-idle #'pbuf-idle-entry )))))
+  nil; allow key processing
+  )
+
+(defun insert-char (pbuf char)
+  )
