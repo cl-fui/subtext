@@ -144,8 +144,8 @@
 		(swa:eval (swank pbuf) ;try to parse string, may be null
 			  (pbuf-parse-string string) #'prompt-proc)))))
 	 nil)); remove thyself
-    (keymap-define-key
-     *global-keymap* #xFF0D
+    (keymap-bind
+     *global-keymap* "<RET>"
      (lambda ()
        (let ((iter (gtb-get-iter-at-mark pbuf (gtb-get-insert pbuf))))
 	 ;; only allow input at the end!

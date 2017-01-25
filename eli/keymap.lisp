@@ -19,13 +19,15 @@
 	   (keymap-dump i))
       (format t "~A" (cdr keymap)))
   (format t ") "))
+
 (defun keymap-lookup (binding key)
   (when binding
     (let ((list (cdr binding))) 
       (if (eql key (car (first list)))
 	  (first list)
 	  (keymap-lookup list key)))))
-
+(defun keymap-find (binding key)
+  (cdr (keymap-lookup binding key)))
 
 (defun keymap-define-key (binding key data)
   (let ((val (cons key data)))

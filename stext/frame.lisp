@@ -9,7 +9,7 @@
 ;;; ----------------------------------------------------------------------------
 (in-package #:stext)
 
-(defparameter *global-keymap* (make-keymap))
+(defparameter *global-keymap* (keymap-make))
 
 
 (defclass frame (gtk-window)
@@ -47,12 +47,12 @@
     (unless (modifier-p gtkkey); if modifier, let gtk handle it!
       (setf gtkkey (make-key gtkkey (gdk-event-key-state event)))
       (with-slots (keysearch) frame
-	(let ((found (lookup-key keysearch gtkkey)))
-	  (typecase found
+	(let ((found (keymap-lookup keysearch gtkkey)))
+	  (typecase (cdr found)
 	    (function (setf keysearch *global-keymap*)
-		      (funcall found))
-	    (keymap (setf keysearch found)
-		    t)
+		      (funcall (cdr found)))
+	    (cons (setf keysearch found)
+		   t)
 	    (t nil)))))))
 
 
