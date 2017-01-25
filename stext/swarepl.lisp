@@ -28,7 +28,8 @@
 
 ;; view invokes this on destruction...
 (defmethod -on-destroy ((pbuf swarepl))
-  (swa:disconnect (swank pbuf)))
+  (swa:disconnect (swank pbuf))
+  )
 
 
 
@@ -60,6 +61,7 @@
     ;; callback evaluated upon processing of a command line
     (defun prompt-proc (swank reply id);REX-CALLBACK
       (declare (ignore id))
+      ;;(format t "~%PROMPT-PROC: ~A~&" reply)
       (if (eq :abort (first reply))
 	  (gsafe (format  pbuf (second reply))))
       (gsafe (prompt swank)))
@@ -93,7 +95,7 @@
     ;; First, debug is invoked with all kinds of useful data.  We will use this
     ;; occasion to prepare an sldb (buffer) and a view stored right in sldb.
     (defun sw-debug (connection thread level condition restarts frames conts)
-      (format t "SW-DEBUG: conn ~A thread ~A level ~A&" connection thread level)
+      ;;(format t "SW-DEBUG: conn ~A thread ~A level ~A&" connection thread level)
       (setf (gethash (+ level (* 1000 thread)) (sldbs pbuf))
 	    (make-wsldb connection thread level condition restarts frames conts)))
     ;; Then, this guy comes to activate the debugger.  We will create a window
@@ -104,18 +106,20 @@
 	  (let ((frame
 		 (make-frame
 		  (make-window  wsldb)
-		  :title (format nil "SLDB ~A ~A"thread level))))
+		  :title (format nil "SLDB ~A ~A"thread level)
+		  :kill nil)))
 	    ;(setf (sldb-fr sldb) frame)
 	    (gtk-widget-show-all frame))
 	  (wsldb-activate wsldb))))
     ;; Now when this returns, we destroy the widget and remove SLDB from the
     ;; hashtable.  TODO: are all sub-widgets destroyes?
     (defun sw-debug-return (connection thread level stepping)
-      (format t "sw-dbug-return: ~A ~A ~A~&" thread level stepping)
+      ;;(format t "sw-dbug-return: ~A ~A ~A~&" thread level stepping)
       (let ((wsldb (gethash (+ level (* 1000 thread)) (sldbs pbuf))))
 	(when wsldb
 	  (wsldb-destroy wsldb)
-	  (remhash (+ level (* 1000 thread)) (sldbs pbuf)))))
+	  (remhash (+ level (* 1000 thread)) (sldbs pbuf))
+	  (PRINT "SW-DEBUG-RETURN DONE"))))
     ;; Start ball-roll
     (prompt swank)))
 

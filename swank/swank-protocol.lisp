@@ -172,6 +172,7 @@ forms to processor."
     (replace final prefix); insert 6 bytes of length
     (replace final payload :start1 6)
     (write-sequence final stream)
+;;    (format t "~&>>>[~A]~&" string)
 ;    (log? "~%-->: [~A][~A]~&" paylen string)
     string))
 
@@ -184,14 +185,15 @@ forms to processor."
       (setf arr (make-array paylen :element-type '(unsigned-byte 8)))
       (read-sequence arr stream)
 ;      (log? "~%<--: [~A][~A]~&" paylen (utf8-decode arr))
-      (utf8-decode arr))))
+      (let ((val (utf8-decode arr)))
+;;    (format t "~&<<<[~A]~&" val)
+	val))))
 
 ;;==============================================================================
 ;; Sending strings (we always receive packets)
 
 (defun send-message-string (connection string)
   "send a message string to a swank connection."
-  (format t "~A~&" string)
   (let ((stream (usocket:socket-stream (socket connection))))
     (prog1 (write-packet stream string)
       (force-output stream))))
@@ -266,6 +268,7 @@ forms to processor."
 	  ;; (:return (ok/abort data) id)
 	  (destructuring-bind (reply id) (cdr message)
 	    (let ((rex (aref rexs id)))
+	      
 	      (funcall (rex-proc rex) connection reply id)
 	      (setf rexid  id; remember last rex processed
 		    histid nil));and reset history 

@@ -88,6 +88,7 @@
   (within-main-loop
    ;; (setf *ui-thread* (bt:current-thread))
     (setf *standard-output* stdout) ;re-enable output
-    (let ((top (make-frame (make-window (make-wtxt (make-instance 'swarepl)))))) 
+    (let ((top (make-frame (make-window (make-wtxt (make-instance 'swarepl)))
+			   :kill t))) 
       
       (gtk-widget-show-all top))))

@@ -9,7 +9,6 @@
 ;;; ----------------------------------------------------------------------------
 (in-package #:stext)
 
-(defparameter *global-keymap* (keymap-make))
 
 
 (defclass frame (gtk-window)
@@ -21,7 +20,8 @@
 (defmethod -on-destroy ((frame frame))
   (with-slots (content) frame
     (format t "destroy:frame content ~A~&" content)
-    (and content (-on-destroy content))))
+    (and content (-on-destroy content))
+    ))
 
 (defmacro make-frame (content &rest rest)
   `(make-instance 'frame :content ,content
@@ -30,7 +30,7 @@
 		 :default-height 480
 		 ,@rest))
 
-(defmethod initialize-instance :after ((frame frame) &key)
+(defmethod initialize-instance :after ((frame frame) &key kill)
   (with-slots (holder minibuf content) frame
     (setf minibuf (make-minibuf frame))
     (gtk-box-pack-end holder minibuf :expand nil)
@@ -39,7 +39,7 @@
     (g-signal-connect
      frame "destroy"
      (lambda (widget) (-on-destroy widget)
-	     (leave-gtk-main)))
+	     (if kill (leave-gtk-main))))
     ;; process keystrokes in minibuf...
     (-on-announce-eli content minibuf)
     (g-signal-connect frame "key-press-event"

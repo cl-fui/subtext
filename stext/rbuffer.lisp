@@ -10,19 +10,18 @@
 ;;------------------------------------------------------------------------------
 
 (defmethod initialize-instance :after ((buffer rbuffer) &key )
-    (print "initialize-instance: rbuffer")
+   ;; (print "initialize-instance: rbuffer")
   (g-signal-connect buffer "insert-text" #'on-insert-text :after nil)
   (g-signal-connect buffer "delete-range" #'on-delete-range)
   (with-slots (ptags) buffer
     ;; establish buffer modification handlers to sync with the range system
    (pbuf-create-tags buffer); for now...TODO
    )
-  (print "initialize-instance: rbuffer DONE")
+  ;;(print "initialize-instance: rbuffer DONE")
   )
 
 (defmethod -on-announce-eli  ((pbuf rbuffer) eli)
-  (format t "~&~&installed rbuf's~&~&")
-  (with-slots (keymap) eli
+    (with-slots (keymap) eli
     (keymap-bind
      keymap "<F1>"
      (lambda ()
@@ -31,7 +30,7 @@
        t))
     ))
 (defmethod -on-destroy :before ((buffer rbuffer))
-  (print "RBUFFER ON-DESTROY")
+  (format t "RBUFFER ON-DESTROY ~A~&" buffer )
 )
 
 (defmethod clear ((pbuf rbuffer))

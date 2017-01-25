@@ -20,7 +20,7 @@
   (:metaclass gobject-class))
 ;;==============================================================================
 (defmethod initialize-instance :after ((stream gtbstream) &key)
-  (print "init-inst GTBSTREAM")
+ ;; (print "init-inst GTBSTREAM")
   (with-slots (point  iter) stream
     (setf iter (gtb-get-end-iter stream)
 	  point (gtb-get-mark stream "insert"))
@@ -28,7 +28,7 @@
   )
 ;;------------------------------------------------------------------------------
 (defmethod -on-destroy :before ((stream gtbstream))
-  (print "GTBSTREAM ON-DESTROY")
+   ;; (format t "gtbstrea, ON-DESTROY ~A~&" stream )
 )
 
 
@@ -42,8 +42,6 @@
   (let ((lbuf (make-array 256 :element-type 'character))
 	(index 0)
 	(stream it))
-    (print "BUFFER ROUTINES")
-    (print it)
     ;;--------------------------------------------------------------------------
     (setf (emit stream)
 	  (lambda (char)
@@ -119,8 +117,7 @@
 
 
 (defun stream-wipe (stream)
-  "clear the buffer entirely"
-  (%gtb-delete stream
+  "clear the buffer entirely" (%gtb-delete stream
 	       (gtb-get-start-iter stream)
 	       (gtb-get-end-iter stream)))
 ;;------------------------------------------------------------------------------

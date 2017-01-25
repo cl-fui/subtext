@@ -67,7 +67,11 @@
   (sldb-activate (gtk-text-view-buffer wsldb)))
 
 (defun wsldb-destroy (wsldb)
-  (gtk-widget-destroy (frame (sldb-eli (gtk-text-view-buffer wsldb)))))
+  (let ((frame (frame (sldb-eli (gtk-text-view-buffer wsldb)))))
+    (gtk-widget-destroy frame)
+    )
+  
+  )
 (defun sldb-activate (sldb)
   (with-slots (sldb-condition sldb-restarts sldb-frames sldb-continuations) sldb
    
@@ -106,7 +110,6 @@
 
 (defun sldb-quit (sldb)
   (with-slots (connection sldb-thread) sldb
-    (print sldb)
     (swa:emacs-rex connection "(swank:throw-to-toplevel)" :thread sldb-thread)))
 
 
