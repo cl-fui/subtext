@@ -31,10 +31,10 @@ We maintain a right-to-left list of widths in the buffer.  Since most of the act
 						   ))))
   
   ;;
-  (width 0 :type fixnum)
-  (data nil :type t)
-  (l  nil :type (or null range))
-  (dad nil  :type (or null range))
+  (width 0   :type fixnum)
+  (data  nil :type t)
+  (l     nil :type (or null range))
+  (dad   nil :type (or null range))
   (child nil :type (or null range))
   )
 
@@ -42,6 +42,9 @@ We maintain a right-to-left list of widths in the buffer.  Since most of the act
   (make-range :data t))
 ;;
 ;; NEW
+;;
+;; This only works at the very end - it is the only zero-width range we
+;; can ever find!
 ;;
 ;; Special case: if the child is a null-node, just take posession of it.
 (defun new (ranges dad &optional (data nil) (register nil))
@@ -120,6 +123,15 @@ We maintain a right-to-left list of widths in the buffer.  Since most of the act
   (loop for r = (child dad) then (l r)
        while r
        collecting r))
+
+#|| Create a sub-range at offset, with width 1
+-find range, make sure it encloses us.
+-figure how much is left over on R, for padding.
+-create a pad child and a real one.
+
+||#
+
+
 
 (defparameter *a* nil)
 (defparameter *b* nil)

@@ -92,3 +92,16 @@
 			   :kill t))) 
       
       (gtk-widget-show-all top))))
+
+;;for debugging ranges
+(defun t0 ( &key (stdout *standard-output*))
+  "final"
+  (within-main-loop
+   ;; (setf *ui-thread* (bt:current-thread))
+    (setf *standard-output* stdout) ;re-enable output
+    (let ((buffer (make-instance 'rbuffer)))
+      (setf *pbuf* buffer)
+      (let ((top (make-frame (make-window (make-wtxt buffer))
+			     :kill t))) 
+	
+	(gtk-widget-show-all top)))))

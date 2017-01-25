@@ -31,6 +31,7 @@
    )(:metaclass gobject-class))
 
 (defmethod initialize-instance :after ((sldb sldb) &key)
+  (setf *pbuf* sldb)
   (pbuf-new-tag sldb :name "grayish"  :foreground "gray" :editable nil)
   (pbuf-new-tag sldb :name "beige"  :foreground "beige" :editable nil)
   (pbuf-new-tag sldb :name "restartable"  :foreground "LimeGreen" :editable nil)
