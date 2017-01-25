@@ -22,10 +22,12 @@
                (:file "range/range")
 
 	       (:file "stext/wtxt")
-
-	       
 	       (:file "stext/gtbstream")
 	       (:file "stext/rbuffer")
+
+	       (:file "stext/modeline")
+	       (:file "stext/window")
+	       
 ;;	       (:file "stext/gtk-stream")
 ;;	       (:file "stext/gtk-in-stream")
 	  

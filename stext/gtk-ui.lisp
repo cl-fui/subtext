@@ -13,7 +13,7 @@
 (defparameter *pbuf* nil)
 
 (defun t1 ( &key (stdout *standard-output*))
-  
+  "a bare window containing a repl"  
   (within-main-loop
    ;; (setf *ui-thread* (bt:current-thread))
     (setf *standard-output* stdout) ;re-enable output
@@ -53,3 +53,32 @@
     ;;(bind-keys *eli*)
     ;;(reset *eli* :full t)
    
+(defun t2 ( &key (stdout *standard-output*))
+  "window"
+  (within-main-loop
+   ;; (setf *ui-thread* (bt:current-thread))
+    (setf *standard-output* stdout) ;re-enable output
+    (let ((top
+	   (make-instance 'gtk-window
+			  :type :toplevel
+			  :title "t1"
+			  :default-width 640
+			  :default-height 480)) 
+	  (window (make-window
+		   (make-wtxt
+		    (setf *pbuf*
+			  (make-instance 'swarepl))))))
+	  
+      (g-signal-connect top "destroy"
+			(lambda (widget)
+			  (declare (ignore widget))
+			  ;;			  (format t "~%DESTROY ~%")
+			  (-on-destroy window)
+			  (leave-gtk-main)))
+      (g-signal-connect top "key-press-event"
+		      (lambda (top event)
+			(-on-key-press window event nil)))
+
+      
+      (gtk-container-add top window)
+      (gtk-widget-show-all top))))
