@@ -21,11 +21,11 @@
                (:file "range/package")
                (:file "range/range")
 
+	       (:file "stext/wtxt")
 
 	       
 	       (:file "stext/gtbstream")
 	       (:file "stext/rbuffer")
-	       (:file "stext/widj")
 ;;	       (:file "stext/gtk-stream")
 ;;	       (:file "stext/gtk-in-stream")
 	  

@@ -1,29 +1,29 @@
 (in-package :stext)
 ;;;=============================================================================
-;;; widj - a text widjet of our design...
+;;; wtxt - a text widjet containin a buffer-derived class..
 ;;;
 ;;; passes button and keypress events to the rbuffer. 
 ;;;
-(defclass widj (gtk-text-view)
+(defclass wtxt (gtk-text-view)
   ()
   (:metaclass gobject-class)
 )
 ;; This is passed from way above to the view
-(defmethod -on-destroy ((widj widj)) ;initiated by outer app window
-  (-on-destroy (gtk-text-view-buffer widj)) ;pass to active buffer
+(defmethod -on-destroy ((wtxt wtxt)) ;initiated by outer app window
+  (-on-destroy (gtk-text-view-buffer wtxt)) ;pass to active buffer
 )
 
-(defmacro make-widj (buffer &rest rest)
-  `(make-instance 'widj :buffer ,buffer ,@rest))
+(defmacro make-wtxt (buffer &rest rest)
+  `(make-instance 'wtxt :buffer ,buffer ,@rest))
 
-(defmethod initialize-instance :after ((widj widj) &key)
+(defmethod initialize-instance :after ((wtxt wtxt) &key)
   ;; Since views know about buffers but not vice versa, we must connect here.
   ;; since we don't know what the view is, we have to use generic functions.
   ;; The signaling system seems to not work well here!
-  (widget-defaults widj); see gtk-ui.lisp
+  (widget-defaults wtxt); see gtk-ui.lisp
 
   (g-signal-connect
-       widj "button-press-event" ;TODO: check widget
+       wtxt "button-press-event" ;TODO: check widget
        (lambda (view event)
 	 (multiple-value-bind (x y)
 	     (gtk-text-view-window-to-buffer-coords
@@ -35,13 +35,13 @@
 	    (gtk-text-view-get-iter-at-location view x y) event))))
   )
 
-(defmethod -on-key-press ((widj widj) event from) ;this particular view just passes them to buffer
-  (print "widj:on-key-press")
-  (format t "~%buffer is ~A" (gtk-text-view-buffer widj))
-  (-on-key-press (gtk-text-view-buffer widj) event from))
+(defmethod -on-key-press ((wtxt wtxt) event from) ;this particular view just passes them to buffer
+  (print "wtxt:on-key-press")
+  (format t "~%buffer is ~A" (gtk-text-view-buffer wtxt))
+  (-on-key-press (gtk-text-view-buffer wtxt) event from))
 
 
-;; These are sent from the widj to the dynamically current buffer
+;; These are sent from the wtxt to the dynamically current buffer
 (defmethod -on-key-press    ((buffer t) event from) nil)
 (defmethod -on-button-press ((buffer t) iter event) nil)
 

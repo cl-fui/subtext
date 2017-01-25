@@ -29,7 +29,7 @@
 				   :border-width 0
 				   :hscrollbar-policy :automatic
 				   :vscrollbar-policy :automatic))
-	  (widj (make-widj (setf *pbuf* (make-instance 'swarepl;rbuffer
+	  (widj (make-wtxt (setf *pbuf* (make-instance 'swarepl;rbuffer
 						       )))))	   
 	  
       (g-signal-connect window "destroy"
