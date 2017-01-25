@@ -45,11 +45,11 @@
  
     ;;feed the engine
     (defun prompt (swank)
-      (stream-delimit pbuf (make-p-prompt) nil)
+      (stream-delimit pbuf (make-p-prompt))
       (with-tag pbuf "prompt"
 	(fresh-line pbuf)
 	(format pbuf "~A> " (swa:prompt swank)))
-      (stream-delimit pbuf (make-p-entry) nil))
+      (stream-delimit pbuf (make-p-entry) ))
         
     ;;---------------------------------------------
     ;; callback evaluated upon processing of a command line
@@ -63,13 +63,13 @@
       (princ string pbuf))
 
     (defun sw-presentation-start (connection id stream)
-      (stream-delimit pbuf (make-p-pres :id id) nil) ;for now,just delimit with presentation id
+      (stream-delimit pbuf (make-p-pres :id id) ) ;for now,just delimit with presentation id
       )
     
     (defun sw-presentation-end (connection id stream)
       (finish-output pbuf)
       (pbuf-tag-range pbuf  "pres")
-      (stream-delimit pbuf nil nil) ;for now,just delimit with presentation id
+      (stream-delimit pbuf nil ) ;for now,just delimit with presentation id
       )
     
     (defun sw-new-package (connection name nickname)
@@ -80,7 +80,7 @@
     ;; Input requested (read-line?).  Keep the id and tag in a range to return
     ;; later, when <enter> is processed.
     (defun sw-read-string (connection id tag)
-      (stream-delimit pbuf (make-p-input :id id :tag tag) nil)
+      (stream-delimit pbuf (make-p-input :id id :tag tag))
       )
 
     ;; We shall keep the debuggers around in a hashtable, keyed by both thread
@@ -137,7 +137,7 @@
     (labels
 	((pbuf-idle-entry () ;in-scope for pbuf!
 	   (with-slots (swank) pbuf
-	     (let* ((range (range:at pbuf (gtb-get-char-count pbuf)))
+	     (let* ((range (range:at (root pbuf) (gtb-get-char-count pbuf)))
 		    (string (range-text pbuf range))
 		    )
 	       (typecase range
@@ -228,7 +228,7 @@
 (defun pbuf-hist-prim (pbuf replacement)
   (when replacement; could be nill on startup...
     (with-slots ( histid) pbuf
-      (let ((range (range:at pbuf (gtb-cursor-position pbuf))))
+      (let ((range (range:at (root pbuf) (gtb-cursor-position pbuf))))
 	(when (eq 'p-entry (type-of range))
 	  ;; we only work on p-entry ranges
 	  (mvb (start end) (range-iters pbuf range)

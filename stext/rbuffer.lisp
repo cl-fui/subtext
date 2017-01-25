@@ -1,10 +1,11 @@
 (in-package :stext)
 ;;;=============================================================================
-;;; rbuffer - a range-aware gtk-text-buffer.
+;;; rbuffer - a gtk-text-buffer that is also a range root.
 ;;;
 ;;OK (ql:quickload :stext)(in-package :stext)
-(defclass rbuffer (gtbstream range:ranges) 
-  ((ptags           :initform nil       :accessor ptags))
+(defclass rbuffer (gtbstream ) 
+  ((ptags :accessor ptags     :initform nil )
+   (root  :accessor root      :initform (range:make) ))
   (:metaclass gobject-class))
 
 ;;------------------------------------------------------------------------------
@@ -46,7 +47,7 @@
   (declare (ignore text))
   (let ((off (gti-get-offset iter)))
     ;;(format t "~%WIDENING: at ~A by ~A~% "off len);;
-    (range:widen (range:at buffer off) len)))
+    (range:widen (range:at (root buffer) off) len)))
   ;;    (format t  "~%Current range is ~A  ~A wide" (range:range-abs (range *out*))    (range:range-width (range *out*)))
   
 
@@ -55,7 +56,7 @@
   (let ((o1 (gti-get-offset  istart))
 	(o2 (gti-get-offset  iend)))
 ;;    (format t "~%deleting range: [~D ~D)" o1 o2)
-    (range:narrow (range:at buffer o1) (- o2 o1))))
+    (range:narrow (range:at (root  buffer) o1) (- o2 o1))))
 
 
 ;;==============================================================================
@@ -66,7 +67,7 @@
 	 (here (gtb-get-iter-at-offset pbuf offset))
 	 (marks-here (gti-get-marks here))
 	 (tags-here (gti-get-tags here)))
-    (mvb (range off) (range:at  pbuf offset )
+    (mvb (range off) (range:at (root pbuf) offset )
 	;; (setf *q* range)g
 	 (format t "~%===============================================")
 	 (format t "~%Cursor is at ~D; character [~C](~d $~x)" offset
@@ -126,7 +127,7 @@
  
  
 (defun pbuf-tag-range (pbuf tag)
-  (mvb (start end) (range:bounds (range:at pbuf (gtb-get-char-count pbuf)))
+  (mvb (start end) (range:bounds (range:at (root  pbuf) (gtb-get-char-count pbuf)))
        (gtb-apply-tag pbuf tag
 		      (gtb-get-iter-at-offset pbuf start)
 		      (gtb-get-iter-at-offset pbuf end))))
@@ -170,10 +171,10 @@
 
 
 ;;of limited use, only good for top subranges inserted at end...
-(defun stream-delimit (bufstrm range register)
-  (with-slots (flush (root range:root)) bufstrm
+(defun stream-delimit (bufstrm range)
+  (with-slots (flush ) bufstrm
     (funcall flush)
-    (range:new (if range range (range:make-range)) root  root)))
+    (range:new-in (root bufstrm) range)))
 
 (defun stream-anchor (bufstrm)
   (with-slots (flush) bufstrm

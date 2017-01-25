@@ -58,7 +58,7 @@
   )
 
 (defmethod -on-button-press ((sldb sldb) iter event)
-  (mvb (range off) (range:at sldb (gti-get-offset iter))
+  (mvb (range off) (range:at (root sldb) (gti-get-offset iter))
        (typecase range
 	 (prestart (sldb-invoke-restart sldb (prestart-id range)))
 	 (pframe (sldb-frame-toggle sldb range))))
@@ -109,28 +109,28 @@
    
     (with-tag sldb "normal" 
       (format sldb "~A~&" (first sldb-condition)))
-    (stream-delimit sldb (make-pcondition) nil)
+    (stream-delimit sldb (make-pcondition))
     (with-tag sldb "condition"
       (format sldb "~A~&" (second sldb-condition)))
-    (stream-delimit sldb nil nil)
+    (stream-delimit sldb nil)
     
     (with-tag sldb "label" (format sldb "~%Restarts:~&"))
     (loop for restart in sldb-restarts
        for i from 0 do
-	 (stream-delimit sldb (make-prestart :id i) nil)
+	 (stream-delimit sldb (make-prestart :id i))
 	 (with-tag sldb "enum"   (format sldb "~2d: [" i))
 	 (with-tag sldb "cyan"   (format sldb "~A" (first restart)))
 	 (with-tag sldb "normal" (format sldb "] ~A~&" (second restart)))
-	 (stream-delimit sldb nil nil))
+	 (stream-delimit sldb nil))
     (with-tag sldb "label" (format sldb "~%Backtrace:~&"))
     (loop for frame in sldb-frames
        for i from 0 do
-	 (stream-delimit sldb (make-pframe :id i) nil)
+	 (stream-delimit sldb (make-pframe :id i) )
 	 (with-tag sldb "enum"
 	   (format sldb "~3d: "  (first frame)))
 	 (with-tag sldb (if (third frame) "restartable" "normal")
 	   (format sldb "~A~&"   (second frame)))
-	 (stream-delimit sldb nil nil))))
+	 (stream-delimit sldb nil))))
 
 
 (defun sldb-invoke-restart (sldb restart)

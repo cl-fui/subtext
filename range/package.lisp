@@ -2,14 +2,12 @@
   (:use #:cl)
   (:shadow cl:find cl:delete)
   (:export
-   :range :width :data :child :dad :l :make-range
-   :ranges :root :ht
-   :root
-   :new
+   :range :width :child :dad :l :make
+   :new-in
    :end
    :bounds
    :widen :narrow
    :at
-   :find
    :kids
+   :subrange
 ))

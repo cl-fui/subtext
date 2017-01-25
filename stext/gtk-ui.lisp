@@ -103,5 +103,11 @@
       (setf *pbuf* buffer)
       (let ((top (make-frame (make-window (make-wtxt buffer))
 			     :kill t))) 
-	
+	(stream-delimit buffer nil)
+	(format buffer "Hell~&")
+	(stream-delimit buffer nil)
+	(format buffer "Fuck~&")
+	(stream-delimit buffer nil)
+	(format buffer "shit~&")
+	(range:subrange (range:make :width 2) (root buffer) 2)
 	(gtk-widget-show-all top)))))

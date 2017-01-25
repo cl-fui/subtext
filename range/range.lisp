@@ -11,24 +11,21 @@ We maintain a right-to-left list of widths in the buffer.  Since most of the act
 ||#
 
 
-(define-condition range-error (error)
-  ()
-  (:documentation "Error in range system.  You are hosed."))
+(define-condition range-error (simple-error)
+  ((message :initarg :message :reader message))
+  )
 
-
-(defclass ranges ()
-  ((root      :initform (make-range)  :accessor root) ;; root node
-   (ht        :initform (make-hash-table :test 'eq)
-	      :accessor ht))     ;; register obj->node
-)
 
 (defstruct (range
+	     (:constructor make (&key (width 0) (dad nil) (l nil)))
 	     (:conc-name nil)
-	     (:print-function (lambda (o s k) (declare (ignore k))
-					   (format s "<~A >"
-						   (width o)
-						   ))))
-  
+	     #||    (:print-function (lambda (o s k) (declare (ignore k))
+	     (format s "<~C~A >"
+	     (if (child o)#\* #\space)
+	     (width o)
+	     )))
+	     ||#
+	     )
   (width 0   :type fixnum)
   (l     nil :type (or null range))
   (dad   nil :type (or null range))
@@ -41,13 +38,16 @@ We maintain a right-to-left list of widths in the buffer.  Since most of the act
 ;; can ever find!
 ;;
 ;; Special case: if the child is a null-node, just take posession of it.
-(defun new (range ranges dad &optional (register nil))
+(defun new-in (dad range)
   "Insert a new range in parent's right side. Return it"
   (with-slots ((dad-child child)) dad
-    (setf (dad range) dad
-	  (l   range) dad-child
-	  dad-child range)
-    range))
+    (if range
+	(setf (dad range) dad
+	      (l   range) dad-child
+	      dad-child range)
+	(setf dad-child
+	      (make :dad dad
+		    :l   dad-child)))))
 
 (defun end (range)
   "find the absolute end position of the range"
@@ -99,11 +99,8 @@ We maintain a right-to-left list of widths in the buffer.  Since most of the act
 	(prim (child tree) rem)
 	(values tree rem))))
 
-(defun at (ranges off)
-  (at_ (root ranges) off))
-
-(defun find (ranges item)
-  (gethash item (ht ranges)))
+(defun at (root off)
+  (at_ root off))
 
 (defun kids (dad)
   (loop for r = (child dad) then (l r)
@@ -117,12 +114,29 @@ We maintain a right-to-left list of widths in the buffer.  Since most of the act
 
 ||#
 
+(defun subrange (range root off)
+  (multiple-value-bind  (dad off) (at root off)
+    (let ((extra (- off (width range))))
+      (if (or (zerop (width range))
+	      (minusp extra))
+	  (error "Cannot insert a subrange: width ~A, extra ~A" (width range) extra))
 
+      (with-slots ((dad-child child)) dad
+	(setf (dad range) dad
+	      (l   range) dad-child
+	      dad-child range)
+	(if (> extra 0)
+	    (setf dad-child
+		  (make :width extra
+			:dad   dad
+			:l     range)))))
+    
+    range))
 
 (defparameter *a* nil)
 (defparameter *b* nil)
-(defparameter *tab* (make-instance 'ranges))
-(setf *a* (widen (new (make-range) *tab* (root *tab*)) 10))
-(setf *b* (widen (new (make-range) *tab* (root *tab*)) 20))
+(defparameter *tab* (make))
+(setf *a* (widen (new-in *tab* nil) 10))
+(setf *b* (widen (new-in *tab* nil) 20))
 
 
