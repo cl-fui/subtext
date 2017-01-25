@@ -94,6 +94,13 @@
       (gtk-widget-show-all top))))
 
 ;;for debugging ranges
+
+(defgeneric present (it stream))
+
+(defstruct  (ptest (:include range:range)))
+(defmethod  present ((p ptest) s)
+  (format s "FUCK YOU" ))
+
 (defun t0 ( &key (stdout *standard-output*))
   "final"
   (within-main-loop
@@ -104,12 +111,14 @@
       (let ((top (make-frame (make-window (make-wtxt buffer))
 			     :kill t))
 	    r) 
-	(setf r (stream-delimit buffer nil))
-	(format buffer "Hell~&")
-        (stream-delimit buffer nil) nil 1 4
-	(format buffer "Fuck~&")
+
 	(stream-delimit buffer nil)
-	(format buffer "shit~&")
-					;(range:subrange (range:make :width 2) (root buffer) 2)
-	(range:sub-of r (range:make) 1 4)
+	(format buffer "hello~&")
+	(time
+	 (loop for i from 1 to 100000 do
+	      (append-presentation buffer (root buffer) (make-ptest))
+	      (terpri buffer)
+	      ))
+	
+	
 	(gtk-widget-show-all top)))))

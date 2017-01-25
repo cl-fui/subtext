@@ -31,8 +31,13 @@
    ;; (format t "gtbstrea, ON-DESTROY ~A~&" stream )
 )
 
+(in-package :gtk)
+(defcfun ("gtk_text_buffer_insert_at_cursor" my-buffer-insert) :void
+  (buffer (g-object gtk-text-buffer))
+  (text (:string :free-to-foreign nil))
+  (len :int))
 
-
+(in-package :stext)
 (defmacro iter-at-point ()
   "Set iter to point, and return it"
   `(progn (%gtb-get-iter-at-mark stream iter point) iter))
@@ -74,7 +79,8 @@
 	      (unless (zerop index)
 		(setf (schar lbuf index) (code-char 0);null-terminate lbuf
 		      index 0)
-		(gtb-insert-at-cursor stream lbuf -1);watch out for UTF8 chars!
+					;(gtb-insert-at-cursor stream lbuf -1);watch out for UTF8 chars!
+		(gtk::my-buffer-insert stream lbuf -1)
 		(iter-at-point))
 	      iter)))))
 
@@ -144,3 +150,12 @@
 
 
 
+(defun append-presentation (stream dad pres)
+  (declare (type gtbstream stream)
+	   (type range:range dad))
+  (with-slots (flush) stream
+    (declare (type function flush))
+    (funcall flush)
+    (range:new-in dad pres)
+    (present pres stream)
+    (funcall flush)))
