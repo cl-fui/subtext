@@ -19,13 +19,10 @@ We maintain a right-to-left list of widths in the buffer.  Since most of the act
 (defstruct (range
 	     (:constructor make (&key (width 0) (dad nil) (l nil)))
 	     (:conc-name nil)
-	     #||    (:print-function (lambda (o s k) (declare (ignore k))
-	     (format s "<~C~A >"
-	     (if (child o)#\* #\space)
-	     (width o)
-	     )))
-	     ||#
-	     )
+	     (:print-function (lambda (o s k) (declare (ignore k))
+				      (format s "<~C~A >"
+					      (if (child o)#\* #\space)
+					      (width o)))))
   (width 0   :type fixnum)
   (l     nil :type (or null range))
   (dad   nil :type (or null range))
@@ -132,6 +129,24 @@ We maintain a right-to-left list of widths in the buffer.  Since most of the act
 			:l     range)))))
     
     range))
+
+(defun sub-of (dad range  start end)
+  (let ((width (- end start))		; width of new node
+	(extra (- (width dad)  end))) ; do we need a pad range?
+    (if (or (not (plusp width))
+	    (minusp extra))
+	(error "Cannot insert a subrange: width ~A, extra ~A" (width range) extra))
+    (with-slots ((dad-child child)) dad
+      (setf (dad   range) dad
+	    (l     range) dad-child
+	    (width range) width
+	    dad-child     range)
+	
+      (unless (zerop extra )
+	  (setf dad-child
+		(make :dad   dad
+		      :l     range
+		      :width extra))))))
 
 (defparameter *a* nil)
 (defparameter *b* nil)
