@@ -34,7 +34,7 @@
 (in-package :gtk)
 (defcfun ("gtk_text_buffer_insert_at_cursor" my-buffer-insert) :void
   (buffer (g-object gtk-text-buffer))
-  (text (:string :free-to-foreign nil))
+  (text :pointer :char)
   (len :int))
 
 (in-package :stext)
@@ -43,8 +43,8 @@
   `(progn (%gtb-get-iter-at-mark stream iter point) iter))
 ;;==============================================================================
 (defun buffer-routines (it)
-
-  (let ((lbuf (make-array 256 :element-type 'character))
+  
+  (let ((lbuf (foreign-string-alloc (make-string 256 :initial-element #\x)))
 	(index 0)
 	(stream it))
     ;;--------------------------------------------------------------------------
@@ -54,9 +54,9 @@
 	    (declare (optimize (speed 3) (safety 0) (debug 0)))
 	    (declare (type character char))
 	    (declare (type fixnum index))
-	    (declare (type (simple-string 256) lbuf ))
+	    ;(declare (type (simple-string 256) lbuf ))
 	    ;;(format t "~%Emitting ~C into ~A at ~A" char stream index)
-	    (setf (schar lbuf index) char)
+	    (cffi::mem-set (char-code char) lbuf :char index)
 	    (incf index)
 	    (when (or (char= char #\newline)
 		      (> index 250)) ;buffer full, or
@@ -73,12 +73,12 @@
 	    "Flush the stream if needed; return iter"
 	    ;; Uses iter
 	    (declare (type fixnum index))
-	    (declare (type (simple-string 256) lbuf ))
+	    ;(declare (type (simple-string 256) lbuf ))
 	    ;;(format t "~%Flush ~A characters from ~A~&" index stream )
 	    (with-slots ( iter point ) stream
 	      (unless (zerop index)
-		(setf (schar lbuf index) (code-char 0);null-terminate lbuf
-		      index 0)
+		(cffi::mem-set 0 lbuf :char index)
+		(setf index 0)
 					;(gtb-insert-at-cursor stream lbuf -1);watch out for UTF8 chars!
 		(gtk::my-buffer-insert stream lbuf -1)
 		(iter-at-point))

@@ -163,7 +163,7 @@
 (defun range-iters (buffer range)
   (mvb (start end) (range:bounds range)
        (values (gtb-get-iter-at-offset buffer start)
-	       (gtb-get-iter-at-offset buffer end))))
+	       (gtb-get-iter-at-offset buffer (1- end)))))
 
 (defun range-text (buffer range)
   (mvb (istart iend) (range-iters buffer range)
@@ -179,4 +179,5 @@
 (defun stream-anchor (bufstrm)
   (with-slots (flush) bufstrm
     (gtb-insert-child-anchor bufstrm (funcall flush))))
+
 

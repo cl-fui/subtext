@@ -96,10 +96,22 @@
 ;;for debugging ranges
 
 (defgeneric present (it stream))
-
-(defstruct  (ptest (:include range:range)))
+(defstruct  (ptest (:include range:range))
+  toggle)
 (defmethod  present ((p ptest) s)
-  (format s "FUCK YOU" ))
+  (format s "FUCK YOU" )
+  (setf (ptest-toggle p) nil))
+(defmethod  -on-pres-click ((p ptest) buffer event)
+
+  (with-slots (toggle) p
+    (setf toggle (not toggle))
+    (mvb (start end) (range-iters buffer p)
+	 (princ start) (print end)
+	 (if toggle
+	     (%gtb-delete buffer start end)
+	     (%gtb-insert buffer start "Fuck You" -1)
+))
+))
 
 (defun t0 ( &key (stdout *standard-output*))
   "final"
@@ -115,10 +127,16 @@
 	(stream-delimit buffer nil)
 	(format buffer "hello~&")
 	(time
-	 (loop for i from 1 to 100000 do
+	 (loop for i from 1 to 10 do
 	      (append-presentation buffer (root buffer) (make-ptest))
 	      (terpri buffer)
 	      ))
 	
 	
 	(gtk-widget-show-all top)))))
+;;WATCH OUT!
+(defmethod -on-button-press ((buffer rbuffer) iter event)
+  (mvb (range off) (range:at (root buffer) (gti-get-offset iter))
+       (-on-pres-click range buffer event))
+ 
+)
