@@ -20,6 +20,16 @@
   (print "initialize-instance: rbuffer DONE")
   )
 
+(defmethod -on-announce-eli  ((pbuf rbuffer) eli)
+  (format t "~&~&installed rbuf's~&~&")
+  (with-slots (keymap) eli
+    (keymap-bind
+     keymap "<F1>"
+     (lambda ()
+       (let ((iter (gtb-get-iter-at-mark pbuf (gtb-get-insert pbuf))))
+	 (bufstat-prim pbuf (gti-get-offset iter)))
+       t))
+    ))
 (defmethod -on-destroy :before ((buffer rbuffer))
   (print "RBUFFER ON-DESTROY")
 )
@@ -58,7 +68,7 @@
 	 (marks-here (gti-get-marks here))
 	 (tags-here (gti-get-tags here)))
     (mvb (range off) (range:at  pbuf offset )
-	;; (setf *q* range)
+	;; (setf *q* range)g
 	 (format t "~%===============================================")
 	 (format t "~%Cursor is at ~D; character [~C](~d $~x)" offset
 		 (gti-get-char here) (char-code (gti-get-char here))

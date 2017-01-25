@@ -27,6 +27,9 @@
       (gtk-box-pack-start window scrolled)
       (gtk-box-pack-end window modeline :expand nil))))
 
+(defmethod -on-announce-eli ((window window) eli)
+  (-on-announce-eli (view window)  eli))
+
 (defmethod -on-destroy ((window window))
   ;;(print "destroy:window")
   (-on-destroy (view window))

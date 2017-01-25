@@ -118,6 +118,11 @@
     t))
 
 
+(defun stream-wipe (stream)
+  "clear the buffer entirely"
+  (%gtb-delete stream
+	       (gtb-get-start-iter stream)
+	       (gtb-get-end-iter stream)))
 ;;------------------------------------------------------------------------------
 ;;------------------------------------------------------------------------------
 ;; Tagged output

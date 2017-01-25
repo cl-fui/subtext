@@ -14,9 +14,8 @@
 
 (defclass frame (gtk-window)
   ((holder   :accessor holder  :initform (make-instance 'gtk-box :orientation :vertical))
-   (minibuf  :accessor minibuf :initform (make-minibuf))
-   (content  :accessor content :initarg :content)
-   (keysearch :accessor keysearch :initform *global-keymap*))
+   (minibuf  :accessor minibuf )
+   (content  :accessor content :initarg :content))
   (:metaclass gobject-class))
 
 (defmethod -on-destroy ((frame frame))
@@ -33,31 +32,20 @@
 
 (defmethod initialize-instance :after ((frame frame) &key)
   (with-slots (holder minibuf content) frame
+    (setf minibuf (make-minibuf frame))
     (gtk-box-pack-end holder minibuf :expand nil)
     (and content (gtk-box-pack-start holder content))
     (gtk-container-add frame holder)
     (g-signal-connect
      frame "destroy"
      (lambda (widget) (-on-destroy widget)
-	      (leave-gtk-main)))
-    (g-signal-connect frame "key-press-event" #'frame-key-press)))
-
-(defun frame-key-press (frame event)
-  (let ((gtkkey (gdk-event-key-keyval event)))
-    (unless (modifier-p gtkkey); if modifier, let gtk handle it!
-      (setf gtkkey (make-key gtkkey (gdk-event-key-state event)))
-      (with-slots (keysearch) frame
-	(let ((found (keymap-lookup keysearch gtkkey)))
-	  (typecase (cdr found)
-	    (function (setf keysearch *global-keymap*)
-		      (funcall (cdr found)))
-	    (cons (setf keysearch found)
-		   t)
-	    (t nil)))))))
+	     (leave-gtk-main)))
+    ;; process keystrokes in minibuf...
+    (-on-announce-eli content minibuf)
+    (g-signal-connect frame "key-press-event"
+		      (lambda (frame event)
+			(-on-key-press (minibuf frame) event nil)))))
 
 
-(defun on-key-press (eli widget event)
-  "Process a key from GTK; ignore modifier keys; process other keys in eli"
-  (declare (ignore widget))
-  (with-slots (key interactive suspend) eli
-    ))
+
+

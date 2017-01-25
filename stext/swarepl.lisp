@@ -95,28 +95,28 @@
     (defun sw-debug (connection thread level condition restarts frames conts)
       (format t "SW-DEBUG: conn ~A thread ~A level ~A&" connection thread level)
       (setf (gethash (+ level (* 1000 thread)) (sldbs pbuf))
-	    (make-sldb connection thread level condition restarts frames conts)))
+	    (make-wsldb connection thread level condition restarts frames conts)))
     ;; Then, this guy comes to activate the debugger.  We will create a window
     ;; and a frame for it, and display it.
     (defun sw-debug-activate (connection thread level &optional selectl)
-      (let ((sldb (gethash (+ level (* 1000 thread)) (sldbs pbuf))))
-	(when sldb
+      (let ((wsldb (gethash (+ level (* 1000 thread)) (sldbs pbuf))))
+	(when wsldb
 	  (let ((frame
 		 (make-frame
-		  (make-window  (sldb-view sldb))
+		  (make-window  wsldb)
 		  :title (format nil "SLDB ~A ~A"thread level))))
-	    (setf (sldb-fr sldb) frame)
+	    ;(setf (sldb-fr sldb) frame)
 	    (gtk-widget-show-all frame))
-	  (sldb-activate sldb))))
+	  (wsldb-activate wsldb))))
     ;; Now when this returns, we destroy the widget and remove SLDB from the
     ;; hashtable.  TODO: are all sub-widgets destroyes?
     (defun sw-debug-return (connection thread level stepping)
       (format t "sw-dbug-return: ~A ~A ~A~&" thread level stepping)
-      (let ((sldb (gethash (+ level (* 1000 thread)) (sldbs pbuf))))
-	(when sldb
-	  (gtk-widget-destroy (sldb-fr sldb) )
-	  (remhash (+ level (* 1000 thread)) (sldbs pbuf))))
-      )  
+      (let ((wsldb (gethash (+ level (* 1000 thread)) (sldbs pbuf))))
+	(when wsldb
+	  (wsldb-destroy wsldb)
+	  (remhash (+ level (* 1000 thread)) (sldbs pbuf)))))
+    ;; Start ball-roll
     (prompt swank)))
 
  
@@ -130,31 +130,38 @@
     (setf swank (swa:make-connection "localhost" 5000))
     (init-swank pbuf))
   ;; install <enter> key binding
-  (labels
-      ((pbuf-idle-entry () ;in-scope for pbuf!
-	 (with-slots (swank) pbuf
-	   (let* ((range (range:at pbuf (gtb-get-char-count pbuf)))
-		  (string (range-text pbuf range))
-		  (data (range:data range)))
-	     (typecase data
-	       (p-input ;;(:emacs-return-string 1 5 "88\n")
-		(with-slots (id tag) data
-		  (swa:emacs-return-string swank string id tag)))
-	       (p-entry
-		(swa:eval (swank pbuf) ;try to parse string, may be null
-			  (pbuf-parse-string string) #'prompt-proc)))))
-	 nil)); remove thyself
-    (keymap-bind
-     *global-keymap* "<RET>"
-     (lambda ()
-       (let ((iter (gtb-get-iter-at-mark pbuf (gtb-get-insert pbuf))))
-	 ;; only allow input at the end!
-	 (if (gti-is-end iter)
-	     (gdk-threads-add-idle #'pbuf-idle-entry)))
-       nil; let gtk insert the <enter> into the buffer...
-       )))
+  
   
   pbuf)
+
+(defmethod -on-announce-eli :after((pbuf swarepl) eli)
+  (with-slots (keymap) eli
+    (labels
+	((pbuf-idle-entry () ;in-scope for pbuf!
+	   (with-slots (swank) pbuf
+	     (let* ((range (range:at pbuf (gtb-get-char-count pbuf)))
+		    (string (range-text pbuf range))
+		    (data (range:data range)))
+	       (typecase data
+		 (p-input ;;(:emacs-return-string 1 5 "88\n")
+		  (with-slots (id tag) data
+		    (swa:emacs-return-string swank string id tag)))
+		 (p-entry
+		  (swa:eval (swank pbuf) ;try to parse string, may be null
+			    (pbuf-parse-string string) #'prompt-proc)))))
+	   nil)); remove thyself
+      (keymap-bind
+       keymap "<RET>"
+       (lambda ()
+	 (let ((iter (gtb-get-iter-at-mark pbuf (gtb-get-insert pbuf))))
+	   ;; only allow input at the end!
+	   (if (gti-is-end iter)
+	       (gdk-threads-add-idle #'pbuf-idle-entry)))
+	 nil; let gtk insert the <enter> into the buffer...
+	 )))
+    
+    )
+  )
 ;;------------------------------------------------------------------------------
 
 ;; Before evaluating a string via SWANK, we read it here, discarding sexps

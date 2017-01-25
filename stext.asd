@@ -48,7 +48,8 @@
 ;;	       (:file "stext/term")
 ;;	       (:file "stext/redit")
 ;;	       (:file "stext/sldb")
-;;	       (:file "stext/types")
+	       ;;	       (:file "stext/types")
+	       (:file "stext/sldb")
 	       (:file "swank/swank-parser") ;it knows about tags...
 	       (:file "stext/swarepl")
              (:file "stext/gtk-ui")

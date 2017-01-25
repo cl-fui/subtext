@@ -7,10 +7,11 @@
 (defclass wtxt (gtk-text-view)
   ()
   (:metaclass gobject-class)
-)
+  )
+
 ;; This is passed from way above to the view
 (defmethod -on-destroy ((wtxt wtxt)) ;initiated by outer app window
-  (-on-destroy (gtk-text-view-buffer wtxt)) ;pass to active buffer
+  (-on-destroy (gtk-text-view-buffer wtxt))		;pass to active buffer
 )
 
 (defmacro make-wtxt (buffer &rest rest)
@@ -34,18 +35,8 @@
 	    (gtk-text-view-buffer view)
 	    (gtk-text-view-get-iter-at-location view x y) event))))
   )
-
-(defmethod -on-key-press ((wtxt wtxt) event from) ;this particular view just passes them to buffer
-  (print "wtxt:on-key-press")
-  (format t "~%buffer is ~A" (type-of (gtk-text-view-buffer wtxt)))
-  (-on-key-press (gtk-text-view-buffer wtxt) event from)
-  (format t "~&sent~&"))
-
-
-;; These are sent from the wtxt to the dynamically current buffer
-(defmethod -on-key-press    ((buffer t) event from) nil)
-(defmethod -on-button-press ((buffer t) iter event) nil)
-
+(defmethod -on-announce-eli ((wtxt wtxt) eli)
+  (-on-announce-eli (gtk-text-view-buffer wtxt) eli))
 
 (defun widget-defaults (widget)
   (gtk-widget-modify-font widget  (pango-font-description-from-string "DejaVu Sans Mono 8.6"))
