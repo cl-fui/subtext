@@ -10,6 +10,7 @@
   
   ((iter         :accessor iter  :initform nil :type gtk-text-iter)
    (point        :accessor point :initform nil :type gtk-text-marker)
+   (iter1        :accessor iter1  :initform nil :type gtk-text-iter)
    ;;local functions to buffer output
    (clear        :accessor clear :type function)
    (emit         :accessor emit  :type function)
@@ -18,8 +19,9 @@
 ;;==============================================================================
 (defmethod initialize-instance :after ((stream gtbstream) &key)
  ;; (print "init-inst GTBSTREAM")
-  (with-slots (point  iter) stream
+  (with-slots (point  iter iter1) stream
     (setf iter (gtb-get-end-iter stream)
+	  iter1 (gtb-get-end-iter stream)
 	  point (gtb-create-mark stream (null-pointer) iter nil))
     (init-buffer-routines stream)))
 ;;------------------------------------------------------------------------------
@@ -33,26 +35,25 @@
 ;;==============================================================================
 ;;
 (defmethod trivial-gray-streams:stream-force-output ((stream gtbstream))
-  (funcall (flush stream)))
+  (declare (optimize (speed 3) (safety 0) (debug 0)))
+  (funcall (the function (flush stream))))
 (defmethod trivial-gray-streams:stream-finish-output ((stream gtbstream))
-  (funcall (flush stream)))
+  (declare (optimize (speed 3) (safety 0) (debug 0)))
+  (funcall (the function (flush stream))))
 ;;------------------------------------------------------------------------------
 (defmethod trivial-gray-streams:stream-write-char ((stream gtbstream) char)
-  (funcall (emit stream) char))
+  (declare (optimize (speed 3) (safety 0) (debug 0)))
+  (funcall (the function (emit stream)) char))
 ;;------------------------------------------------------------------------------
 (defmethod trivial-gray-streams:stream-line-column ((stream gtbstream))
-  (let ((o (gti-get-line-offset (funcall (flush stream)))))
-    ;;(print o)
-    o))
+  (let ((o (stream-offset stream)))
+    (- (gti-get-line-offset (iter stream)) o)))
+
 (defmethod trivial-gray-streams:stream-start-line-p ((stream gtbstream))
-  (let ((o (gti-starts-line (funcall (flush stream)))))
-    ;;(print o)
-    o))
+  (gti-starts-line (funcall (the function (flush stream)))))
 ;;------------------------------------------------------------------------------
 (defmethod trivial-gray-streams:stream-file-position ((stream gtbstream))
-  (funcall (flush stream))
-  (with-slots (iter point) stream
-    (gti-get-offset (iter-at-point))))
+  (stream-offset stream))
 
 (defmethod (setf trivial-gray-streams:stream-file-position) (value (stream gtbstream))
   (funcall (flush stream))
@@ -70,44 +71,6 @@
       t)))
 
 
-(defun stream-wipe (stream)
-  "clear the buffer entirely" (%gtb-delete stream
-	       (gtb-get-start-iter stream)
-	       (gtb-get-end-iter stream)))
-;;------------------------------------------------------------------------------
-;;------------------------------------------------------------------------------
-;; Tagged output
-;;
-;; As we allow nested tagged output, 'with-tags' keeps track of the tags and
-;; starting position on the stack.
-;;
-(defmacro with-tag (stream tag &body body)
-  (let ((str (gensym)))
-    `(let ((,str ,stream ))
-       (with-slots (iter point flush) ,str
-	 (let ((off-start (gti-get-offset (funcall flush))))
-	   (unwind-protect
-		(progn ,@body)
-	     (let ((end (funcall flush)))
-	       (gtb-apply-tag
-		,str ,tag
-		(gtb-get-iter-at-offset ,str off-start) ; old
-		end ))))))) )
-
-
-
-
-
-
-(defun append-presentation (stream dad pres)
-  (declare (type gtbstream stream)
-	   (type range:range dad))
-  (with-slots (flush) stream
-    (declare (type function flush))
-    (funcall flush)
-    (range:new-in dad pres)
-    (present pres stream)
-    (funcall flush)))
 ;;==============================================================================
 ;; buffer routines create a closure with a buffer... These routines get hammered
 ;; and really do need to be fast; a closure seems to be a little better on SBCL
@@ -149,9 +112,63 @@
 	    (declare (type (simple-string 256) lbuf ))
 ;;	    (format t "~%Flush ~A characters" index )
 	    (with-slots (iter point) stream
-	      (iter-at-point)
-	      (unless (zerop index)
-		(setf (schar lbuf index) (code-char 0);null-terminate lbuf
-		      index 0)
-		(%gtb-insert stream iter lbuf -1));watch out for UTF8 chars!
-	      iter)))))
+	      (prog1
+		  (iter-at-point)
+		(unless (zerop index)
+		  (setf (schar lbuf index) #\Nul ;terminate UTF8 lbuf
+			index 0) 
+		  (%gtb-insert stream iter lbuf -1))))))))
+;;==============================================================================
+;; And our extensions...
+
+(defun stream-wipe (stream)
+  "clear the buffer entirely"
+  (%gtb-delete stream
+	       (gtb-get-start-iter stream)
+	       (gtb-get-end-iter stream)))
+
+(defun stream-offset (stream)
+  "get a clean offset"
+  (declare (optimize (speed 3) (safety 0)))
+  (gti-offset (funcall (the function (flush stream)))))
+
+(defun tag-to-here (stream tag start-offset)
+  "apply a tag from start-offset to current position"
+  (%gtb-get-iter-at-offset stream (iter1 stream) start-offset) ; old
+  (gtb-apply-tag
+   stream tag
+   (iter1 stream)
+   (funcall (the function (flush stream))))  )
+;;==============================================================================
+;;------------------------------------------------------------------------------
+;;------------------------------------------------------------------------------
+;; Tagged output
+;;
+;; As we allow nested tagged output, 'with-tags' keeps track of the tags and
+;; starting position on the stack.  The usual unwind-protect is not necessary
+;; as we do not reserve any resources
+;;
+(defmacro with-tag (stream tag &body body)
+  (let ((str (gensym))
+	(off (gensym))
+	(tagg (gensym)))
+    `(let* ((,str (the gtbstream ,stream)) 
+	    (,off (stream-offset ,str))
+	    (,tagg ,tag))
+       ,@body
+       (tag-to-here ,str ,tagg ,off))))
+
+
+
+
+
+
+(defun append-presentation (stream dad pres)
+  (declare (type gtbstream stream)
+	   (type range:range dad))
+  (with-slots (flush) stream
+    (declare (type function flush))
+    (funcall flush)
+    (range:new-in dad pres)
+    (present pres stream)
+    (funcall flush)))
