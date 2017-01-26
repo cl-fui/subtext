@@ -79,10 +79,12 @@
 	 (unless open
 	   (mvb (start end) (range:bounds range)
 		(file-position sldb (1- end))
+		;;-----------------------------
 		(format sldb "~%     Locals:")
 		(loop for item in (first (second reply)) do
 		     (format sldb "~%       ~A = ~A" (second item) (sixth item)))
 		(finish-output sldb)
+		;;-----------------------------
 		(setf open t)
 		;;(print (first (second reply)) sldb)
 		;;(print (second (second reply)) sldb)

@@ -99,7 +99,7 @@
 (defstruct  (ptest (:include range:range))
   toggle)
 (defmethod  present ((p ptest) s)
-  (format s "FUCK YOU" )
+  (format s "FUCK YOUЉ" )
   (setf (ptest-toggle p) nil))
 (defmethod  -on-pres-click ((p ptest) buffer event)
 

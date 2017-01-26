@@ -6,6 +6,8 @@
 	       #:bordeaux-threads
 	       #:trivial-gray-streams
 	       #:usocket
+	       #:anaphora
+	       #:alexandria
 	       #-(or allegro ccl clisp sbcl) ;for systems with no Unicod
                #:trivial-utf-8
 	       )
@@ -28,6 +30,7 @@
 	       (:file "stext/wtxt")
 	       (:file "stext/gtbstream")
 	       (:file "stext/rbuffer")
+	       (:file "stext/rstream")
 
 	       (:file "stext/modeline")
 	       (:file "stext/window")

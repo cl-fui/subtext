@@ -48,7 +48,13 @@ starting with 'old-prefix' in :package.  Remember to capitalize "
 	  ,@body)
      (gdk-threads-leave)))
 
-
+(defmacro when-setf (place expr &rest rest)
+  "when expr is not nil, setf the form and execute optional body"
+  (let ((temp (gensym)))
+    `(let ((,temp ,expr))
+       (when ,temp
+	 (setf ,place ,temp)
+	 ,@rest))))
 ;;==============================================================================
 (defmethod print-object ((mark gtk-text-mark) out)
   (let ((offset (gtk:gtk-text-iter-get-offset (gtk:gtk-text-buffer-get-iter-at-mark

@@ -3,19 +3,16 @@
 ;; gtbstream
 ;;
 ;; A thin layer around gtk-text-buffer, allowing us to treat it like a stream
-;; using cursor as point
+;; using a marker as point
 
 (defclass gtbstream (gtk-text-buffer
 		     trivial-gray-streams:fundamental-character-output-stream)
   
-  ((iter         :type gtk-text-iter
-		 :initform nil
-		 :accessor iter)
-   (point        :initform nil
-		 :accessor point)
+  ((iter         :accessor iter  :initform nil :type gtk-text-iter)
+   (point        :accessor point :initform nil :type gtk-text-marker)
    ;;local functions to buffer output
    (clear        :accessor clear :type function)
-   (emit         :accessor emit :type function)
+   (emit         :accessor emit  :type function)
    (flush        :accessor flush :type function))
   (:metaclass gobject-class))
 ;;==============================================================================
@@ -23,70 +20,18 @@
  ;; (print "init-inst GTBSTREAM")
   (with-slots (point  iter) stream
     (setf iter (gtb-get-end-iter stream)
-	  point (gtb-get-mark stream "insert"))
-     (buffer-routines stream))
-  )
+	  point (gtb-create-mark stream (null-pointer) iter nil))
+    (init-buffer-routines stream)))
 ;;------------------------------------------------------------------------------
 (defmethod -on-destroy :before ((stream gtbstream))
-   ;; (format t "gtbstrea, ON-DESTROY ~A~&" stream )
-)
+  (gtb-delete-mark stream (point stream)))
 
-(in-package :gtk)
-(defcfun ("gtk_text_buffer_insert_at_cursor" my-buffer-insert) :void
-  (buffer (g-object gtk-text-buffer))
-  (text :pointer :char)
-  (len :int))
-
-(in-package :stext)
 (defmacro iter-at-point ()
   "Set iter to point, and return it"
   `(progn (%gtb-get-iter-at-mark stream iter point) iter))
-;;==============================================================================
-(defun buffer-routines (it)
-  
-  (let ((lbuf (foreign-string-alloc (make-string 256 :initial-element #\x)))
-	(index 0)
-	(stream it))
-    ;;--------------------------------------------------------------------------
-    (setf (emit stream)
-	  (lambda (char)
-	    "Emit a character into stream.  May cache until..."
-	    (declare (optimize (speed 3) (safety 0) (debug 0)))
-	    (declare (type character char))
-	    (declare (type fixnum index))
-	    ;(declare (type (simple-string 256) lbuf ))
-	    ;;(format t "~%Emitting ~C into ~A at ~A" char stream index)
-	    (cffi::mem-set (char-code char) lbuf :char index)
-	    (incf index)
-	    (when (or (char= char #\newline)
-		      (> index 250)) ;buffer full, or
-	      (funcall (the function (flush stream)))
-	      char)))
-    ;;--------------------------------------------------------------------------
-    (setf (clear stream)
-	  (lambda ()
-	    "clear the buffer"
-	    (setf index 0)))
-    ;;--------------------------------------------------------------------------
-    (setf (flush stream)
-	  (lambda ()
-	    "Flush the stream if needed; return iter"
-	    ;; Uses iter
-	    (declare (type fixnum index))
-	    ;(declare (type (simple-string 256) lbuf ))
-	    ;;(format t "~%Flush ~A characters from ~A~&" index stream )
-	    (with-slots ( iter point ) stream
-	      (unless (zerop index)
-		(cffi::mem-set 0 lbuf :char index)
-		(setf index 0)
-					;(gtb-insert-at-cursor stream lbuf -1);watch out for UTF8 chars!
-		(gtk::my-buffer-insert stream lbuf -1)
-		(iter-at-point))
-	      iter)))))
-
 
 ;;==============================================================================
-;;------------------------------------------------------------------------------
+;;
 (defmethod trivial-gray-streams:stream-force-output ((stream gtbstream))
   (funcall (flush stream)))
 (defmethod trivial-gray-streams:stream-finish-output ((stream gtbstream))
@@ -102,8 +47,7 @@
 (defmethod trivial-gray-streams:stream-start-line-p ((stream gtbstream))
   (let ((o (gti-starts-line (funcall (flush stream)))))
     ;;(print o)
-    o)
-)
+    o))
 ;;------------------------------------------------------------------------------
 (defmethod trivial-gray-streams:stream-file-position ((stream gtbstream))
   (funcall (flush stream))
@@ -112,14 +56,18 @@
 
 (defmethod (setf trivial-gray-streams:stream-file-position) (value (stream gtbstream))
   (funcall (flush stream))
-  (with-slots (iter point)stream
-    (case value
-      (:start (%gtb-get-iter-at-offset stream iter 0))
-      (:end   (%gtb-get-end-iter stream iter))
-      (t
-       (%gtb-get-iter-at-offset stream iter value)))
-    (gtb-place-cursor stream iter)
-    t))
+  (block main
+    (with-slots (iter point) stream
+      (typecase value
+	(string (return-from main (when-setf point (gtb-get-mark stream value))))
+	(keyword (case value
+		   (:start  (%gtb-get-start-iter stream iter))
+		   (:end    (%gtb-get-end-iter   stream iter))
+		   (t (return-from main nil))))
+	(number (gtb-get-iter-at-offset stream value))
+	(t (return-from main nil)))
+      (gtb-move-mark stream point iter)
+      t)))
 
 
 (defun stream-wipe (stream)
@@ -150,6 +98,7 @@
 
 
 
+
 (defun append-presentation (stream dad pres)
   (declare (type gtbstream stream)
 	   (type range:range dad))
@@ -159,3 +108,50 @@
     (range:new-in dad pres)
     (present pres stream)
     (funcall flush)))
+;;==============================================================================
+;; buffer routines create a closure with a buffer... These routines get hammered
+;; and really do need to be fast; a closure seems to be a little better on SBCL
+;; So here we initialize a closure, compile emit, clear and flush and set the
+;; 3 function pointers in the stream.
+;; Notes:
+;; - keep an eye on how UTF8 characters are handled!
+;; - this can be sped up with a foreign buffer as long as UTF8 is made to work.
+(defun init-buffer-routines (strm)
+  (let ((lbuf (make-array 256 :element-type 'character))
+	(index 0)
+	(stream strm))
+    ;;--------------------------------------------------------------------------
+    (setf (emit stream)
+	  (lambda (char)
+	    "Emit a character into stream.  May cache until..."
+	    (declare (optimize (speed 3) (safety 0) (debug 0)))
+	    (declare (type character char))
+	    (declare (type fixnum index))
+	    (declare (type (simple-string 256) lbuf ))
+;;	    (format t "~%Emitting ~C into ~A at ~A" char stream index)
+	    (setf (schar lbuf index) char)
+	    (incf index)
+	    (when (or (char= char #\newline)
+		      (> index 250)) ;buffer full, or
+	      (funcall (the function (flush stream)))
+	      char)))
+    ;;--------------------------------------------------------------------------
+    (setf (clear stream)
+	  (lambda ()
+	    "clear the buffer"
+	    (setf index 0)))
+    ;;--------------------------------------------------------------------------
+    (setf (flush stream)
+	  (lambda ()
+	    "Flush the stream if needed; return iter"
+	    ;; Uses iter
+	    (declare (type fixnum index))
+	    (declare (type (simple-string 256) lbuf ))
+;;	    (format t "~%Flush ~A characters" index )
+	    (with-slots (iter point) stream
+	      (iter-at-point)
+	      (unless (zerop index)
+		(setf (schar lbuf index) (code-char 0);null-terminate lbuf
+		      index 0)
+		(%gtb-insert stream iter lbuf -1));watch out for UTF8 chars!
+	      iter)))))
