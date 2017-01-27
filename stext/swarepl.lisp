@@ -150,12 +150,15 @@
 	   nil)); remove thyself
       (keymap-bind
        keymap "<RET>"
-       (lambda ()
+       (lambda (gtkkey)
+	 (declare (ignore gtkkey))
+	 (write-char #\newline pbuf)
 	 (let ((iter (gtb-get-iter-at-mark pbuf (gtb-get-insert pbuf))))
+	   (print iter)
 	   ;; only allow input at the end!
 	   (if (gti-is-end iter)
 	       (gdk-threads-add-idle #'pbuf-idle-entry)))
-	 nil; let gtk insert the <enter> into the buffer...
+	   
 	 )))
     
     )

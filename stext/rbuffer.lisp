@@ -21,16 +21,25 @@
   ;;(print "initialize-instance: rbuffer DONE")
   )
 
+
 (defmethod -on-announce-eli  ((pbuf rbuffer) eli)
     (with-slots (keymap) eli
     (keymap-bind
      keymap "<F1>"
-     (lambda ()
+     (lambda (gtkkey) (declare (ignore gtkkey))
        (let ((iter (gtb-get-iter-at-mark pbuf (gtb-get-insert pbuf))))
 	 (bufstat-prim pbuf (gti-get-offset iter)))
        t))
-;    (keymapbind keymap "<a>"	(lambda () ()))
+    (keymap-bind-self-keys-in-str
+     "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+     keymap pbuf)
+
+    (keymap-bind-self-keys-in-str
+     "~!@#$%^&*()_+[]{}\|~`,.<>/?"
+     keymap pbuf)
+	(print keymap)
     ))
+
 (defmethod -on-destroy :before ((buffer rbuffer))
   (format t "RBUFFER ON-DESTROY ~A~&" buffer )
   )

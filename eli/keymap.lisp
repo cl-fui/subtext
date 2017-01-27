@@ -29,8 +29,9 @@
 (defun keymap-find (binding key)
   (cdr (keymap-lookup binding key)))
 
-(defun keymap-define-key (binding key data)
-  (let ((val (cons key data)))
+(defun keymap-define-key (binding gtkkey data)
+  "append keymap with a key"
+  (let ((val (cons gtkkey data)))
     (push val (cdr binding) )
     val))
 
@@ -42,6 +43,37 @@
        (cdr keylist) data)
       (setf (cdr binding) data)))
 
-(defun keymap-bind (keymap keystr data)
-  (keymap-bindp keymap (kbd keystr) data))
+(defun keymap-bind (binding keystr data)
+  (keymap-bindp binding (kbd keystr) data))
+
+
+
+(defun keymap-bind-self-insert (keymap gtkkey stream)
+  (flet ((self-inserter (gtkkey) ;closes over stream, but not key
+	   (write-char (key->character gtkkey) stream)))
+    ;;TODO: check parameters
+    (keymap-define-key  keymap gtkkey #'self-inserter)))
+
+
+
+(defun keymap-bind-self-keys-in-str (string keymap stream)
+  (flet ((self-inserter (gtkkey) ;closes over stream, but not key
+	   (write-char (key->character gtkkey) stream)))
+    ;;TODO: check parameters
+    (let ((s (make-string 1)))
+      (loop for char across string do
+	   (setf (char s 0) char)
+	   (keymap-define-key 
+	    keymap (symbol-value (find-symbol s :kp))
+	    #'self-inserter)))))
+
+
+
+
+
+
+
+
+
+
 

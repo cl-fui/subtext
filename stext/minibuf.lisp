@@ -9,7 +9,7 @@
   ((keymap      :accessor keymap :initform (keymap-make))
    (keysearch   :accessor keysearch) ;state-machine pointer
    (frame       :accessor frame :initarg :frame)
-   (lock        :accessor lock  :initform nil) ;lock input
+   (lock        :accessor lock  :initform t) ;lock input
    )
   
   (:metaclass gobject-class))
@@ -24,6 +24,8 @@
 ;;
 ;; Key processing
 ;;
+;; Generally, look up a key and call its (lambda keycode stream)
+;;
 ;; If modifier, let gtk handle it to build a full key.
 (defmethod -on-key-press ((view minibuf) event from)
   (let ((gtkkey (gdk-event-key-keyval event))
@@ -35,7 +37,7 @@
 	  (typecase (cdr found)
 	    (function (setf keysearch keymap)
 		      (stream-wipe stream)
-		      (funcall (cdr found)))
+		      (funcall (cdr found) (car found)))
 	    (cons (setf keysearch found)
 		  (princ (key->string (car found)) stream)
 		  (finish-output stream)

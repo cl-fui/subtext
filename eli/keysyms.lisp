@@ -16,10 +16,16 @@
 (defvar *gtkcode-gtkname-map* (make-hash-table))
 (defvar *gtkname-gtkcode-map* (make-hash-table :test 'equal))
 
+(defparameter *key-package* (make-package 'kp))
+
 (defun define-gtkcode (gtkcode gtkname)
   "Define a mapping from a gtkname to a gtkcode."
   (setf (gethash gtkcode *gtkcode-gtkname-map*) gtkname
-        (gethash gtkname *gtkname-gtkcode-map*) gtkcode))
+        (gethash gtkname *gtkname-gtkcode-map*) gtkcode)
+  (let ((symbol (intern gtkname *key-package*)))
+    (setf (symbol-value symbol) gtkcode)
+    (export symbol *key-package*))
+  )
 
 (defun gtkname->gtkcode (gtkname)
   "Return the gtkcode corresponding to NAME or nil"
