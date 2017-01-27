@@ -3,9 +3,9 @@
 ;;; rbuffer - a gtk-text-buffer 
 ;;;
 ;;OK (ql:quickload :stext)(in-package :stext)
-(defclass rbuffer (gtbstream ) 
+(defclass rbuffer (cursorstream) 
   ((ptags :accessor ptags     :initform nil )
-   (root  :accessor root      :initform (range:make) ))
+   (root  :accessor root      :initform (range:make)))
   (:metaclass gobject-class))
 
 ;;------------------------------------------------------------------------------
@@ -29,10 +29,12 @@
        (let ((iter (gtb-get-iter-at-mark pbuf (gtb-get-insert pbuf))))
 	 (bufstat-prim pbuf (gti-get-offset iter)))
        t))
+;    (keymapbind keymap "<a>"	(lambda () ()))
     ))
 (defmethod -on-destroy :before ((buffer rbuffer))
   (format t "RBUFFER ON-DESTROY ~A~&" buffer )
-)
+  )
+
 
 (defmethod clear ((pbuf rbuffer))
   "clear pbuf of all presentations, and all content!"
@@ -41,7 +43,10 @@
     (gtb-remove-all-tags pbuf start end)
     (gtk::%gtk-text-buffer-delete pbuf start end)))
 
-;; This is where the magic happens. We locate the range, and insert right into it...
+
+;;==============================================================================
+;;
+;;This is where the magic happens. We locate the range, and insert right into it...
 (defun on-insert-text (buffer iter text len)
   "update presentation bounds"
   (declare (ignore text))
@@ -86,9 +91,6 @@
 (defun bufstat (buffer) ;;see gtk-ui for keybinding
  
   (bufstat-prim buffer (gtb-cursor-position buffer)) )
-
-
-
 
 ;;==============================================================================;
 ;; a quick way to make a tag
