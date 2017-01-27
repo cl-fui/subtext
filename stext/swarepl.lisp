@@ -46,7 +46,7 @@
     ;;feed the engine
     (defun prompt (swank)
       (stream-delimit pbuf (make-p-prompt))
-      (with-tag pbuf "prompt"
+      (with-tagname pbuf "prompt"
 	(fresh-line pbuf)
 	(format pbuf "~A> " (swa:prompt swank)))
       (stream-delimit pbuf (make-p-entry) ))

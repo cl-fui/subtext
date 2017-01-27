@@ -98,8 +98,10 @@
 (defgeneric present (it stream))
 (defstruct  (ptest (:include range:range))
   toggle)
+
+(defparameter *tag* nil)
 (defmethod  present ((p ptest) s)
-  (with-tag s "prompt"
+  (with-tag s *tag*
     (format s "FUCK YOU"))
   (terpri s)
   (setf (ptest-toggle p) nil))
@@ -129,8 +131,9 @@
 	    r) 
 	(stream-delimit buffer nil)
 	(format buffer "hello~&")
+	(setf *tag* (gttt-lookup (gtb-tag-table buffer) "prompt" ))
 	(time
-	 (loop for i from 1 to 10 do
+	 (loop for i from 1 to 200000 do
 	      (append-presentation buffer (root buffer) (make-ptest))
 	      ))
 	
@@ -139,9 +142,9 @@
 ;;WATCH OUT!
 (defparameter *q* nil)
 
-(defmethod -on-button-press ((buffer rbuffer) iter event)
-  (setf *q* event)
-  (mvb (range off) (range:at (root buffer) (gti-get-offset iter))
-       (-on-pres-click range buffer event))
- 
-)
+(defmethod -on-button-press ((buffer rbuffer) view event)
+  (print "1"))
+(defmethod -on-2button-press ((buffer rbuffer) view event)
+  (print "2"))
+(defmethod -on-3button-press ((buffer rbuffer) view event)
+  (print "3"))

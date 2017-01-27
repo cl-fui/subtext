@@ -38,6 +38,10 @@ We maintain a right-to-left list of widths in the buffer.  Since most of the act
 ;; Special case: if the child is a null-node, just take posession of it.
 (defun new-in (dad range)
   "Insert a new range in parent's right side. Return it"
+  (declare (optimize (speed 3) (debug 0) (safety 0))
+	   (type range dad)
+	   (type (or range null) range)
+	   )
   (with-slots ((dad-child child)) dad
     (if range
 	(setf (dad range) dad

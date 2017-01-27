@@ -1,6 +1,6 @@
 (in-package :stext)
 ;;;=============================================================================
-;;; rbuffer - a gtk-text-buffer that is also a range root.
+;;; rbuffer - a gtk-text-buffer 
 ;;;
 ;;OK (ql:quickload :stext)(in-package :stext)
 (defclass rbuffer (gtbstream ) 
@@ -170,10 +170,14 @@
 
 
 ;;of limited use, only good for top subranges inserted at end...
+(defun fflush (stream) (funcall (flush stream)))
 (defun stream-delimit (bufstrm range)
-  (with-slots (flush ) bufstrm
-    (funcall flush)
-    (range:new-in (root bufstrm) range)))
+  (declare (type gtbstream bufstrm)
+	   (type range:range range))
+  ;;     (funcall (the function (flush bufstrm)))
+  (declare (optimize (speed 3) (debug 0) (safety 0)))
+  (funcall (the function (flush bufstrm)))
+  (range:new-in  (root bufstrm) range))
 
 (defun stream-anchor (bufstrm)
   (with-slots (flush) bufstrm

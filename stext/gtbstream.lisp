@@ -132,11 +132,20 @@
   (declare (optimize (speed 3) (safety 0)))
   (gti-offset (funcall (the function (flush stream)))))
 
-(defun tag-to-here (stream tag start-offset)
+(defun tagname-to-here (stream tagname start-offset)
   "apply a tag from start-offset to current position"
   (funcall (the function (flush stream)))
   (%gtb-get-iter-at-offset stream (iter1 stream) start-offset) ; old
   (gtb-apply-tag
+	  stream tagname
+	  (iter1 stream)
+	  (iter stream)))
+(defun tag-to-here (stream tag start-offset)
+  "apply a tag from start-offset to current position"
+  (declare (optimize (speed 3) (safety 0) (debug 0)))
+  (funcall (the function (flush stream)))
+  (%gtb-get-iter-at-offset stream (iter1 stream) start-offset) ; old
+  (%gtb-apply-tag
 	  stream tag
 	  (iter1 stream)
 	  (iter stream)))
@@ -150,14 +159,24 @@
 ;; as we do not reserve any resources
 ;;
 (defmacro with-tag (stream tag &body body)
-  (let ((str (gensym))
-	(off (gensym))
-	(tagg (gensym)))
+  (let* ((str (gensym))
+	 (off (gensym))
+	 (tg (gensym)))
     `(let* ((,str (the gtbstream ,stream)) 
 	    (,off (stream-offset ,str))
-	    (,tagg ,tag))
+	    (,tg ,tag))
        ,@body
-       (tag-to-here ,str ,tagg ,off))))
+       (tag-to-here ,str ,tg ,off))))
+
+(defmacro with-tagname (stream tag &body body)
+  (let* ((str (gensym))
+	 (off (gensym))
+	 (tg  (gensym)))
+    `(let* ((,str (the gtbstream ,stream)) 
+	    (,off (stream-offset ,str))
+	    (,tg ,tag))
+       ,@body
+       (tagname-to-here ,str ,tg ,off))))
 
 
 

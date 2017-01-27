@@ -31,7 +31,7 @@
    )(:metaclass gobject-class))
 
 (defmethod initialize-instance :after ((sldb sldb) &key)
-  (setf *pbuf* sldb)
+  ;(setf *pbuf* sldb)
   (pbuf-new-tag sldb :name "grayish"  :foreground "gray" :editable nil)
   (pbuf-new-tag sldb :name "beige"  :foreground "beige" :editable nil)
   (pbuf-new-tag sldb :name "restartable"  :foreground "LimeGreen" :editable nil)
@@ -111,28 +111,28 @@
 (defun sldb-activate (sldb)
   (with-slots (sldb-condition sldb-restarts sldb-frames sldb-continuations) sldb
    
-    (with-tag sldb "normal" 
+    (with-tagname sldb "normal" 
       (format sldb "~A~&" (first sldb-condition)))
     (stream-delimit sldb (make-pcondition))
-    (with-tag sldb "condition"
+    (with-tagname sldb "condition"
       (format sldb "~A~&" (second sldb-condition)))
     (stream-delimit sldb nil)
     
-    (with-tag sldb "label" (format sldb "~%Restarts:~&"))
+    (with-tagname sldb "label" (format sldb "~%Restarts:~&"))
     (loop for restart in sldb-restarts
        for i from 0 do
 	 (stream-delimit sldb (make-prestart :id i))
-	 (with-tag sldb "enum"   (format sldb "~2d: [" i))
-	 (with-tag sldb "cyan"   (format sldb "~A" (first restart)))
-	 (with-tag sldb "normal" (format sldb "] ~A~&" (second restart)))
+	 (with-tagname sldb "enum"   (format sldb "~2d: [" i))
+	 (with-tagname sldb "cyan"   (format sldb "~A" (first restart)))
+	 (with-tagname sldb "normal" (format sldb "] ~A~&" (second restart)))
 	 (stream-delimit sldb nil))
-    (with-tag sldb "label" (format sldb "~%Backtrace:~&"))
+    (with-tagname sldb "label" (format sldb "~%Backtrace:~&"))
     (loop for frame in sldb-frames
        for i from 0 do
 	 (stream-delimit sldb (make-pframe :id i) )
-	 (with-tag sldb "enum"
+	 (with-tagname sldb "enum"
 	   (format sldb "~3d: "  (first frame)))
-	 (with-tag sldb (if (third frame) "restartable" "normal")
+	 (with-tagname sldb (if (third frame) "restartable" "normal")
 	   (format sldb "~A~&"   (second frame)))
 	 (stream-delimit sldb nil))))
 

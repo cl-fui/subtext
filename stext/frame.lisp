@@ -42,6 +42,7 @@
 	     (if kill (leave-gtk-main))))
     ;; process keystrokes in minibuf...
     (-on-announce-eli content minibuf)
+    ;(gtk-widget-add-events frame )
     (g-signal-connect frame "key-press-event"
 		      (lambda (frame event)
 			(-on-key-press (minibuf frame) event nil)))))
