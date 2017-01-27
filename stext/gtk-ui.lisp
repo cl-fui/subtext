@@ -99,20 +99,24 @@
 (defstruct  (ptest (:include range:range))
   toggle)
 (defmethod  present ((p ptest) s)
-  (format s "FUCK YOUЉ" )
+  (with-tag s "prompt"
+    (format s "FUCK YOU"))
+  (terpri s)
   (setf (ptest-toggle p) nil))
+
+
 (defmethod  -on-pres-click ((p ptest) buffer event)
 
   (with-slots (toggle) p
     (setf toggle (not toggle))
     (mvb (start end) (range-iters buffer p)
-	 (princ start) (print end)
+	 (format t "~%~A ~A~&" start end)
 	 (if toggle
-	     (%gtb-delete buffer start end)
-	     (%gtb-insert buffer start "Fuck You" -1)
+	     (PROGN (PRINT "DELETED") (%gtb-delete buffer start end))
+	     (PROGN (PRINT "expanded") (%gtb-insert buffer start "Fuck You" -1))
 ))
 ))
-
+(defparameter *top* nil)
 (defun t0 ( &key (stdout *standard-output*))
   "final"
   (within-main-loop
@@ -120,22 +124,23 @@
     (setf *standard-output* stdout) ;re-enable output
     (let ((buffer (make-instance 'rbuffer)))
       (setf *pbuf* buffer)
-      (let ((top (make-frame (make-window (make-wtxt buffer))
+      (let ((top (make-frame (make-window (setf *top* (make-wtxt buffer)))
 			     :kill t))
 	    r) 
-
 	(stream-delimit buffer nil)
 	(format buffer "hello~&")
 	(time
 	 (loop for i from 1 to 10 do
 	      (append-presentation buffer (root buffer) (make-ptest))
-	      (terpri buffer)
 	      ))
 	
 	
 	(gtk-widget-show-all top)))))
 ;;WATCH OUT!
+(defparameter *q* nil)
+
 (defmethod -on-button-press ((buffer rbuffer) iter event)
+  (setf *q* event)
   (mvb (range off) (range:at (root buffer) (gti-get-offset iter))
        (-on-pres-click range buffer event))
  

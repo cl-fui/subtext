@@ -17,24 +17,50 @@
 (defmacro make-wtxt (buffer &rest rest)
   `(make-instance 'wtxt :buffer ,buffer ,@rest))
 
+
+
+
+(defgeneric -on-button-press  (object view event))
+(defgeneric -on-2button-press (object view event))
+(defgeneric -on-3button-press (object view event))
+
+(defmethod -on-button-press ((o t) view event)
+  (declare (ignore o iter event)))
+(defmethod -on-2button-press ((o t) view event)
+  (declare (ignore o iter event)))
+(defmethod -on-3button-press ((o t) view event)
+  (declare (ignore o iter event)))
+
+(defun rview-buffer-coordinates (view x y)
+  (gtv-window-to-buffer-coords
+   view
+   :text
+   (truncate x)
+   (truncate y)))
+
+(defun rview-iter-from-event (view event)
+  (mvb
+   (x y) (gtv-window-to-buffer-coords
+	  view :text
+	  (truncate (gdk-event-button-x event))
+	  (truncate (gdk-event-button-y event)))
+   (gtv-get-iter-at-location view x y)))
+
 (defmethod initialize-instance :after ((wtxt wtxt) &key)
   ;; Since views know about buffers but not vice versa, we must connect here.
   ;; since we don't know what the view is, we have to use generic functions.
   ;; The signaling system seems to not work well here!
   (widget-defaults wtxt); see gtk-ui.lisp
-
+  ;;(gtk-widget-add-events wtxt (:button2-mask) )
   (g-signal-connect
-       wtxt "button-press-event" ;TODO: check widget
-       (lambda (view event)
-	 (multiple-value-bind (x y)
-	     (gtk-text-view-window-to-buffer-coords
-	     view :text
-	      (truncate (gdk-event-button-x event))
-	      (truncate (gdk-event-button-y event)))
-	   (-on-button-press
-	    (gtk-text-view-buffer view)
-	    (gtk-text-view-get-iter-at-location view x y) event))))
-  )
+   wtxt "button-press-event" ;TODO: check widget
+   (lambda (view event)
+     (let ((buffer (gtv-buffer wtxt)))
+       (case (gdk-event-get-click-count event)
+	 (1 (-on-button-press  buffer view event))
+	 (2 (-on-2button-press buffer view event))
+	 (3 (-on-3button-press buffer view event)))))))
+
 (defmethod -on-announce-eli ((wtxt wtxt) eli)
   (-on-announce-eli (gtk-text-view-buffer wtxt) eli))
 

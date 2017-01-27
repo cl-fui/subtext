@@ -243,22 +243,6 @@
 (defun pbuf-c-down (pbuf)
   (pbuf-hist-prim pbuf (swa:history-forward (swank pbuf))))
 
-(defmethod prez-on-button-press ((prez null) pbuf range button)
-  (print "prez null")
-  nil)
-(defmethod prez-on-button-press ((prez t) pbuf range button)
-  (print "prez t")
-  nil)
-
-
-(defmethod prez-on-button-press ((it p-prompt) pbuf range button)
-  (if (= button 1)
-      nil ;default handler
-      (progn
-	(popup-menu '(("fuck") ("duck")) :button button)
-	(print "prez pressed promjpt")
-	t; we handle
-	)))
 
 
 

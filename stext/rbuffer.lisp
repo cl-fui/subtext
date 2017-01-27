@@ -131,7 +131,6 @@
        (gtb-apply-tag pbuf tag
 		      (gtb-get-iter-at-offset pbuf start)
 		      (gtb-get-iter-at-offset pbuf end))))
-
 ;;---------------------------------------------
 ;; helpers
 

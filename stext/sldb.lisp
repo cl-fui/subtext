@@ -57,13 +57,13 @@
     (keymap-bind keymap "q" (lambda () (sldb-quit sldb))))
   )
 
-(defmethod -on-button-press ((sldb sldb) iter event)
-  (mvb (range off) (range:at (root sldb) (gti-get-offset iter))
-       (typecase range
-	 (prestart (sldb-invoke-restart sldb (prestart-id range)))
-	 (pframe (sldb-frame-toggle sldb range))))
- 
-)
+(defmethod -on-button-press ((sldb sldb) view event)
+  (let ((iter (rview-iter-from-event view event)))
+    (mvb (range off) (range:at (root sldb) (gti-get-offset iter))
+	 (typecase range
+	   (prestart (sldb-invoke-restart sldb (prestart-id range)))
+	   (pframe (sldb-frame-toggle sldb range))))))
+
 ;;; Return a list (LOCALS TAGS) for vars and catch tags in the frame INDEX.
 ;;; LOCALS is a list of the form ((&key NAME ID VALUE) ...).
 ;;;TAGS has is a list of strings.
@@ -79,8 +79,10 @@
 	 (unless open
 	   (mvb (start end) (range:bounds range)
 		(file-position sldb (1- end))
+		(format t "DDDDD ~A~% "end)
 		;;-----------------------------
 		(format sldb "~%     Locals:")
+		(format t "EEEEE ~A~% "end)
 		(loop for item in (first (second reply)) do
 		     (format sldb "~%       ~A = ~A" (second item) (sixth item)))
 		(finish-output sldb)

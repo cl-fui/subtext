@@ -20,8 +20,9 @@ We maintain a right-to-left list of widths in the buffer.  Since most of the act
 	     (:constructor make (&key (width 0) (dad nil) (l nil)))
 	     (:conc-name nil)
 	     (:print-function (lambda (o s k) (declare (ignore k))
-				      (format s "<~C~A >"
+				      (format s "<~C~A ~A >"
 					      (if (child o)#\* #\space)
+					      (type-of o)
 					      (width o)))))
   (width 0   :type fixnum)
   (l     nil :type (or null range))

@@ -65,7 +65,7 @@
 		   (:start  (%gtb-get-start-iter stream iter))
 		   (:end    (%gtb-get-end-iter   stream iter))
 		   (t (return-from main nil))))
-	(number (gtb-get-iter-at-offset stream value))
+	(number (%gtb-get-iter-at-offset stream iter value))
 	(t (return-from main nil)))
       (gtb-move-mark stream point iter)
       t)))
@@ -134,11 +134,12 @@
 
 (defun tag-to-here (stream tag start-offset)
   "apply a tag from start-offset to current position"
+  (funcall (the function (flush stream)))
   (%gtb-get-iter-at-offset stream (iter1 stream) start-offset) ; old
   (gtb-apply-tag
-   stream tag
-   (iter1 stream)
-   (funcall (the function (flush stream))))  )
+	  stream tag
+	  (iter1 stream)
+	  (iter stream)))
 ;;==============================================================================
 ;;------------------------------------------------------------------------------
 ;;------------------------------------------------------------------------------
