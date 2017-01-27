@@ -20,29 +20,30 @@
    )
   ;;(print "initialize-instance: rbuffer DONE")
   )
+(defparameter *self-inserting-keys* "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ~!@#$%^&*()_+[]{}\|~`,.<>/?")
+(defmethod -on-eli-key ((pbuf rbuffer) key event)
+  "process an eli key"
+  (let ((char (key->character key)))
+    (if (find char *self-inserting-keys* :test #'char=)
+	(progn (write-char char pbuf) (finish-output pbuf) t)
+	nil)))
 
+(defun pbuf-key-backspace (pbuf)
+  (%gtb-backspace pbuf (funcall (flush pbuf)) nil t))
 
 (defmethod -on-announce-eli  ((pbuf rbuffer) eli)
-    (with-slots (keymap) eli
-    (keymap-bind
-     keymap "<F1>"
+  (with-slots (keymap) eli
+    (keymap-define-key
+     keymap #.kb:BS (lambda (gtkkey) (declare ) (pbuf-key-backspace pbuf)) )
+    (keymap-define-key
+     keymap #.kb:F1
      (lambda (gtkkey) (declare (ignore gtkkey))
-       (let ((iter (gtb-get-iter-at-mark pbuf (gtb-get-insert pbuf))))
-	 (bufstat-prim pbuf (gti-get-offset iter)))
-       t))
-    (keymap-bind-self-keys-in-str
-     "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-     keymap pbuf)
-
-    (keymap-bind-self-keys-in-str
-     "~!@#$%^&*()_+[]{}\|~`,.<>/?"
-     keymap pbuf)
-	(print keymap)
-    ))
+	     (let ((iter (gtb-get-iter-at-mark pbuf (gtb-get-insert pbuf))))
+	       (bufstat-prim pbuf (gti-get-offset iter)))
+	     t))))
 
 (defmethod -on-destroy :before ((buffer rbuffer))
-  (format t "RBUFFER ON-DESTROY ~A~&" buffer )
-  )
+  (format t "RBUFFER ON-DESTROY ~A~&" buffer ))
 
 
 (defmethod clear ((pbuf rbuffer))

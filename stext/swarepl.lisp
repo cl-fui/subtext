@@ -149,10 +149,10 @@
 			    (pbuf-parse-string string) #'prompt-proc)))))
 	   nil)); remove thyself
       (keymap-bind
-       keymap "<RET>"
+       keymap (kbd "<RET>")
        (lambda (gtkkey)
 	 (declare (ignore gtkkey))
-	 (write-char #\newline pbuf)
+	 (write-char #\newline pbuf); insert newline, which flushes output!
 	 (let ((iter (gtb-get-iter-at-mark pbuf (gtb-get-insert pbuf))))
 	   (print iter)
 	   ;; only allow input at the end!

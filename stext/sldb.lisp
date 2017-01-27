@@ -44,18 +44,10 @@
 (defmethod -on-announce-eli :after ((sldb sldb) eli)
   (setf (sldb-eli sldb) eli)
   (with-slots (keymap) eli
-    (keymap-bind keymap "0" (lambda () (sldb-invoke-restart sldb 0)))
-    (keymap-bind keymap "1" (lambda () (sldb-invoke-restart sldb 1)))
-    (keymap-bind keymap "2" (lambda () (sldb-invoke-restart sldb 2)))
-    (keymap-bind keymap "3" (lambda () (sldb-invoke-restart sldb 3)))
-    (keymap-bind keymap "4" (lambda () (sldb-invoke-restart sldb 4)))
-    (keymap-bind keymap "5" (lambda () (sldb-invoke-restart sldb 5)))
-    (keymap-bind keymap "6" (lambda () (sldb-invoke-restart sldb 6)))
-    (keymap-bind keymap "7" (lambda () (sldb-invoke-restart sldb 7)))
-    (keymap-bind keymap "8" (lambda () (sldb-invoke-restart sldb 8)))
-    (keymap-bind keymap "9" (lambda () (sldb-invoke-restart sldb 9)))
-    (keymap-bind keymap "q" (lambda () (sldb-quit sldb))))
-  )
+    (keymap-define-key keymap #.kb:|q| (lambda (key) (sldb-quit sldb))))
+ )
+
+
 
 (defmethod -on-button-press ((sldb sldb) view event)
   (let ((iter (rview-iter-from-event view event)))

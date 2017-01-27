@@ -16,7 +16,7 @@
 (defvar *gtkcode-gtkname-map* (make-hash-table))
 (defvar *gtkname-gtkcode-map* (make-hash-table :test 'equal))
 
-(defparameter *key-package* (make-package 'kp))
+(defparameter *key-package* (make-package 'kb))
 
 (defun define-gtkcode (gtkcode gtkname)
   "Define a mapping from a gtkname to a gtkcode."

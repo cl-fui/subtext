@@ -73,3 +73,7 @@
 			     ;(make-gdk-rgba :red 1.d0 :green 1.d0 :blue 1.d0 :alpha 1.d0)
 			     )
   (gtk-widget-override-color widget :selected (make-gdk-rgba  :alpha 1.d0) ))
+
+(defmethod -on-eli-key ((view wtxt) key event)
+  "process an eli key"
+  (-on-eli-key (gtv-buffer view) key event))

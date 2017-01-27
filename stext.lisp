@@ -100,10 +100,11 @@ Note: a single underline in label will crate a 'mnemonic'; two __ is _"
       (gtk-menu-popup menu :button button :activate-time activate-time))))
 
 ;------------------------------------
-(defgeneric -on-key-press    (object event from))
 (defgeneric -on-destroy      (object))
 
 (defmethod -on-destroy ((it t)))
+
+
 
 #||
 (defun achoice (x) (print "FUCK SECOND"))

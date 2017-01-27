@@ -35,7 +35,6 @@
   (-on-destroy (view window))
   (-on-destroy (modeline window)))
 
-(defmethod -on-key-press ((window window) event from)
-   (format t "~%window:on-key-press ~A~%" event)
-   (-on-key-press (view window) event from))
+(defmethod -on-eli-key ((window window) key event)
+   (-on-eli-key (view window) key event))
 
