@@ -24,7 +24,7 @@
 (defgeneric -on-2button-press (object iter event))
 (defgeneric -on-3button-press (object iter event))
 (defgeneric -on-motion        (object iter event))
-(defmethod -on-motion ((o t) viaew event)
+(defmethod -on-motion ((o t) view event)
   (declare (ignore o view event)))
 
 (defmethod -on-button-press ((o t) view event)

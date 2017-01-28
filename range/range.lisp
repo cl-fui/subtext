@@ -16,19 +16,18 @@ We maintain a right-to-left list of widths in the buffer.  Since most of the act
   )
 
 
-(defstruct (range
-	     (:constructor make (&key (width 0) (dad nil) (l nil)))
-	     (:conc-name nil)
-	     (:print-function (lambda (o s k) (declare (ignore k))
-				      (format s "<~C~A ~A >"
-					      (if (child o)#\* #\space)
-					      (type-of o)
-					      (width o)))))
-  (width 0   :type fixnum)
-  (l     nil :type (or null range))
-  (dad   nil :type (or null range))
-  (child nil :type (or null range)))
+(defclass range ()
+  ((width :accessor width :initform 0   :initarg :width)
+   (l     :accessor l     :initform nil :initarg :l)
+   (dad   :accessor dad   :initform nil :initarg :dad)
+   (child :accessor child :initform nil :initarg :child))
+   )
+(defmethod print-object ((obj range) out)
+  (print-unreadable-object (obj out :type t)
+    (format out "~s" obj)))
 
+(defmacro make (&rest rest)
+  `(make-instance 'range ,@rest))
 ;;
 ;; NEW
 ;;

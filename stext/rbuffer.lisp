@@ -21,7 +21,7 @@
    (setf range root)); for noww...TODO
   ;;(print "initialize-instance: rbuffer DONE")
   )
-(defparameter *self-inserting-keys* "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ~!@#$%^&*()_+[]{}\|~`,.<>/?")
+(defparameter *self-inserting-keys* " 0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ~!@#$%^&*()_+[]{}\|~`,.<>/?")
 (defmethod -on-eli-key ((pbuf rbuffer) key event)
   "process an eli key"
   (let ((char (key->character key)))

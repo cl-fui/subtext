@@ -97,18 +97,23 @@
 
 (defgeneric present (it stream))
 ;------------------------------------------------
-(defstruct  (ptest (:include range:range))
-  toggle text1 number text2)
+(defclass  ptest (range:range)
+  ((toggle :accessor toggle :initarg :toggle :initform nil)
+   (text1  :accessor text1  :initarg :text1  :initform nil)
+   (num    :accessor num    :initarg :num    :initform nil)
+   (text2  :accessor text2  :initarg :text2  :initform nil)))
+
+(defparameter *tag* nil)
 (defmethod  present ((p ptest) s)
-  (with-slots (text1 text2 number toggle) p
+  (with-slots (text1 text2 num toggle) p
     (unless toggle
 	(progn
 	  (with-tag s *tag*
 	    (princ text1 s)
 	    (with-tag s "output"
-	      (princ number s))
+	      (princ num s))
 	    (princ text2 s))))))
-(defparameter *tag* nil)
+
 
 (defmethod  -on-button-press ((p ptest) iter event)
   (let ((buffer (gti-buffer iter)))
@@ -137,8 +142,8 @@
 	  (format buffer "hello~&"))
 	(setf *tag* (gttt-lookup (gtb-tag-table buffer) "prompt" ))
 	(time
-	 (loop for i from 1 to 100000 do
-	      (with-range buffer (make-ptest :text1 "hello" :number i :text2 "world")
+	 (loop for i from 1 to 10000 do
+	      (with-range buffer (make-instance 'ptest :text1 "hello" :num i :text2 "world")
 		(present it buffer)
 		(terpri buffer))
 	      ))

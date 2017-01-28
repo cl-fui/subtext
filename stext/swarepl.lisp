@@ -1,10 +1,13 @@
 (in-package :stext)
 
 
-(defstruct (p-entry  (:include range:range)) )
-(defstruct (p-pres   (:include range:range)) id )
-(defstruct (p-input  (:include range:range)) id tag )
-(defstruct (p-prompt (:include range:range)) )
+(defclass p-entry  ( range:range) ())
+(defclass p-pres   ( range:range)
+  ((id :accessor id :initform nil :initarg :id)) )
+(defclass p-input  ( range:range)
+  ((id :accessor id :initform nil :initarg :id)
+   (tag :accessor tag :initform nil :initarg :tag)) )
+(defclass p-prompt ( range:range) ()  )
 
 
 ;;OK (ql:quickload :stext)(in-package :stext)
@@ -45,11 +48,11 @@
  
     ;;feed the engine
     (defun prompt (swank)
-      (with-range pbuf (make-p-prompt)
+      (with-range pbuf (make-instance 'p-prompt)
 	(with-tag pbuf "prompt"
 	  (fresh-line pbuf)
 	  (format pbuf "~A> " (swa:prompt swank))))
-      (with-range pbuf (make-p-entry)
+      (with-range pbuf (make-instance 'p-entry)
 ;;	(format pbuf " ")
 	)
       (finish-output pbuf)
@@ -70,7 +73,7 @@
     (let (ob pr)
       (defun sw-presentation-start (connection id stream)
 	(mvb (oldbase promise)
-	     (range-in pbuf (make-p-pres :id id))
+	     (range-in pbuf (make-instance 'p-pres :id id))
 	     (setf ob oldbase
 		   pr promise)))
       
@@ -90,7 +93,7 @@
     ;; Input requested (read-line?).  Keep the id and tag in a range to return
     ;; later, when <enter> is processed.
     (defun sw-read-string (connection id tag)
-      (with-range pbuf (make-p-input :id id :tag tag)
+      (with-range pbuf (make-instance 'p-input :id id :tag tag)
 	(format pbuf " ")))
 
     ;; We shall keep the debuggers around in a hashtable, keyed by both thread

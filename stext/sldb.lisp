@@ -1,9 +1,12 @@
 (in-package :stext)
 
-(defstruct (pcondition (:include range:range)))
-(defstruct (prestart   (:include range:range)) id)
+(defclass pcondition (range:range) ())
+(defclass prestart   (range:range)
+    ((id :accessor id)))
 
-(defstruct (pframe     (:include range:range)) id open)
+(defclass pframe     (range:range)
+  ((id :accessor id)
+   (opn :accessor opn)))
 
 ;;-------------------------------------------------------------------
 ;; mouse move derived signal is called to highlight/dehighlight
@@ -19,7 +22,7 @@
   (sldb-frame-more stream p))
 
 (defmethod pres-button-press ((p prestart) stream event)
-  (sldb-invoke-restart stream (prestart-id p)))
+  (sldb-invoke-restart stream (id p)))
 
 ;;OK (ql:quickload :stext)(in-package :stext)
 
@@ -36,8 +39,13 @@
 
 ;;---------------------------------------
 ;; SLDB presentation
-(defstruct (-sldb (:include range:range))
-  thread level condition restarts frames continuations)
+(defclass -sldb (range:range)
+  ((thread        :accessor thread)
+   (level         :accessor thread)
+   (condition     :accessor thread )
+   (restarts      :accessor thread)
+   (frames        :accessor thread)
+   (continuations :accessor thread)))
 
 (defclass sldb (rbuffer)
   ((connection  :accessor connection   :initarg :connection )
@@ -117,7 +125,7 @@
 
 (defun make-wsldb (connection thread level condition restarts frames continuations)
   "create the presentation, buffer and view for the debugger."
-  (let* ((pres (make--sldb 
+  (let* ((pres (make-instance '-sldb 
 			   :thread thread
 			   :level level
 			   :condition condition
@@ -145,13 +153,13 @@
     (with-slots (condition restarts frames continuations) p
       (with-tagname stream "normal" 
 	(format stream "~A~&" (first condition)))
-      (with-range stream (make-pcondition)
+      (with-range stream (make-instance 'pcondition)
 	(with-tagname stream "condition"
 	  (format stream "~A~&" (second condition))))
       
       (with-tagname stream "label" (format stream "~%Restarts:~&"))
       (loop for restart in restarts
-	 for i from 0 do	   (with-range stream (make-prestart :id i)
+	 for i from 0 do	   (with-range stream (make-instance 'prestart :id i)
 	     (with-tagname stream "enum"   (format stream "~2d: [" i))
 	     (with-tagname stream "cyan"   (format stream "~A" (first restart)))
 	     (with-tagname stream "normal" (format stream "] ~A~&" (second restart)))))
@@ -159,7 +167,7 @@
       (with-tagname stream "label" (format stream "~%Backtrace:~&"))
       (loop for frame in frames
 	 for i from 0 do
-	   (with-range stream (make-pframe :id i) 
+	   (with-range stream (make-instance 'pframe :id i) 
 	     (with-tagname stream "enum"
 	       (format stream "~3d: "  (first frame)))
 	     (with-tagname stream (if (third frame) "restartable" "normal")
