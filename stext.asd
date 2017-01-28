@@ -28,7 +28,7 @@
                (:file "range/range")
 
 	       (:file "stext/wtxt")
-	       (:file "stext/cursorstream")
+	       (:file "stext/gtbstream")
 	       (:file "stext/rbuffer")
 	       (:file "stext/rstream")
 

@@ -3,7 +3,7 @@
 ;;; rbuffer - a gtk-text-buffer 
 ;;;
 ;;OK (ql:quickload :stext)(in-package :stext)
-(defclass rbuffer (cursorstream) 
+(defclass rbuffer (gtbstream) 
   ((ptags :accessor ptags     :initform nil )
    (root  :accessor root      :initform (range:make)))
   (:metaclass gobject-class))
@@ -188,12 +188,12 @@
 	   (type range:range range))
   ;;     (funcall (the function (flush bufstrm)))
   (declare (optimize (speed 3) (debug 0) (safety 0)))
-  (funcall (the function (flush bufstrm)))
+  (stream-flush bufstrm)
   (range:new-in  (root bufstrm) range))
 
 (defun stream-anchor (bufstrm)
-  (with-slots (flush) bufstrm
-    (gtb-insert-child-anchor bufstrm (funcall flush))))
+  (error 0)
+)
 
 
 

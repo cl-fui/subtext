@@ -9,161 +9,167 @@
 		     trivial-gray-streams:fundamental-character-output-stream)
   
   ((iter         :accessor iter  :initform nil :type gtk-text-iter)
-   (point        :accessor point :initform nil :type gtk-text-marker)
    (iter1        :accessor iter1  :initform nil :type gtk-text-iter)
+   (offset       :accessor offset :initform 0 :type fixnum)
    ;;local functions to buffer output
-   (clear        :accessor clear :type function)
-   (emit         :accessor emit  :type function)
-   (flush        :accessor flush :type function))
+
+   (lbuf         :accessor lbuf   :initform (make-array 256 :element-type 'character))
+   (index       :accessor index  :initform 0))
   (:metaclass gobject-class))
 ;;==============================================================================
 (defmethod initialize-instance :after ((stream gtbstream) &key)
  ;; (print "init-inst GTBSTREAM")
   (with-slots (point  iter iter1) stream
-    (setf iter (gtb-get-end-iter stream)
+    (setf iter  (gtb-get-start-iter stream)
 	  iter1 (gtb-get-end-iter stream)
-	  point (gtb-create-mark stream (null-pointer) iter nil))
-    (init-buffer-routines stream)))
+	  ;point (gtb-create-mark stream (null-pointer) iter nil)
+	  )))
 ;;------------------------------------------------------------------------------
 (defmethod -on-destroy :before ((stream gtbstream))
   (gtb-delete-mark stream (point stream)))
 
-(defmacro iter-at-point ()
+(defmacro iter-to-offset ()
   "Set iter to point, and return it"
-  `(progn (%gtb-get-iter-at-mark stream iter point) iter))
+  `(progn (setf (gtk::gtk-text-iter-offset iter) offset) iter))
 
-;;==============================================================================
-;;
+	  ;;==============================================================================
+	  ;;
+
+
 (defmethod trivial-gray-streams:stream-force-output ((stream gtbstream))
   (declare (optimize (speed 3) (safety 0) (debug 0)))
-  (funcall (the function (flush stream))))
+  (stream-flush stream))
+
 (defmethod trivial-gray-streams:stream-finish-output ((stream gtbstream))
   (declare (optimize (speed 3) (safety 0) (debug 0)))
-  (funcall (the function (flush stream))))
-;;------------------------------------------------------------------------------
+  (stream-flush stream))
+		;;------------------------------------------------------------------------------
+
+
 (defmethod trivial-gray-streams:stream-write-char ((stream gtbstream) char)
   (declare (optimize (speed 3) (safety 0) (debug 0)))
-  (funcall (the function (emit stream)) char))
-;;------------------------------------------------------------------------------
+  (stream-emit stream char))
+		;;------------------------------------------------------------------------------
+
+
 (defmethod trivial-gray-streams:stream-line-column ((stream gtbstream))
-  (let ((o (stream-offset stream)))
-    (- (gti-get-line-offset (iter stream)) o)))
+  (with-slots (iter offset) stream
+    (stream-flush stream)
+    (- (gti-get-line-offset (iter-to-offset)) offset)))
 
 (defmethod trivial-gray-streams:stream-start-line-p ((stream gtbstream))
-  (gti-starts-line (funcall (the function (flush stream)))))
-;;------------------------------------------------------------------------------
+  (with-slots (iter offset) stream
+    (stream-flush stream)
+    (gti-starts-line (iter-to-offset))))
+		;;------------------------------------------------------------------------------
+
+
 (defmethod trivial-gray-streams:stream-file-position ((stream gtbstream))
-  (stream-offset stream))
+  (stream-flush stream))
 
 (defmethod (setf trivial-gray-streams:stream-file-position) (value (stream gtbstream))
-  (funcall (flush stream))
+  (stream-flush stream)
   (block main
-    (with-slots (iter point) stream
+    (with-slots (iter offset) stream
       (typecase value
-	(string (return-from main (when-setf point (gtb-get-mark stream value))))
 	(keyword (case value
-		   (:start  (%gtb-get-start-iter stream iter))
-		   (:end    (%gtb-get-end-iter   stream iter))
+		   (:start  (setf offset 0))
+		   (:end    (setf offset (gtb-get-char-count stream)))
 		   (t (return-from main nil))))
-	(number (%gtb-get-iter-at-offset stream iter value))
+	(number (setf offset value))
 	(t (return-from main nil)))
-      (gtb-move-mark stream point iter)
       t)))
 
+(defun stream-to-iter (stream iter)
+  (stream-flush stream)
+  (setf (offset stream) (gti-get-offset iter))
+)
+		;;==============================================================================
+		;; buffer routines create a closure with a buffer... These routines get hammered
+		;; and really do need to be fast; a closure seems to be a little better on SBCL
+		;; So here we initialize a closure, compile emit, clear and flush and set the
+		;; 3 function pointers in the stream.
+		;; Notes:
+		;; - keep an eye on how UTF8 characters are handled!
+		;; - this can be sped up with a foreign buffer as long as UTF8 is made to work.
 
-;;==============================================================================
-;; buffer routines create a closure with a buffer... These routines get hammered
-;; and really do need to be fast; a closure seems to be a little better on SBCL
-;; So here we initialize a closure, compile emit, clear and flush and set the
-;; 3 function pointers in the stream.
-;; Notes:
-;; - keep an eye on how UTF8 characters are handled!
-;; - this can be sped up with a foreign buffer as long as UTF8 is made to work.
-(defun init-buffer-routines (strm)
-  (let ((lbuf (make-array 256 :element-type 'character))
-	(index 0)
-	(stream strm))
-    ;;--------------------------------------------------------------------------
-    (setf (emit stream)
-	  (lambda (char)
-	    "Emit a character into stream.  May cache until..."
-	    (declare (optimize (speed 3) (safety 0) (debug 0)))
-	    (declare (type character char))
-	    (declare (type fixnum index))
-	    (declare (type (simple-string 256) lbuf ))
-;;	    (format t "~%Emitting ~C into ~A at ~A" char stream index)
-	    (setf (schar lbuf index) char)
-	    (incf index)
-	    (when (or (char= char #\newline)
-		      (> index 250)) ;buffer full, or
-	      (funcall (the function (flush stream)))
-	      char)))
-    ;;--------------------------------------------------------------------------
-    (setf (clear stream)
-	  (lambda ()
-	    "clear the buffer"
-	    (setf index 0)))
-    ;;--------------------------------------------------------------------------
-    (setf (flush stream)
-	  (lambda ()
-	    "Flush the stream if needed; return iter"
-	    ;; Uses iter
-	    (declare (type fixnum index))
-	    (declare (type (simple-string 256) lbuf ))
-;;	    (format t "~%Flush ~A characters" index )
-	    (with-slots (iter point) stream
-	      (prog1
-		  (iter-at-point)
-		(unless (zerop index)
-		  (setf (schar lbuf index) #\Nul ;terminate UTF8 lbuf
-			index 0) 
-		  (%gtb-insert stream iter lbuf -1))))))))
-;;==============================================================================
-;; And our extensions...
+
+
+
+(defun stream-emit (stream char)
+  (declare (optimize (speed 3) (safety 0) (debug 0)))
+  (declare (type character char))
+  (with-slots (index lbuf) stream
+    "Emit a character into stream.  May cache until..."
+    
+    ;;	    (format t "~%Emitting ~C into ~A at ~A" char stream index)
+    (setf (schar lbuf index) char)
+    (incf (the fixnum index))
+    (when (or (char= char #\newline)
+	      (> (the fixnum index) 250))	;buffer full, or
+      (stream-flush stream)
+      char)))
+		;;--------------------------------------------------------------------------
+		;;--------------------------------------------------------------------------
+
+
+
+(defun stream-flush (stream)
+  "Flush the stream if needed; return iter"
+  (declare (optimize (speed 3) (safety 0) (debug 0)))
+  (with-slots (iter offset index lbuf) stream
+    (unless (zerop (the fixnum index))
+      (iter-to-offset)
+      (incf (the fixnum offset) (the fixnum index))
+      (setf (schar lbuf index) #\Nul ;terminate UTF8 lbuf
+	    index 0) 
+      (%gtb-insert stream iter lbuf -1))
+    offset))
+		;;==============================================================================
+		;; And our extensions...
+
+
 
 (defun stream-wipe (stream)
   "clear the buffer entirely"
   (%gtb-delete stream
 	       (gtb-get-start-iter stream)
-	       (gtb-get-end-iter stream)))
+	       (gtb-get-end-iter stream))
+  (setf (index stream) 0))
 
-(defun stream-offset (stream)
-  "get a clean offset"
-  (declare (optimize (speed 3) (safety 0)))
-  (gti-offset (funcall (the function (flush stream)))))
 
 (defun tagname-to-here (stream tagname start-offset)
   "apply a tag from start-offset to current position"
-  (funcall (the function (flush stream)))
-  (%gtb-get-iter-at-offset stream (iter1 stream) start-offset) ; old
-  (gtb-apply-tag
-	  stream tagname
-	  (iter1 stream)
-	  (iter stream)))
+  (with-slots (iter iter1) stream
+    (stream-flush stream) ;iter now set to end
+    (%gtb-get-iter-at-offset stream iter1 start-offset);; setting iter's offset does not work
+    (gtb-apply-tag stream tagname iter1 iter)))
+
 (defun tag-to-here (stream tag start-offset)
   "apply a tag from start-offset to current position"
   (declare (optimize (speed 3) (safety 0) (debug 0)))
-  (funcall (the function (flush stream)))
-  (%gtb-get-iter-at-offset stream (iter1 stream) start-offset) ; old
-  (%gtb-apply-tag
-	  stream tag
-	  (iter1 stream)
-	  (iter stream)))
-;;==============================================================================
-;;------------------------------------------------------------------------------
-;;------------------------------------------------------------------------------
-;; Tagged output
-;;
-;; As we allow nested tagged output, 'with-tags' keeps track of the tags and
-;; starting position on the stack.  The usual unwind-protect is not necessary
-;; as we do not reserve any resources
-;;
+  (with-slots (iter iter1) stream
+    (stream-flush stream) ;iter now set to end
+    (%gtb-get-iter-at-offset stream iter1 start-offset)
+    (%gtb-apply-tag stream tag iter iter1)))
+
+		;;==============================================================================
+		;;------------------------------------------------------------------------------
+		;;------------------------------------------------------------------------------
+		;; Tagged output
+		;;
+		;; As we allow nested tagged output, 'with-tags' keeps track of the tags and
+		;; starting position on the stack.  The usual unwind-protect is not necessary
+		;; as we do not reserve any resources
+		;;
+
+
 (defmacro with-tag (stream tag &body body)
   (let* ((str (gensym))
 	 (off (gensym))
 	 (tg (gensym)))
     `(let* ((,str (the gtbstream ,stream)) 
-	    (,off (stream-offset ,str))
+	    (,off (stream-flush ,stream))
 	    (,tg ,tag))
        ,@body
        (tag-to-here ,str ,tg ,off))))
@@ -173,7 +179,7 @@
 	 (off (gensym))
 	 (tg  (gensym)))
     `(let* ((,str (the gtbstream ,stream)) 
-	    (,off (stream-offset ,str))
+	    (,off (stream-flush ,str))
 	    (,tg ,tag))
        ,@body
        (tagname-to-here ,str ,tg ,off))))
@@ -186,9 +192,8 @@
 (defun append-presentation (stream dad pres)
   (declare (type gtbstream stream)
 	   (type range:range dad))
-  (with-slots (flush) stream
-    (declare (type function flush))
-    (funcall flush)
-    (range:new-in dad pres)
-    (present pres stream)
-    (funcall flush)))
+  
+  (stream-flush stream)
+  (range:new-in dad pres)
+  (present pres stream)
+  (stream-flush stream)) 

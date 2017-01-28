@@ -145,7 +145,7 @@
 (defparameter *q* nil)
 
 (defmethod -on-button-press ((buffer rbuffer) iter event)
-  (stream-position buffer iter)
+  (stream-to-iter buffer iter)
   (let ((range  (range:at (root buffer) (gti-get-offset iter))))
     (-on-button-press range iter event))
   (print "1"))
