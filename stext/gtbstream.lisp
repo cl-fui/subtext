@@ -48,19 +48,19 @@
   (stream-emit stream char))
 		;;------------------------------------------------------------------------------
 
-#||
+
 (defmethod trivial-gray-streams:stream-line-column ((stream gtbstream))
   (with-slots (iter offset index) stream
-    (let ((actual (+ offset index)))
-      (- (gti-get-line-offset (iter-to-offset)) offset))))
+    (%gtb-get-iter-at-offset stream iter (+ offset index))
+    (gti-get-line-offset iter)))
 
 (defmethod trivial-gray-streams:stream-start-line-p ((stream gtbstream))
-  (with-slots (iter offset) stream
-    (stream-flush stream)
-    (gti-starts-line (iter-to-offset))))
+  (with-slots (iter offset index) stream
+    (%gtb-get-iter-at-offset stream iter (+ offset index))
+    (gti-starts-line iter)))
 		;;------------------------------------------------------------------------------
 
-||#
+
 (defmethod trivial-gray-streams:stream-force-output ((stream gtbstream))
   (declare (optimize (speed 3) (safety 0) (debug 0)))
   (stream-flush stream))
@@ -112,18 +112,18 @@
     (when (> (the fixnum index) 508);
       (stream-flush stream)
       char)))
-		;;--------------------------------------------------------------------------
-		;;--------------------------------------------------------------------------
-
-
-
+;;--------------------------------------------------------------------------
+;;--------------------------------------------------------------------------
 (defun stream-flush (stream)
-  "Flush the stream if needed; return iter"
+  "Flush the stream if needed; return offset"
   (declare (optimize (speed 3) (safety 0) (debug 0)))
-  (with-slots (iter offset index lbuf) stream
+  (with-slots (iter offset index lbuf root) stream
     ;;(format t "Flushing ~A characters~&" index)
     (unless (zerop (the fixnum index))
-      (iter-to-offset)
+      (setf (gtk::gtk-text-iter-offset iter) offset)
+      ;; assure a nil range for output to top level
+      (when (gti-is-end iter)
+	(range:assure-top-level root))
       (incf (the fixnum offset) (the fixnum index))
       (setf (schar lbuf index) #\Nul ;terminate UTF8 lbuf
 	    index 0) 
@@ -203,7 +203,10 @@
   (make-tag-promise :tag tag :start (+ (offset stream) (index stream))))
 
 (defun tag-out (stream promise)
-  (setf (tag-promise-end promise) (+ (offset stream) (index stream)))
+  (declare (optimize (speed 3) (safety 0) (debug 0))
+	   (type gtbstream stream))
+  (setf (tag-promise-end promise) (the fixnum (+ (the fixnum (offset stream))
+						 (the fixnum (index stream)))))
   (push promise (promises stream)))
 
 (defmacro with-tag (stream tag &body body)
@@ -217,8 +220,6 @@
 ;; start and end are dad-based coordinates...
 ;; once we start a range-promise, we count from 0!
 (defstruct range-promise range end)
-
-
 
 (defun range-in (stream newrange)
   (with-slots (range offset index rangebase) stream
@@ -250,11 +251,16 @@
 
 
 (defun stream-range-promises (stream)
+  ;;(print (promises stream))
+   ;;(format t "~%ROOT: ~A kids ~A~&" (root stream) (range:kids (root stream)))
   (loop for promise in (reverse (promises stream)) do
        (typecase promise	 
 	 (range-promise
 	  (with-slots (range end) promise
-	    (range:sub range end)))
+	    ;;(format t "~%PROMISE: ~A ~DAD:~&" promise (range:dad (range-promise-range promise)))
+	    (range:sub range end)
+	    ;;(format t "~%ROOT: ~A kids ~A~&" (root stream) (range:kids (root stream)))
+	    ))
 	 (tag-promise
 	  (with-slots (start end tag) promise
 	    (with-slots (iter iter1) stream

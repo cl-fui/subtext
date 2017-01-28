@@ -112,10 +112,12 @@
 
 (defmethod  -on-button-press ((p ptest) iter event)
   (let ((buffer (gti-buffer iter)))
-    (print buffer)
     (with-slots (toggle) p
       (setf toggle (not toggle))
       (mvb (start end) (range-iters buffer p)
+	   (format t "~A ~A~&"start end)
+					;(gtb-apply-tag buffer "input" start end)
+	   (gti-backward-char end)
 	   (%gtb-delete buffer start end)
 	   (present p buffer)
 	   )
@@ -137,8 +139,9 @@
 	(time
 	 (loop for i from 1 to 100000 do
 	      (with-range buffer (make-ptest :text1 "hello" :number i :text2 "world")
-		(present it buffer))
-	      (terpri buffer)))
+		(present it buffer)
+		(terpri buffer))
+	      ))
 	
 	(finish-output buffer)
 	(gtk-widget-show-all top)))))

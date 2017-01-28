@@ -30,7 +30,9 @@
 	nil)))
 
 (defun pbuf-key-backspace (pbuf)
-  (%gtb-backspace pbuf (funcall (flush pbuf)) nil t))
+  (with-slots (iter) pbuf
+    (%gtb-get-iter-at-offset pbuf iter (stream-flush pbuf))
+    (%gtb-backspace pbuf iter nil t)))
 
 (defmethod -on-announce-eli  ((pbuf rbuffer) eli)
   (with-slots (keymap) eli
@@ -62,13 +64,11 @@
   "update presentation bounds"
   (declare (ignore text))
   (let ((off (gti-get-offset iter)))
-    ;;(format t "~%WIDENING: at ~A by ~A~% "off len);;
     (range:widen (range:at (root buffer) off) len)))
-  ;;    (format t  "~%Current range is ~A  ~A wide" (range:range-abs (range *out*))    (range:range-width (range *out*)))
+
   
 
 (defun on-delete-range (buffer istart iend)
-  "Delete marks in range.  Marks start to the left of a presentation."
   (let ((o1 (gti-get-offset  istart))
 	(o2 (gti-get-offset  iend)))
 ;;    (format t "~%deleting range: [~D ~D)" o1 o2)
@@ -175,26 +175,13 @@
 (defun range-iters (buffer range)
   (mvb (start end) (range:bounds range)
        (values (gtb-get-iter-at-offset buffer start)
-	       (gtb-get-iter-at-offset buffer (1- end)))))
+	       (gtb-get-iter-at-offset buffer end))))
 
 (defun range-text (buffer range)
   (mvb (istart iend) (range-iters buffer range)
        (gtb-get-text buffer istart iend nil)))
 
 
-;;of limited use, only good for top subranges inserted at end...
-(defun fflush (stream) (funcall (flush stream)))
-(defun stream-delimit (bufstrm range)
-  (declare (type gtbstream bufstrm)
-	   (type range:range range))
-  ;;     (funcall (the function (flush bufstrm)))
-  (declare (optimize (speed 3) (debug 0) (safety 0)))
-  (stream-flush bufstrm)
-  (range:new-in  (root bufstrm) range))
-
-(defun stream-anchor (bufstrm)
-  (error 0)
-)
 
 
 

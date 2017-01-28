@@ -45,11 +45,16 @@
  
     ;;feed the engine
     (defun prompt (swank)
-      (stream-delimit pbuf (make-p-prompt))
-      (with-tagname pbuf "prompt"
-	(fresh-line pbuf)
-	(format pbuf "~A> " (swa:prompt swank)))
-      (stream-delimit pbuf (make-p-entry) ))
+      (with-range pbuf (make-p-prompt)
+	(with-tag pbuf "prompt"
+	  (fresh-line pbuf)
+	  (format pbuf "~A> " (swa:prompt swank))))
+      (with-range pbuf (make-p-entry)
+;;	(format pbuf " ")
+	)
+      (finish-output pbuf)
+      )
+    
         
     ;;---------------------------------------------
     ;; callback evaluated upon processing of a command line
@@ -62,15 +67,20 @@
     (defun sw-write-string (connection string &optional stream)
       (princ string pbuf))
 
-    (defun sw-presentation-start (connection id stream)
-      (stream-delimit pbuf (make-p-pres :id id) ) ;for now,just delimit with presentation id
-      )
-    
-    (defun sw-presentation-end (connection id stream)
-      (finish-output pbuf)
-      (pbuf-tag-range pbuf  "pres")
-      (stream-delimit pbuf nil ) ;for now,just delimit with presentation id
-      )
+    (let (ob pr)
+      (defun sw-presentation-start (connection id stream)
+	(mvb (oldbase promise)
+	     (range-in pbuf (make-p-pres :id id))
+	     (setf ob oldbase
+		   pr promise)))
+      
+      (defun sw-presentation-end (connection id stream)
+ 
+	(push (make-tag-promise :tag "pres" :start (rangebase pbuf) :end (file-position pbuf))
+	      (promises pbuf) )
+	(range-out pbuf ob pr)
+
+	))
     
     (defun sw-new-package (connection name nickname)
       (setf (swa:pkg connection) name
@@ -80,8 +90,8 @@
     ;; Input requested (read-line?).  Keep the id and tag in a range to return
     ;; later, when <enter> is processed.
     (defun sw-read-string (connection id tag)
-      (stream-delimit pbuf (make-p-input :id id :tag tag))
-      )
+      (with-range pbuf (make-p-input :id id :tag tag)
+	(format pbuf " ")))
 
     ;; We shall keep the debuggers around in a hashtable, keyed by both thread
     ;; and debug level (TODO: is this really necessary?).
@@ -102,7 +112,6 @@
 		  (make-window  wsldb)
 		  :title (format nil "SLDB ~A ~A"thread level)
 		  :kill nil)))
-	    ;(setf (sldb-fr sldb) frame)
 	    (gtk-widget-show-all frame))
 	  (wsldb-activate wsldb))))
     ;; Now when this returns, we destroy the widget and remove SLDB from the
@@ -137,32 +146,22 @@
     (labels
 	((pbuf-idle-entry () ;in-scope for pbuf!
 	   (with-slots (swank) pbuf
-	     (let* ((range (range:at (root pbuf) (gtb-get-char-count pbuf)))
-		    (string (range-text pbuf range))
-		    )
-	       (typecase range
-		 (p-input ;;(:emacs-return-string 1 5 "88\n")
-		  (with-slots (id tag) range
-		    (swa:emacs-return-string swank string id tag)))
-		 (p-entry
-		  (swa:eval (swank pbuf) ;try to parse string, may be null
-			    (pbuf-parse-string string) #'prompt-proc)))))
-	   nil)); remove thyself
-      (keymap-bind
-       keymap (kbd "<RET>")
+	     (let* ((range (range:at (root pbuf) (gtb-get-char-count pbuf)));TODO
+		    (string (range-text pbuf range)))
+	       (format t "OFF: ~A  MAX ~A~&" (offset pbuf) (gtb-get-char-count pbuf))
+	       (swa:eval (swank pbuf) ;try to parse string, may be null
+			 (pbuf-parse-string string) #'prompt-proc)))
+	   ;; (with-slots (id tag) range	    (swa:emacs-return-string swank string id tag))	   nil)); remove thyself
+	   nil))
+	   
+      (keymap-define-key
+       keymap #.kb:RET
        (lambda (gtkkey)
 	 (declare (ignore gtkkey))
-	 (write-char #\newline pbuf); insert newline, which flushes output!
-	 (let ((iter (gtb-get-iter-at-mark pbuf (gtb-get-insert pbuf))))
-	   (print iter)
-	   ;; only allow input at the end!
-	   (if (gti-is-end iter)
-	       (gdk-threads-add-idle #'pbuf-idle-entry)))
-	   
-	 )))
-    
-    )
-  )
+	 (write-char #\newline pbuf)
+	 (gdk-threads-add-idle #'pbuf-idle-entry)
+	 t))
+)))
 ;;------------------------------------------------------------------------------
 
 ;; Before evaluating a string via SWANK, we read it here, discarding sexps

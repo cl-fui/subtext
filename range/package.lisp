@@ -10,4 +10,5 @@
    :at
    :kids
    :sub
+   :assure-top-level
 ))

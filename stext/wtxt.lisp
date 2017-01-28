@@ -20,9 +20,12 @@
 
 
 
-(defgeneric -on-button-press  (object view event))
-(defgeneric -on-2button-press (object view event))
-(defgeneric -on-3button-press (object view event))
+(defgeneric -on-button-press  (object iter event))
+(defgeneric -on-2button-press (object iter event))
+(defgeneric -on-3button-press (object iter event))
+(defgeneric -on-motion        (object iter event))
+(defmethod -on-motion ((o t) viaew event)
+  (declare (ignore o view event)))
 
 (defmethod -on-button-press ((o t) view event)
   (declare (ignore o iter event)))
@@ -38,13 +41,12 @@
    (truncate x)
    (truncate y)))
 
-(defun rview-iter-from-event (view event)
+(defun rview-iter-from-xy (view x y)
   (mvb
-   (x y) (gtv-window-to-buffer-coords
-	  view :text
-	  (truncate (gdk-event-button-x event))
-	  (truncate (gdk-event-button-y event)))
-   (gtv-get-iter-at-location view x y)))
+   (xx yy) (gtv-window-to-buffer-coords
+	  view :text x y)
+   (gtv-get-iter-at-location view xx yy)))
+
 
 (defmethod initialize-instance :after ((wtxt wtxt) &key)
   ;; Since views know about buffers but not vice versa, we must connect here.
@@ -56,11 +58,21 @@
    wtxt "button-press-event" ;TODO: check widget
    (lambda (view event)
      (let ((buffer (gtv-buffer wtxt))
-	   (iter (rview-iter-from-event view event)))
+	   (iter (rview-iter-from-xy view
+				     (truncate (gdk-event-button-x event))
+				     (truncate (gdk-event-button-y event)))))
        (case (gdk-event-get-click-count event)
 	 (1 (-on-button-press  buffer iter event))
 	 (2 (-on-2button-press buffer iter event))
-	 (3 (-on-3button-press buffer iter event)))))))
+	 (3 (-on-3button-press buffer iter event))))))
+  (g-signal-connect
+   wtxt "motion-notify-event" ;TODO: check widget
+   (lambda (view event)
+     (let ((buffer (gtv-buffer wtxt))
+	   (iter (rview-iter-from-xy view
+					(truncate (gdk-event-motion-x event))
+					(truncate (gdk-event-motion-y event)))))
+       (-on-motion buffer iter event)))))
 
 (defmethod -on-announce-eli ((wtxt wtxt) eli)
   (-on-announce-eli (gtk-text-view-buffer wtxt) eli))

@@ -10,7 +10,7 @@
 (in-package #:stext)
 
 
-
+(defparameter *frame* nil)
 (defclass frame (gtk-window)
   ((holder   :accessor holder  :initform (make-instance 'gtk-box :orientation :vertical))
    (minibuf  :accessor minibuf )
@@ -44,6 +44,7 @@
 	     (if kill (leave-gtk-main))))
     ;; process keystrokes in minibuf...
     (-on-announce-eli content minibuf)
+    (setf *frame* frame)
  
 					;(gtk-widget-add-events frame )
     ;; Key processing: gtk stuff is done here, from here on we use
