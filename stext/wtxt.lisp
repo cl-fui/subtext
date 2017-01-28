@@ -55,11 +55,12 @@
   (g-signal-connect
    wtxt "button-press-event" ;TODO: check widget
    (lambda (view event)
-     (let ((buffer (gtv-buffer wtxt)))
+     (let ((buffer (gtv-buffer wtxt))
+	   (iter (rview-iter-from-event view event)))
        (case (gdk-event-get-click-count event)
-	 (1 (-on-button-press  buffer view event))
-	 (2 (-on-2button-press buffer view event))
-	 (3 (-on-3button-press buffer view event)))))))
+	 (1 (-on-button-press  buffer iter event))
+	 (2 (-on-2button-press buffer iter event))
+	 (3 (-on-3button-press buffer iter event)))))))
 
 (defmethod -on-announce-eli ((wtxt wtxt) eli)
   (-on-announce-eli (gtk-text-view-buffer wtxt) eli))

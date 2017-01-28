@@ -96,28 +96,30 @@
 ;;for debugging ranges
 
 (defgeneric present (it stream))
+;------------------------------------------------
 (defstruct  (ptest (:include range:range))
-  toggle)
-
-(defparameter *tag* nil)
+  toggle text1 number text2)
 (defmethod  present ((p ptest) s)
-  (with-tag s *tag*
-    (format s "FUCK YOU"))
-  (terpri s)
-  (setf (ptest-toggle p) nil))
+  (with-slots (text1 text2 number toggle) p
+    (unless toggle
+	(progn
+	  (with-tag s *tag*
+	    (princ text1 s)
+	    (with-tagname s "output"
+		(princ number s))
+	    (princ text2 s))))))
+(defparameter *tag* nil)
 
-
-(defmethod  -on-pres-click ((p ptest) buffer event)
-
-  (with-slots (toggle) p
-    (setf toggle (not toggle))
-    (mvb (start end) (range-iters buffer p)
-	 (format t "~%~A ~A~&" start end)
-	 (if toggle
-	     (PROGN (PRINT "DELETED") (%gtb-delete buffer start end))
-	     (PROGN (PRINT "expanded") (%gtb-insert buffer start "Fuck You" -1))
-))
-))
+(defmethod  -on-button-press ((p ptest) iter event)
+  (let ((buffer (gti-buffer iter)))
+    (print buffer)
+    (with-slots (toggle) p
+      (setf toggle (not toggle))
+      (mvb (start end) (range-iters buffer p)
+	   (%gtb-delete buffer start end)
+	   (present p buffer)
+	   )
+      )))
 (defparameter *top* nil)
 (defun t0 ( &key (stdout *standard-output*))
   "final"
@@ -133,18 +135,21 @@
 	(format buffer "hello~&")
 	(setf *tag* (gttt-lookup (gtb-tag-table buffer) "prompt" ))
 	(time
-	 (loop for i from 1 to 200000 do
-	      (append-presentation buffer (root buffer) (make-ptest))
-	      ))
+	 (loop for i from 1 to 100000 do
+	      (append-presentation buffer (root buffer) (make-ptest :text1 "hello" :number i :text2 "world"))
+	      (terpri buffer)))
 	
 	
 	(gtk-widget-show-all top)))))
 ;;WATCH OUT!
 (defparameter *q* nil)
 
-(defmethod -on-button-press ((buffer rbuffer) view event)
+(defmethod -on-button-press ((buffer rbuffer) iter event)
+  (stream-position buffer iter)
+  (let ((range  (range:at (root buffer) (gti-get-offset iter))))
+    (-on-button-press range iter event))
   (print "1"))
-(defmethod -on-2button-press ((buffer rbuffer) view event)
+(defmethod -on-2button-press ((buffer rbuffer) iter event)
   (print "2"))
-(defmethod -on-3button-press ((buffer rbuffer) view event)
+(defmethod -on-3button-press ((buffer rbuffer) iter event)
   (print "3"))

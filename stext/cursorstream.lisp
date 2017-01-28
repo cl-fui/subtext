@@ -66,11 +66,27 @@
 		   (:end    (%gtb-get-end-iter   stream iter))
 		   (t (return-from main nil))))
 	(number (%gtb-get-iter-at-offset stream iter value))
+	(gtk-text-iterator (setf (gti-offset iter) (gti-offset value)))
 	(t (return-from main nil)))
       (gtb-place-cursor stream iter)
       t)))
 
-
+(defun stream-position (stream value)
+  (funcall (flush stream))
+  (block main
+    (with-slots (iter point) stream
+      (typecase value
+	(string (return-from main (when-setf point (gtb-get-mark stream value))))
+	(keyword (case value
+		   (:start  (%gtb-get-start-iter stream iter))
+		   (:end    (%gtb-get-end-iter   stream iter))
+		   (t (return-from main nil))))
+	(number (%gtb-get-iter-at-offset stream iter value))
+	(gtk-text-iter (setf (gtk::gtk-text-iter-offset iter) (gti-offset value)))
+	(t (return-from main nil)))
+      (gtb-place-cursor stream iter)
+      t))
+)
 ;;==============================================================================
 ;; buffer routines create a closure with a buffer... These routines get hammered
 ;; and really do need to be fast; a closure seems to be a little better on SBCL
