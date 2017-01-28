@@ -105,8 +105,8 @@
 	(progn
 	  (with-tag s *tag*
 	    (princ text1 s)
-	    (with-tagname s "output"
-		(princ number s))
+	    (with-tag s "output"
+	      (princ number s))
 	    (princ text2 s))))))
 (defparameter *tag* nil)
 
@@ -131,15 +131,16 @@
       (let ((top (make-frame (make-window (setf *top* (make-wtxt buffer)))
 			     :kill t))
 	    r) 
-	(stream-delimit buffer nil)
-	(format buffer "hello~&")
+	(with-range buffer (range:make)
+	  (format buffer "hello~&"))
 	(setf *tag* (gttt-lookup (gtb-tag-table buffer) "prompt" ))
 	(time
 	 (loop for i from 1 to 100000 do
-	      (append-presentation buffer (root buffer) (make-ptest :text1 "hello" :number i :text2 "world"))
+	      (with-range buffer (make-ptest :text1 "hello" :number i :text2 "world")
+		(present it buffer))
 	      (terpri buffer)))
 	
-	
+	(finish-output buffer)
 	(gtk-widget-show-all top)))))
 ;;WATCH OUT!
 (defparameter *q* nil)

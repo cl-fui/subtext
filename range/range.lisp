@@ -82,27 +82,26 @@ We maintain a right-to-left list of widths in the buffer.  Since most of the act
     (narrow (dad range) by)
     range)
   )
-(defun prim (range off)
+(defun prim (range off r)
   (with-slots (width child l) range
     (if (>= width off) ;if width>off, it is inside here
 	(if child; if there are children, 
-	    (prim child off); maybe?
-	    (values range off)); no children means this is it.
+	    (prim child off nil); maybe?
+	    (values range off r))   ; no children means this is it.
 	(if l; width<= offset, more to go.
-	    (prim l (- off width)); try next to the left.
-	    (values (dad range) off); no more? dad is it.
+	    (prim l (- off width) range); try next to the left.
+	    nil; this cannot happen...
 	    ))))
 
-(defun at_ (tree off)
-  "Return the range that encloses off"
-  (let* ((width (width tree))
-	 (rem (- width off))); because from right!
-    (if (child tree)
-	(prim (child tree) rem)
-	(values tree rem))))
+;; This routine is used to insert ranges below.  Here we find the encloser,
+;; as well as the right node so we can fix its l pointer or nil if we are first
+(defun at (root from-left)
+  "Find the range that encloses the offset, and return
+it, rem and right node"
+  (let ((off (- (width root) from-left ))) ; because from right!
+    (prim root off nil)))
 
-(defun at (root off)
-  (at_ root off))
+
 
 (defun kids (dad)
   (loop for r = (child dad) then (l r)
@@ -116,47 +115,86 @@ We maintain a right-to-left list of widths in the buffer.  Since most of the act
 
 ||#
 
-(defun subrange (range root off)
-  (multiple-value-bind  (dad off) (at root off)
-    (let ((extra (- off (width range))))
-      (if (or (zerop (width range))
-	      (minusp extra))
-	  (error "Cannot insert a subrange: width ~A, extra ~A" (width range) extra))
 
-      (with-slots ((dad-child child)) dad
-	(setf (dad range) dad
-	      (l   range) dad-child
-	      dad-child range)
-	(if (> extra 0)
-	    (setf dad-child
-		  (make :width extra
-			:dad   dad
-			:l     range)))))
-    
-    range))
+;; Sub-of creates a subrange of a dad range.
+;; range is set with a real dad and width.
+(defun subrange (range end root)
+  (with-slots (dad width child l) range
+    ;; The parent range must have real children for this to work...
+    (unless (child dad) (setf (child dad) (make :dad  dad :width (width dad))))
+    ;; now, get the range at our position and make sure that it is nil and
+    ;; completely encloses us.
+  
+    (multiple-value-bind (encloser off rnode) (at root end)
+      (when (or (null encloser)
+		(not (eq 'range (type-of encloser)))
+		(> width (- (width encloser) off))
+		(not (eq (dad encloser) dad)))
+	(error "Cannot insert a subrange: ~A at ~A; into ~A at ~A" range end encloser off))
+      (format t "encloser ~A ~A~&" encloser off)
+      (let ((remaining (-(width encloser) width)))
+	(format t "remaining ~A~&" remaining)
+	(if (plusp off)			
+	    (progn; convert encloser to filler
+	      (setf (width encloser) off 
+		    l (l encloser) ;we follow!
+		    (l encloser) range) 
+	      (decf remaining off)
+	      (when (plusp remaining)
+		;(print "OK")
+		(if (eq 'range (type-of l)) ;if node to our left is pad
+		    (incf (width l) remaining) ;simply widen it
+		    ;; otherwise, insert pad node to our left
+		    ;(progn (print "ADDING ON") (setf l (make :width remaining :dad dad :l l)))
+		    )))
+	    (progn; insert us and and fill with encloser
+	      (setf l encloser)
+	      (format t "WIDTH OF ENCLOSER ~A~&" (width encloser))
+	      (if rnode
+		  (setf (l rnode) range)
+		  (setf (child dad) range))
+	      (decf (width encloser) width)
+	      (format t "WIDTH OF ENCLOSER NOW ~A~&" (width encloser))))
+	)))
+  range)
 
-(defun sub-of (dad range  start end)
-  (let ((width (- end start))		; width of new node
-	(extra (- (width dad)  end))) ; do we need a pad range?
-    (if (or (not (plusp width))
-	    (minusp extra))
-	(error "Cannot insert a subrange: width ~A, extra ~A" (width range) extra))
-    (with-slots ((dad-child child)) dad
-      (setf (dad   range) dad
-	    (l     range) dad-child
-	    (width range) width
-	    dad-child     range)
-	
-      (unless (zerop extra )
-	  (setf dad-child
-		(make :dad   dad
-		      :l     range
-		      :width extra))))))
+
+
+(defun sub (range endoff)
+  (with-slots (dad width child l) range
+    (unless (child dad) (setf (child dad) (make :dad  dad :width (width dad))))
+    (multiple-value-bind (encloser off rnode) (at dad endoff)
+       (when (or (not (eq 'range (type-of encloser)))
+		(> width (- (width dad) off))
+		(not (eq (dad encloser) dad)))
+	(error "Cannot insert a subrange: ~A at ~A; into ~A at ~A" range endoff encloser off))
+           (let ((remaining (-(width encloser) width)))
+	(if (plusp off)			
+	    (progn; convert encloser to filler
+	      (setf (width encloser) off 
+		    l (l encloser) ;we follow!
+		    (l encloser) range) 
+	      (decf remaining off)
+	      (when (plusp remaining)
+		(if (eq 'range (type-of l)) ;if node to our left is pad
+		    (incf (width l) remaining) ;simply widen it
+		    ;; otherwise, insert pad node to our left
+		   ; (progn (print "ADDING ON") (setf l (make :width remaining :dad dad :l l)))
+		    )))
+	    (progn; insert us and and fill with encloser
+	      (setf l encloser)
+	      (if rnode
+		  (setf (l rnode) range)
+		  (setf (child dad) range))
+	      (decf (width encloser) width))))))
+  range)
 
 (defparameter *a* nil)
 (defparameter *b* nil)
 (defparameter *tab* (make))
-(setf *a* (widen (new-in *tab* nil) 10))
-(setf *b* (widen (new-in *tab* nil) 20))
+(setf *a* (widen (new-in *tab* nil) 100))
+;;(setf *b* (subrange (make :width 12 :dad *a*) 20 *tab* ))
+(setf *b* (sub (make :width 12 :dad *a*) 20 ))
+(sub (make :width 3 :dad *b*) 13) 
 
 

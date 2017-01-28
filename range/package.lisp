@@ -9,5 +9,5 @@
    :widen :narrow
    :at
    :kids
-   :subrange :sub-of
+   :sub
 ))

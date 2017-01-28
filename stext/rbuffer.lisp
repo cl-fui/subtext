@@ -14,10 +14,11 @@
    ;; (print "initialize-instance: rbuffer")
   (g-signal-connect buffer "insert-text" #'on-insert-text :after nil)
   (g-signal-connect buffer "delete-range" #'on-delete-range)
-  (with-slots (ptags) buffer
+  (with-slots (ptags range root) buffer
     ;; establish buffer modification handlers to sync with the range system
    (pbuf-create-tags buffer); for now...TODO
-   )
+   
+   (setf range root)); for noww...TODO
   ;;(print "initialize-instance: rbuffer DONE")
   )
 (defparameter *self-inserting-keys* "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ~!@#$%^&*()_+[]{}\|~`,.<>/?")
