@@ -50,12 +50,13 @@
 
 
 (defmethod trivial-gray-streams:stream-line-column ((stream gtbstream))
-  (format t "line-col~&") (with-slots (iter offset index) stream
+  ;;(format t "line-col~&")
+  (with-slots (iter offset index) stream
     (%gtb-get-iter-at-offset stream iter (+ offset index))
     (gti-get-line-offset iter)))
 
 (defmethod trivial-gray-streams:stream-start-line-p ((stream gtbstream))
-  (format t "startlinep~~&")
+  ;;(format t "startlinep~~&")
   (stream-flush stream)
   (with-slots (iter offset index) stream
     (%gtb-get-iter-at-offset stream iter (+ offset index))
@@ -65,11 +66,11 @@
 
 (defmethod trivial-gray-streams:stream-force-output ((stream gtbstream))
   (declare (optimize (speed 3) (safety 0) (debug 0)))
-  (format t "Force")
+  ;(format t "Force")
   (stream-flush stream))
 (defmethod trivial-gray-streams:stream-finish-output ((stream gtbstream))
   (declare (optimize (speed 3) (safety 0) (debug 0)))
-  (format t "Finish~~&")
+  ;;(format t "Finish~~&")
   (stream-flush stream)
   )
 
@@ -125,7 +126,7 @@
   (declare (optimize (speed 3) (safety 0) (debug 3)))
   
   (with-slots (iter offset index lbuf root promises) stream
-    (format t "Flushing ~A characters~&" index)
+    ;;(format t "Flushing ~A characters~&" index)
     (unless (zerop (the fixnum index))
       (setf (gtk::gtk-text-iter-offset iter) offset)
       ;; assure a nil range for output to top level
@@ -250,8 +251,8 @@
 
 
 (defun stream-range-promises (stream)
-  (print (promises stream))
-  (print "---------------")
+;;  (print (promises stream))
+;;  (print "---------------")
    ;;(format t "~%ROOT: ~A kids ~A~&" (root stream) (range:kids (root stream)))
   (loop for promise in (reverse (promises stream)) do
        (typecase promise	 

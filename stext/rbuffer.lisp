@@ -71,7 +71,7 @@
 (defun on-delete-range (buffer istart iend)
   (let ((o1 (gti-get-offset  istart))
 	(o2 (gti-get-offset  iend)))
-;;    (format t "~%deleting range: [~D ~D)" o1 o2)
+    (format t "~%deleting range: [~D ~D)" o1 o2)
     (range:narrow (range:at (root  buffer) o1) (- o2 o1))))
 
 

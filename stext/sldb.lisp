@@ -6,11 +6,13 @@
 
 (defclass pframe     (range:range)
   ((id :accessor id    :initarg :id   )
-   (opn :accessor opn  :initarg :opn  )
    (pframex :accessor pframex :initform nil
     )))
 
-(defclass pframex    (range:range) ())
+(defclass pframex    (range:range) 
+  ((opn :accessor opn  :initarg :opn :initform nil ))
+)
+
 
 ;;-------------------------------------------------------------------
 ;; mouse move derived signal is called to highlight/dehighlight
@@ -70,10 +72,12 @@
   
   (pbuf-new-tag sldb :name "grhigh" :background "darkgreen" :foreground "NavajoWhite" ))
 
-(defmethod on-announce-eli :after ((sldb sldb) eli)
-     (setf (sldb-eli sldb) eli)
-     (with-slots (keymap) eli
-       (keymap-define-key keymap #.kb:|q| (lambda (key) (sldb-quit sldb)))))
+(defmethod -on-announce-eli :after ((sldb sldb) eli)
+  (print "YES")
+  (terpri)
+  (setf (sldb-eli sldb) eli)
+  (with-slots (keymap) eli
+    (keymap-define-key keymap #.kb:|q| (lambda (key) (sldb-quit sldb)))))
 
 
 
@@ -148,36 +152,37 @@
   )
 
 (defmethod present ((p sldb) stream)
-  (format t "O1111K~&")
-    (with-slots (conditio restarts frames continuations) p
-      (with-tag stream "normal" 
-	(format stream "~A~&" (first conditio)))
-      (with-range stream (make-instance 'pcondition)
-	(with-tag stream "condition"
-	  (format stream "~A~&" (second conditio))))
-      
-      (with-tag stream "label" (format stream "~%Restarts:~&"))
-      (loop for restart in restarts
-	 for i from 0 do
-	   (with-range stream (make-instance 'prestart :id i)
-	     (with-tag stream "enum"   (format stream "~2d: [" i))
-	     (with-tag stream "cyan"   (format stream "~A" (first restart)))
-	     (with-tag stream "normal" (format stream "] ~A~&" (second restart)))))
-      ;;-------------------------------------------------------
-      (with-tag stream "label" (format stream "~%Backtrace:~&"))
-      (loop for frame in frames
-	 for i from 0 do
-	   (let ((pf (make-instance 'pframe :id i)))
-	    
-	     (with-range stream pf
-	       (with-tag stream "enum"
-		 (format stream "~3d: "  (first frame)))
+  (with-slots (conditio restarts frames continuations) p
+    (with-tag stream "normal" 
+      (format stream "~A~&" (first conditio)))
+    (with-range stream (make-instance 'pcondition)
+      (with-tag stream "condition"
+	(format stream "~A~&" (second conditio))))
+    
+    (with-tag stream "label" (format stream "~%Restarts:~&"))
+    (loop for restart in restarts
+       for i from 0 do
+	 (with-range stream (make-instance 'prestart :id i)
+	   (with-tag stream "enum"   (format stream "~2d: [" i))
+	   (with-tag stream "cyan"   (format stream "~A" (first restart)))
+	   (with-tag stream "normal" (format stream "] ~A~&" (second restart)))))
+    ;;-------------------------------------------------------
+    (with-tag stream "label" (format stream "~%Backtrace:~&"))
+    (loop for frame in frames
+       for i from 0 do
+	 (let ((pf (make-instance 'pframe :id i))
+	       (pfx (make-instance 'pframex)	))
+	   (setf (pframex pf) pfx)
+	   (with-range stream pf
+	     (with-tag stream "enum"
+	       (format stream "~3d: "  (first frame)))
 	       (with-tag stream (if (third frame) "restartable" "normal")
 		 (format stream "~A"   (second frame)))
 	       
-	       (with-range stream (make-instance 'pframex)	 (format stream " "))
-	       (terpri stream) 
-		 )))))
+	       (with-range stream pfx
+		 (format stream " "))
+	       (terpri stream)))))
+  (finish-output stream))
 
 (defun sldb-activate (sldb)
   (present sldb  sldb)

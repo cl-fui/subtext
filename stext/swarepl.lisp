@@ -151,7 +151,7 @@
 	   (with-slots (swank) pbuf
 	     (let* ((range (range:at (root pbuf) (gtb-get-char-count pbuf)));TODO
 		    (string (range-text pbuf range)))
-	       (format t "OFF: ~A  MAX ~A~&" (offset pbuf) (gtb-get-char-count pbuf))
+	       ;(format t "OFF: ~A  MAX ~A~&" (offset pbuf) (gtb-get-char-count pbuf))
 	       (swa:eval (swank pbuf) ;try to parse string, may be null
 			 (pbuf-parse-string string) #'prompt-proc)))
 	   ;; (with-slots (id tag) range	    (swa:emacs-return-string swank string id tag))	   nil)); remove thyself

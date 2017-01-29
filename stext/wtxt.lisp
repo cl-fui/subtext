@@ -73,8 +73,20 @@
 					(truncate (gdk-event-motion-x event))
 					(truncate (gdk-event-motion-y event)))))
        (-on-motion buffer iter event)))))
-
+;; Looks like view is the place to handle cursor commands! TODO: improve...
 (defmethod -on-announce-eli ((wtxt wtxt) eli)
+  (defun bind-move-cursor (gtkkey)
+    (apply #'g-signal-emit wtxt  "move-cursor"
+	   (case gtkkey
+	     (#.kb:LEFT  '(:visual-positions -1))
+	     (#.kb:RIGHT '(:visual-positions  1))
+	     (#.kb:UP    '(:display-lines    -1))
+	     (#.kb:DOWN  '(:display-lines     1))
+	     (t (print "FUCK YOU~&")nil))))
+  (with-slots (keymap) eli
+    (mapc (lambda (key) (keymap-define-key keymap key  #'bind-move-cursor) )
+	  '(#.kb:LEFT #.kb:RIGHT #.KB:UP #.kb:DOWN))
+    )
   (-on-announce-eli (gtk-text-view-buffer wtxt) eli))
 
 (defun widget-defaults (widget)
