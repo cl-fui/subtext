@@ -111,7 +111,7 @@
 	  (with-tag s *tag*
 	    (princ text1 s)
 	    (with-tag s "output"
-	      (princ num s))
+	      (format s "~A"  num))
 	    (princ text2 s))))))
 
 
@@ -142,7 +142,7 @@
 	  (format buffer "hello~&"))
 	(setf *tag* (gttt-lookup (gtb-tag-table buffer) "prompt" ))
 	(time
-	 (loop for i from 1 to 10000 do
+	 (loop for i from 1 to 100 do
 	      (with-range buffer (make-instance 'ptest :text1 "hello" :num i :text2 "world")
 		(present it buffer)
 		(terpri buffer))

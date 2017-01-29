@@ -50,11 +50,13 @@
 
 
 (defmethod trivial-gray-streams:stream-line-column ((stream gtbstream))
-  (with-slots (iter offset index) stream
+  (format t "line-col~&") (with-slots (iter offset index) stream
     (%gtb-get-iter-at-offset stream iter (+ offset index))
     (gti-get-line-offset iter)))
 
 (defmethod trivial-gray-streams:stream-start-line-p ((stream gtbstream))
+  (format t "startlinep~~&")
+  (stream-flush stream)
   (with-slots (iter offset index) stream
     (%gtb-get-iter-at-offset stream iter (+ offset index))
     (gti-starts-line iter)))
@@ -63,10 +65,13 @@
 
 (defmethod trivial-gray-streams:stream-force-output ((stream gtbstream))
   (declare (optimize (speed 3) (safety 0) (debug 0)))
+  (format t "Force")
   (stream-flush stream))
 (defmethod trivial-gray-streams:stream-finish-output ((stream gtbstream))
   (declare (optimize (speed 3) (safety 0) (debug 0)))
-  (stream-flush stream))
+  (format t "Finish~~&")
+  (stream-flush stream)
+  )
 
 (defmethod trivial-gray-streams:stream-file-position ((stream gtbstream))
   (+ (offset stream) (index stream)))
@@ -85,6 +90,7 @@
       t)))
 
 (defun stream-to-iter (stream iter)
+  (print "AAA")
   (stream-flush stream)
   (setf (offset stream) (gti-get-offset iter))
 )
@@ -116,9 +122,10 @@
 ;;--------------------------------------------------------------------------
 (defun stream-flush (stream)
   "Flush the stream if needed; return offset"
-  (declare (optimize (speed 3) (safety 0) (debug 0)))
-  (with-slots (iter offset index lbuf root) stream
-    ;;(format t "Flushing ~A characters~&" index)
+  (declare (optimize (speed 3) (safety 0) (debug 3)))
+  
+  (with-slots (iter offset index lbuf root promises) stream
+    (format t "Flushing ~A characters~&" index)
     (unless (zerop (the fixnum index))
       (setf (gtk::gtk-text-iter-offset iter) offset)
       ;; assure a nil range for output to top level
@@ -128,7 +135,7 @@
       (setf (schar lbuf index) #\Nul ;terminate UTF8 lbuf
 	    index 0) 
       (%gtb-insert stream iter lbuf -1))
-    (stream-range-promises stream)
+    (when promises (stream-range-promises stream))
     offset))
 		;;==============================================================================
 		;; And our extensions...
@@ -172,15 +179,7 @@
 
 
 
-(defmacro with-tagname (stream tag &body body)
-  (let* ((str (gensym))
-	 (off (gensym))
-	 (tg  (gensym)))
-    `(let* ((,str (the gtbstream ,stream)) 
-	    (,off (stream-flush ,str))
-	    (,tg ,tag))
-       ,@body
-       (tagname-to-here ,str ,tg ,off))))
+
 
 
 
@@ -251,7 +250,8 @@
 
 
 (defun stream-range-promises (stream)
-  ;;(print (promises stream))
+  (print (promises stream))
+  (print "---------------")
    ;;(format t "~%ROOT: ~A kids ~A~&" (root stream) (range:kids (root stream)))
   (loop for promise in (reverse (promises stream)) do
        (typecase promise	 

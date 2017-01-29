@@ -23,8 +23,9 @@ We maintain a right-to-left list of widths in the buffer.  Since most of the act
    (child :accessor child :initform nil :initarg :child))
    )
 (defmethod print-object ((obj range) out)
-  (print-unreadable-object (obj out :type t)
-    (format out "~s" obj)))
+  (with-slots (width child) obj
+    (format out "<~C~A ~A>" (if child #\* #\ )
+	    (type-of obj) width)))
 
 (defmacro make (&rest rest)
   `(make-instance 'range ,@rest))
@@ -96,10 +97,18 @@ We maintain a right-to-left list of widths in the buffer.  Since most of the act
 ;; as well as the right node so we can fix its l pointer or nil if we are first
 (defun at (root from-left)
   "Find the range that encloses the offset, and return
-it, rem and right node"
+it, rem and right node."
   (let ((off (- (width root) from-left ))) ; because from right!
     (prim root off nil)))
 
+(defun uat (root from-left)
+  "find a good range, that is not a range:range (often used as a spacer) 
+but a derived type."
+  (loop for val = (at root from-left)
+     then (dad val)
+     while (eq (type-of val) 'range)
+     while val
+     finally (return val)  ))
 
 
 (defun kids (dad)

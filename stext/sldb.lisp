@@ -2,11 +2,15 @@
 
 (defclass pcondition (range:range) ())
 (defclass prestart   (range:range)
-    ((id :accessor id)))
+    ((id :accessor id :initarg :id   :initform nil)))
 
 (defclass pframe     (range:range)
-  ((id :accessor id)
-   (opn :accessor opn)))
+  ((id :accessor id    :initarg :id   )
+   (opn :accessor opn  :initarg :opn  )
+   (pframex :accessor pframex :initform nil
+    )))
+
+(defclass pframex    (range:range) ())
 
 ;;-------------------------------------------------------------------
 ;; mouse move derived signal is called to highlight/dehighlight
@@ -14,10 +18,12 @@
 (defmethod pres-highlight ((p t) stream flag))
 (defmethod pres-highlight ((p pframe) stream flag)
   (mvb (start end) (range-iters stream p)
+            
        (if flag
 	   (gtb-apply-tag stream "grhigh" start end )
 	   (gtb-remove-tag stream "grhigh" start end ))))
 
+(defmethod pres-button-press ((p t) stream event))
 (defmethod pres-button-press ((p pframe) stream event)
   (sldb-frame-more stream p))
 
@@ -37,26 +43,22 @@
     ;(setf *q* widget)
     ))
 
-;;---------------------------------------
-;; SLDB presentation
-(defclass -sldb (range:range)
-  ((thread        :accessor thread)
-   (level         :accessor thread)
-   (condition     :accessor thread )
-   (restarts      :accessor thread)
-   (frames        :accessor thread)
-   (continuations :accessor thread)))
 
-(defclass sldb (rbuffer)
-  ((connection  :accessor connection   :initarg :connection )
-   (sldb-pres   :accessor sldb-pres :initarg :sldb-pres)
+(defclass sldb (rbuffer range:range)
+  ((connection    :accessor connection    :initarg :connection    :initform nil )
+   (thread        :accessor thread        :initarg :thread        :initform nil )
+   (level         :accessor level         :initarg :level         :initform nil )
+   (conditio      :accessor conditio      :initarg :conditio      :initform nil )
+   (restarts      :accessor restarts      :initarg :restarts      :initform nil )
+   (frames        :accessor frames        :initarg :frames        :initform nil )
+   (continuations :accessor continuations :initarg :continuations :initform nil )
    (sldb-eli :accessor sldb-eli)
 ;;   (sldb-fr            :accessor sldb-fr :initform nil)
 ;;   (sldb-view          :accessor sldb-view :initform nil)
    )(:metaclass gobject-class))
 
 (defmethod initialize-instance :after ((sldb sldb) &key)
-  ;(setf *pbuf* sldb)
+  (setf *pbuf* sldb);****
   (pbuf-new-tag sldb :name "grayish"  :foreground "gray" :editable nil)
   (pbuf-new-tag sldb :name "beige"  :foreground "beige" :editable nil)
   (pbuf-new-tag sldb :name "restartable"  :foreground "LimeGreen" :editable nil)
@@ -68,11 +70,11 @@
   
   (pbuf-new-tag sldb :name "grhigh" :background "darkgreen" :foreground "NavajoWhite" ))
 
-(defmethod -on-announce-eli :after ((sldb sldb) eli)
-  (setf (sldb-eli sldb) eli)
-  (with-slots (keymap) eli
-    (keymap-define-key keymap #.kb:|q| (lambda (key) (sldb-quit sldb))))
- )
+(defmethod on-announce-eli :after ((sldb sldb) eli)
+     (setf (sldb-eli sldb) eli)
+     (with-slots (keymap) eli
+       (keymap-define-key keymap #.kb:|q| (lambda (key) (sldb-quit sldb)))))
+
 
 
 
@@ -80,14 +82,15 @@
   (mvb (range off) (range:at (root sldb) (gti-get-offset iter))
 	(pres-button-press range sldb event)))
 
-
 (let (last)
   (defmethod -on-motion ((sldb sldb) iter event)
-    (let ((range (range:at (root sldb) (gti-get-offset iter))))
+    (let ((range (range:uat (root sldb) (gti-get-offset iter))))
+     
+
       (unless (eq last range)
-	(pres-highlight last sldb nil)
-	(pres-highlight range sldb t)
-	(setf last range)))))
+	  (pres-highlight last sldb nil)
+	  (pres-highlight range sldb t)
+	  (setf last range)))))
 ;;; Return a list (LOCALS TAGS) for vars and catch tags in the frame INDEX.
 ;;; LOCALS is a list of the form ((&key NAME ID VALUE) ...).
 ;;;TAGS has is a list of strings.
@@ -96,46 +99,42 @@
 
 
 (defun sldb-frame-more (sldb range)
-  (with-slots (connection sldb-pres) sldb
-    (with-slots (thread) sldb-pres
-      (with-slots (id open) range
-	(swa:emacs-rex
-	 connection
-	 (format nil "(swank:frame-locals-and-catch-tags ~A)" id)
-	 :thread thread
-	 :proc
-	 (lambda (connection reply id)
-	   (unless open
-	     (mvb (start end) (range:bounds range)
-		  (file-position sldb (1- end))
-		  (format t "DDDDD ~A~% "end)
-		  ;;-----------------------------
-		  (format sldb "~%     Locals:")
-		  (format t "EEEEE ~A~% "end)
-		  (loop for item in (first (second reply)) do
-		       (format sldb "~%       ~A = ~A" (second item) (sixth item)))
-		  (finish-output sldb)
-		  ;;-----------------------------
-		  (setf open t)
-		  ;;(print (first (second reply)) sldb)
-		  ;;(print (second (second reply)) sldb)
-		  )))))))
+  (with-slots (connection thread) sldb
+        (with-slots (id opn) range
+      (swa:emacs-rex
+       connection
+       (format nil "(swank:frame-locals-and-catch-tags ~A)" id)
+       :thread thread
+       :proc
+       (lambda (connection reply id)
+	 (unless opn
+	   (mvb (start end) (range:bounds range)
+		(file-position sldb (1- end))
+		(format t "DDDDD ~A~% "end)
+		;;-----------------------------
+		(format sldb "~%     Locals:")
+		(format t "EEEEE ~A~% "end)
+		(loop for item in (first (second reply)) do
+		     (format sldb "~%       ~A = ~A" (second item) (sixth item)))
+		(finish-output sldb)
+		;;-----------------------------
+		(setf opn t)
+		;;(print (first (second reply)) sldb)
+		;;(print (second (second reply)) sldb)
+		))))))
   )
-(defparameter qqq nil)
 
-(defun make-wsldb (connection thread level condition restarts frames continuations)
+(defun make-wsldb (connection thread level conditio restarts frames continuations)
   "create the presentation, buffer and view for the debugger."
-  (let* ((pres (make-instance '-sldb 
-			   :thread thread
-			   :level level
-			   :condition condition
-			   :restarts restarts
-			   :frames frames
-			   :continuations continuations))
-	 (sldb (make-instance 
-		'sldb :sldb-pres pres :connection connection)))
-    (setf qqq sldb)
-
+  (let* ((sldb (make-instance 
+		'sldb
+		:connection connection
+		:thread thread
+		:level level
+		:conditio conditio
+		:restarts restarts
+		:frames frames
+		:continuations continuations)))
     (make-wtxt sldb)))
 
 (defun wsldb-activate (wsldb)
@@ -148,51 +147,54 @@
   
   )
 
-(defmethod present ((p -sldb) stream)
+(defmethod present ((p sldb) stream)
   (format t "O1111K~&")
-    (with-slots (condition restarts frames continuations) p
-      (with-tagname stream "normal" 
-	(format stream "~A~&" (first condition)))
+    (with-slots (conditio restarts frames continuations) p
+      (with-tag stream "normal" 
+	(format stream "~A~&" (first conditio)))
       (with-range stream (make-instance 'pcondition)
-	(with-tagname stream "condition"
-	  (format stream "~A~&" (second condition))))
+	(with-tag stream "condition"
+	  (format stream "~A~&" (second conditio))))
       
-      (with-tagname stream "label" (format stream "~%Restarts:~&"))
+      (with-tag stream "label" (format stream "~%Restarts:~&"))
       (loop for restart in restarts
-	 for i from 0 do	   (with-range stream (make-instance 'prestart :id i)
-	     (with-tagname stream "enum"   (format stream "~2d: [" i))
-	     (with-tagname stream "cyan"   (format stream "~A" (first restart)))
-	     (with-tagname stream "normal" (format stream "] ~A~&" (second restart)))))
+	 for i from 0 do
+	   (with-range stream (make-instance 'prestart :id i)
+	     (with-tag stream "enum"   (format stream "~2d: [" i))
+	     (with-tag stream "cyan"   (format stream "~A" (first restart)))
+	     (with-tag stream "normal" (format stream "] ~A~&" (second restart)))))
       ;;-------------------------------------------------------
-      (with-tagname stream "label" (format stream "~%Backtrace:~&"))
+      (with-tag stream "label" (format stream "~%Backtrace:~&"))
       (loop for frame in frames
 	 for i from 0 do
-	   (with-range stream (make-instance 'pframe :id i) 
-	     (with-tagname stream "enum"
-	       (format stream "~3d: "  (first frame)))
-	     (with-tagname stream (if (third frame) "restartable" "normal")
-	       (format stream "~A~&"   (second frame))))
-	   )))
+	   (let ((pf (make-instance 'pframe :id i)))
+	    
+	     (with-range stream pf
+	       (with-tag stream "enum"
+		 (format stream "~3d: "  (first frame)))
+	       (with-tag stream (if (third frame) "restartable" "normal")
+		 (format stream "~A"   (second frame)))
+	       
+	       (with-range stream (make-instance 'pframex)	 (format stream " "))
+	       (terpri stream) 
+		 )))))
 
 (defun sldb-activate (sldb)
-  (format t "AAAA ~A~&" (type-of sldb))
-  (present (sldb-pres sldb) sldb)
+  (present sldb  sldb)
   
-)
+  )
 
 
 (defun sldb-invoke-restart (sldb restart)
-  (with-slots (connection sldb-pres) sldb
-    (with-slots (level thread) sldb-pres
-      (swa:emacs-rex
-       connection
-       (format nil "(swank:invoke-nth-restart-for-emacs ~A ~A)" level restart)
-       :thread thread))))
+  (with-slots (connection level thread) sldb
+    (swa:emacs-rex
+     connection
+     (format nil "(swank:invoke-nth-restart-for-emacs ~A ~A)" level restart)
+     :thread thread)))
 
 (defun sldb-quit (sldb)
-  (with-slots (connection sldb-pres) sldb
-    (with-slots (level thread) sldb-pres
-      (swa:emacs-rex connection "(swank:throw-to-toplevel)" :thread thread))))
+  (with-slots (connection level thread) sldb
+        (swa:emacs-rex connection "(swank:throw-to-toplevel)" :thread thread)))
 
 
 
