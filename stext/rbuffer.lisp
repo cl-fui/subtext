@@ -54,13 +54,15 @@
 
 
 ;;==============================================================================
-;;
+;; TODO: bytes and characters...
 ;;This is where the magic happens. We locate the range, and insert right into it...
 (defun on-insert-text (buffer iter text len)
   "update presentation bounds"
   (declare (ignore text))
-  (let ((off (gti-get-offset iter)))
-    (range:widen (range:at (root buffer) off) len)))
+  (if (%gti-is-end iter)
+      (range:widen-baby (root buffer) len)
+      (let ((off (gti-get-offset iter)))
+	(range:widen (range:at (root buffer) off) len))))
 
   
 

@@ -29,6 +29,7 @@ starting with 'old-prefix' in :package.  Remember to capitalize "
 ;;(eval-when (:compile-toplevel))
 (abbrev-symbols :gtk "GTK-TEXT-VIEW-"      "GTV-")
 (abbrev-symbols :gtk "GTK-TEXT-ITER-"      "GTI-")
+(abbrev-symbols :gtk "%GTK-TEXT-ITER-"     "%GTI-")
 (abbrev-symbols :gtk "GTK-TEXT-BUFFER-"    "GTB-")
 (abbrev-symbols :gtk "GTK-TEXT-MARK-"      "GTM-")
 (abbrev-symbols :gtk "GTK-TEXT-TAG-"       "GTT-")

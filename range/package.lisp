@@ -10,5 +10,5 @@
    :at :uat
    :kids
    :sub
-   :assure-top-level
+   :widen-baby
 ))

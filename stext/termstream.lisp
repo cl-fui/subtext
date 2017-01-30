@@ -59,7 +59,7 @@
   )
 
 (defmethod trivial-gray-streams:stream-file-position ((stream termstream))
-  (+ (gtb-get-char-count stream)  (index stream)))
+  (stream-position stream))
 
 (defmethod (setf trivial-gray-streams:stream-file-position) (value (stream termstream))
   (stream-flush stream)
@@ -93,6 +93,12 @@
       (when promises (term-promises stream)))))
 ;;==============================================================================
 ;; And our extensions...
+(declaim (inline stream-real-position))
+(defun stream-position (stream)
+  (declare (optimize (speed 3) (safety 0) (debug 3)))
+  (the fixnum (+ (the fixnum (gtb-get-char-count stream))
+		 (the fixnum (index stream)))))
+
 (defun stream-wipe (stream)
   (with-slots (index iter iter1 promises) stream
     (%gtb-get-start-iter stream iter)
@@ -113,15 +119,12 @@
 (defstruct tag-promise tag start end)
 
 (defun tag-in (stream tag)
-  (make-tag-promise :tag tag :start (+ (gtb-get-char-count stream)
-				       (index stream))))
+  (make-tag-promise :tag tag :start (stream-position stream)))
 
 (defun tag-out (stream promise)
   (declare (optimize (speed 3) (safety 0) (debug 0))
 	   (type termstream stream))
-  (setf (tag-promise-end promise)
-	(the fixnum (+ (the fixnum (gtb-get-char-count stream))
-		       (the fixnum (index stream)))))
+  (setf (tag-promise-end promise) (stream-position stream))
   (push promise (promises stream)))
 
 (defmacro with-tag (stream tag &body body)
@@ -132,6 +135,21 @@
        ,@body
        (tag-out ,strm ,promise))))
 
+
+;; make a promise by marking a position...
+
+
+(defmacro promise (stream tag &body body)
+  (let ((strm (gensym))
+	(promise (gensym)))  
+    `(let* ((,strm ,stream)
+	   (,promise (tag-in ,strm ,tag)))
+       ,@body
+       (tag-out ,strm ,promise))))
+
+
+
+
 (defmethod promise-fulfill ((promise tag-promise) stream)
   (with-slots (start end tag) promise
     (with-slots (iter iter1) stream
@@ -139,9 +157,10 @@
       (%gtb-get-iter-at-offset stream iter1 end)
       (gtb-apply-tag stream tag iter iter1 ))))
 (defun term-promises (stream)
-;;  (print (promises stream))
-;;  (print "---------------")
+ ;;; (print (promises stream))
+  ;;(print "---------------")
    ;;(format t "~%ROOT: ~A kids ~A~&" (root stream) (range:kids (root stream)))
+  
   (loop for promise in (reverse (promises stream)) do
        (promise-fulfill promise stream))
   (setf (promises stream) nil))

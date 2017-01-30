@@ -21,7 +21,12 @@ We maintain a right-to-left list of widths in the buffer.  Since most of the act
    (l     :accessor l     :initform nil :initarg :l)
    (dad   :accessor dad   :initform nil :initarg :dad)
    (child :accessor child :initform nil :initarg :child))
-   )
+  )
+(declaim (inline rangep))
+(defun rangep (obj)
+  (declare (optimize (speed 3) (debug 0) (safety 0)))
+  (eq 'range (type-of obj)))
+
 (defmethod print-object ((obj range) out)
   (with-slots (width child) obj
     (format out "<~C~A ~A>" (if child #\* #\ )
@@ -99,6 +104,7 @@ We maintain a right-to-left list of widths in the buffer.  Since most of the act
   "Find the range that encloses the offset, and return
 it, rem and right node."
   (let ((off (- (width root) from-left ))) ; because from right!
+    (format t "~&AT ~A off~&" off)
     (prim root off nil)))
 
 (defun uat (root from-left)
@@ -174,9 +180,17 @@ but a derived type."
   range)
 
 ;; We _have_ to differentiate between appending new ranges and manipulating old ones, sadly...
-(defun assure-top-level(root)
-  (unless (eq 'range (type-of (child root)))
-    (setf (child root) (make :dad root :l (child root)))))
+(defun widen-baby (root by)
+  "Widen the first (rightmost) range. Make sure we are outputting into a clean null node."
+  (when (dad root) (error "RANGE:APPEND-TERM requires a root node, not ~A!" root))
+  ;;acceptable situations
+  (with-slots (child width) root
+    (when child
+	(if (rangep child)
+	    (incf (width child) by)
+	    (setf child (make :dad root :l child :width by))))
+    (incf width by)))
+
 
 
 (defparameter *a* nil)
