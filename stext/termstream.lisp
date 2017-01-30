@@ -110,59 +110,58 @@
 ;;==============================================================================
 ;;------------------------------------------------------------------------------
 ;;------------------------------------------------------------------------------
-;; Tagged output
+;; Promises
 ;;
-;; As we allow nested tagged output, 'with-tags' keeps track of the tags and
-;; starting position on the stack.  The usual unwind-protect is not necessary
-;; as we do not reserve any resources
+;; A promise is a promise to perform some task on the buffer in the future. A
+;; promise has start and end offsets, and the content, such as tag..
+;; We keep offsets as numeric offsets.  That should mostly work as insertion
+;; happes at the end.  Should we make a promise, then insert in the beginning
+;; of a buffer, bad things will happen TODO~
 ;;
-(defstruct tag-promise tag start end)
+;; Promises are made with a (promising "bold" whatever) forms.  At the end of
+;; the promising form, the promise is placed on the promises list.  When the
+;; output is finished,  promises are resolved.  
+(defstruct promise start end content)
 
-(defun tag-in (stream tag)
-  (make-tag-promise :tag tag :start (stream-position stream)))
-
-(defun tag-out (stream promise)
+(defun promise-in (stream content)
   (declare (optimize (speed 3) (safety 0) (debug 0))
 	   (type termstream stream))
-  (setf (tag-promise-end promise) (stream-position stream))
+  (make-promise :start (stream-position stream)
+		:content content))
+
+(defun promise-out (stream promise)
+  (declare (optimize (speed 3) (safety 0) (debug 0))
+	   (type termstream stream)
+	   (type promise promise))
+  (setf (promise-end promise) (stream-position stream))
   (push promise (promises stream)))
 
-(defmacro with-tag (stream tag &body body)
-  (let ((strm (gensym))
-	(promise (gensym)))  
-    `(let* ((,strm ,stream)
-	   (,promise (tag-in ,strm ,tag)))
+;; this macro requires stream to be called stream!
+(defmacro promising (thing &body body)
+  (let ((promise (gensym)))  
+    `(let* ((,promise (promise-in stream ,thing)))
        ,@body
-       (tag-out ,strm ,promise))))
+       (promise-out stream ,promise))))
 
 
-;; make a promise by marking a position...
+(defmethod promise-fulfill ((tag gtk-text-tag) stream)
+  (with-slots (iter iter1) stream
+    (gtb-apply-tag stream tag iter iter1 )))
 
+(defmethod promise-fulfill ((tag string) stream )
+  (with-slots (iter iter1) stream
+    (gtb-apply-tag stream tag iter iter1 )))
 
-(defmacro promise (stream tag &body body)
-  (let ((strm (gensym))
-	(promise (gensym)))  
-    `(let* ((,strm ,stream)
-	   (,promise (tag-in ,strm ,tag)))
-       ,@body
-       (tag-out ,strm ,promise))))
-
-
-
-
-(defmethod promise-fulfill ((promise tag-promise) stream)
-  (with-slots (start end tag) promise
-    (with-slots (iter iter1) stream
-      (%gtb-get-iter-at-offset stream iter start)
-      (%gtb-get-iter-at-offset stream iter1 end)
-      (gtb-apply-tag stream tag iter iter1 ))))
 (defun term-promises (stream)
  ;;; (print (promises stream))
   ;;(print "---------------")
-   ;;(format t "~%ROOT: ~A kids ~A~&" (root stream) (range:kids (root stream)))
-  
-  (loop for promise in (reverse (promises stream)) do
-       (promise-fulfill promise stream))
+  ;; for each promise, fullfil it
+  (with-slots (promises iter iter1) stream
+    (loop for promise in (reverse (promises stream)) do
+	 (with-slots (start end content) promise
+	   (%gtb-get-iter-at-offset stream iter start)
+	   (%gtb-get-iter-at-offset stream iter1 end)
+	   (promise-fulfill content stream))))
   (setf (promises stream) nil))
 ;;------------------------------------------------------------------------------
 ;;

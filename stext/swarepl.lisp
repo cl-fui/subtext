@@ -63,10 +63,11 @@
     
     ;;---------------------------------------------
     ;; This can be called explicitly
-    (defun prompt (swank)    
-      (with-tag pbuf "prompt"
-	(fresh-line pbuf)
-	(format pbuf "~A> " (swa:prompt swank)))
+    (defun prompt (swank)
+      (let ((stream pbuf))
+	(promising "prompt"
+	  (fresh-line pbuf)
+	  (format pbuf "~A> " (swa:prompt swank))))
       (simple-input-mark pbuf))
     ;;----------------------------------------------
     ;; Callback for any eval issued, called on reply
