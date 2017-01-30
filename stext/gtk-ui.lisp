@@ -108,15 +108,16 @@
    (text2  :accessor text2  :initarg :text2  :initform nil)))
 
 (defparameter *tag* nil)
-(defmethod  present ((p ptest) s)
+(defmethod  present ((p ptest) stream)
   (with-slots (text1 text2 num toggle) p
     (unless toggle
-	(progn
-	  (with-tag s *tag*
-	    (princ text1 s)
-	    (with-tag s "output"
-	      (format s "~A"  num))
-	    (princ text2 s))))))
+      (progn
+	(promising *tag*
+	  (princ text1 stream)
+	  (promising "output"
+	    (promising (range:make)
+	      (format stream "~A"  num)))
+	  (princ text2 stream))))))
 
 
 (defmethod  -on-button-press ((p ptest) iter event)
@@ -139,23 +140,30 @@
     (setf *standard-output* stdout) ;re-enable output
     (let ((buffer (make-instance 'rbuffer)))
       (setf *pbuf* buffer)
+      
       (let ((top (make-frame (make-window (setf *top* (make-wtxt buffer)))
 			     :kill t))
-	    r) 
-	(with-range buffer (range:make)
-	  (format buffer "hello~&"))
-	(setf *tag* (gttt-lookup (gtb-tag-table buffer) "prompt" ))
-	(time
-	 (loop for i from 1 to 100 do
-	      (with-range buffer (make-instance 'ptest :text1 "hello" :num i :text2 "world")
-		;(present it buffer)
-		(terpri buffer))
-	      ))
-	
-	(finish-output buffer)
+	    r)
 	(gtk-widget-show-all top)
+;;	(with-range buffer (range:make)	  (format buffer "hello~&"))
+	(setf *tag* (gttt-lookup (gtb-tag-table buffer) "prompt" ))
+	(let ((stream buffer))
+	  (time
+	   (loop for i from 1 to 10 do
+	      ;;(with-range buffer)
 
-	))))
+		(promising
+		    (make-instance 'ptest :text1 "hello" :num i :text2 "world")
+					;(make-instance 'ptest :text1 "hello" :num i :text2 "world")
+		  ;;buffer
+		  
+		  (present it buffer))
+		
+		(terpri buffer)))))	
+      (finish-output buffer)
+      
+      
+	)))
 ;;WATCH OUT!
 (defparameter *q* nil)
 

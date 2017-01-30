@@ -13,16 +13,18 @@
 
    (lbuf         :accessor lbuf   :initform (make-array 4096 :element-type 'character))
    (index        :accessor index  :initform 0   :type fixnum)
-   (promises     :accessor promises :initform nil))
+   (promises     :accessor promises :initform nil)
+   (active-range :accessor active-range :initform nil ))
   
   (:metaclass gobject-class))
 ;;==============================================================================
 (defmethod initialize-instance :after ((stream termstream) &key)
  ;; (print "init-inst TERMSTREAM")
-  (with-slots (iter iter1 markin) stream
+  (with-slots (active-range iter iter1 markin root) stream
     (setf iter   (gtb-get-start-iter stream)
 	  iter1  (gtb-get-end-iter   stream)
-	  markin (gtb-create-mark stream (null-pointer) iter t))))
+	  markin (gtb-create-mark stream (null-pointer) iter t)
+	  active-range root)))
 ;;------------------------------------------------------------------------------
 (defmethod -on-destroy :before ((stream termstream))
   (with-slots (markin) stream
@@ -107,6 +109,12 @@
     (setf index 0
 	  promises nil)))
 
+(defun stream-apply-tag (stream tag start end)
+  (with-slots (iter iter1) stream
+    (%gtb-get-iter-at-offset stream iter start)
+    (%gtb-get-iter-at-offset stream iter1 end)
+    (gtb-apply-tag stream tag iter iter1))
+)
 ;;==============================================================================
 ;;------------------------------------------------------------------------------
 ;;------------------------------------------------------------------------------
@@ -123,45 +131,65 @@
 ;; output is finished,  promises are resolved.  
 (defstruct promise start end content)
 
-(defun promise-in (stream content)
+(defmethod promise-in (stream (content t))
   (declare (optimize (speed 3) (safety 0) (debug 0))
 	   (type termstream stream))
   (make-promise :start (stream-position stream)
 		:content content))
 
-(defun promise-out (stream promise)
+(defmethod promise-out (stream promise (content t))
   (declare (optimize (speed 3) (safety 0) (debug 0))
 	   (type termstream stream)
 	   (type promise promise))
   (setf (promise-end promise) (stream-position stream))
   (push promise (promises stream)))
 
+(defmethod promise-in :after (stream (range range:range))
+  (setf (range:dad range) (active-range stream)
+	(active-range stream) range))
+
+;; must be after
+(defmethod promise-out :after (stream promise (range range:range))
+  (setf (active-range stream) (range:dad range)
+	(range:width range) (- (promise-end promise) (promise-start promise)))
+  ;; At this point we have all the information to make a subrange.
+  (format t "SUBRANGING ~A into ~A at offset ~A~&"
+	  range
+	  (range:dad range)
+	  (promise-end promise))
+  
+  )
 ;; this macro requires stream to be called stream!
+;; injects it for the thing promised...
+
 (defmacro promising (thing &body body)
-  (let ((promise (gensym)))  
-    `(let* ((,promise (promise-in stream ,thing)))
+  (let ((promise (gensym)))
+    `(let* ((it ,thing)
+	    (,promise (promise-in stream it)))
        ,@body
-       (promise-out stream ,promise))))
+       (promise-out stream ,promise it))))
 
+(defmethod promise-fulfill ((tag gtk-text-tag) promise stream)
+  (with-slots (start end) promise
+    (stream-apply-tag stream tag start end)))
 
-(defmethod promise-fulfill ((tag gtk-text-tag) stream)
-  (with-slots (iter iter1) stream
-    (gtb-apply-tag stream tag iter iter1 )))
+(defmethod promise-fulfill ((tag string)  promise stream )
+  (with-slots (start end) promise
+    (stream-apply-tag stream tag start end)))
 
-(defmethod promise-fulfill ((tag string) stream )
-  (with-slots (iter iter1) stream
-    (gtb-apply-tag stream tag iter iter1 )))
+(defmethod promise-fulfill ((range range:range) promise stream)
+;;  (format t "fulfill range...~A at offset ~A - dad:~A~&"	  range () (range:dad range))
+ )
+
 
 (defun term-promises (stream)
  ;;; (print (promises stream))
   ;;(print "---------------")
   ;; for each promise, fullfil it
   (with-slots (promises iter iter1) stream
-    (loop for promise in (reverse (promises stream)) do
+    (loop for promise in (promises stream) do
 	 (with-slots (start end content) promise
-	   (%gtb-get-iter-at-offset stream iter start)
-	   (%gtb-get-iter-at-offset stream iter1 end)
-	   (promise-fulfill content stream))))
+	   (promise-fulfill content promise stream))))
   (setf (promises stream) nil))
 ;;------------------------------------------------------------------------------
 ;;
