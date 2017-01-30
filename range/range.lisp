@@ -17,10 +17,10 @@ We maintain a right-to-left list of widths in the buffer.  Since most of the act
 
 
 (defclass range ()
-  ((width :accessor width :initform 0   :initarg :width)
-   (l     :accessor l     :initform nil :initarg :l)
-   (dad   :accessor dad   :initform nil :initarg :dad)
-   (child :accessor child :initform nil :initarg :child))
+  ((width :accessor width :initform 0   :initarg :width :type fixnum)
+   (l     :accessor l     :initform nil :initarg :l     :type range)
+   (dad   :accessor dad   :initform nil :initarg :dad   :type range)
+   (child :accessor child :initform nil :initarg :child :type range))
   )
 (declaim (inline rangep))
 (defun rangep (obj)
@@ -72,11 +72,14 @@ We maintain a right-to-left list of widths in the buffer.  Since most of the act
   (let ((end (end range)))
     (values (- end (width range)) end)))
 
-(defun widen (range by)
+(defun widen-prim (range by)
+  (declare (optimize (speed 3) (safety 0) (debug 0)))
   (when range
-    (incf (width range) by)
-    (widen (dad range) by)
+    (incf (the fixnum (width range))
+	  (the fixnum by))
+    (widen-prim (dad range) by)
     range))
+
 
 ;; This is the only problem area...
 (defun narrow (range by)
@@ -87,25 +90,31 @@ We maintain a right-to-left list of widths in the buffer.  Since most of the act
     (narrow (dad range) by)
     range)
   )
-(defun prim (range off r)
-  (with-slots (width child l) range
-    (if (>= width off) ;if width>off, it is inside here
+;;==============================================================================
+;; This routine is used to insert ranges below.  Here we find the encloser,
+;; as well as the right node so we can fix its l pointer or nil if we are first
+(defun at-prim (range off r)
+    (declare (optimize (speed 3) (safety 0) (debug 0)))
+    (with-slots (width child l) range
+      (declare (type fixnum width))
+    (if (>= (the fixnum width) (the fixnum off)) ;if width>off, it is inside
 	(if child; if there are children, 
-	    (prim child off nil); maybe?
+	    (at-prim child off nil); maybe?
 	    (values range off r))   ; no children means this is it.
 	(if l; width<= offset, more to go.
-	    (prim l (- off width) range); try next to the left.
+	    (at-prim l (the fixnum (- (the fixnum off)
+				   (the fixnum width)))
+		  range) ; try next to the left.
 	    nil; this cannot happen...
 	    ))))
 
-;; This routine is used to insert ranges below.  Here we find the encloser,
-;; as well as the right node so we can fix its l pointer or nil if we are first
+
 (defun at (root from-left)
   "Find the range that encloses the offset, and return
 it, rem and right node."
   (let ((off (- (width root) from-left ))) ; because from right!
-    (format t "~&AT ~A off~&" off)
-    (prim root off nil)))
+    ;;(format t "~&AT ~A off~&" off)
+    (at-prim root off nil)))
 
 (defun uat (root from-left)
   "find a good range, that is not a range:range (often used as a spacer) 
@@ -116,6 +125,15 @@ but a derived type."
      while val
      finally (return val)  ))
 
+
+(defun widen (root at by)
+  (declare (optimize (speed 3) (safety 0) (debug 0)))
+  (let ((off (- (the fixnum (width root))
+		(the fixnum at) ))) ; because from right!
+    ;;(format t "~&AT ~A off~&" off)
+    (if (zerop off)
+	(widen-baby root by)
+	(widen-prim (at-prim root (the fixnum off) nil) by))))
 
 (defun kids (dad)
   (loop for r = (child dad) then (l r)

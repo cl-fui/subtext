@@ -30,7 +30,7 @@
 	       (:file "stext/wtxt")
 	       (:file "stext/termstream")
 	       (:file "stext/rbuffer")
-	       (:file "stext/rstream")
+	       ;;(:file "stext/rstream")
 
 	       (:file "stext/modeline")
 	       (:file "stext/window")

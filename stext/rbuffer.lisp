@@ -5,14 +5,18 @@
 ;;OK (ql:quickload :stext)(in-package :stext)
 (defclass rbuffer (termstream) 
   ((ptags :accessor ptags     :initform nil )
-   (root  :accessor root      :initform (range:make)))
+   (root  :accessor root      :initform (range:make))
+   ;; private
+   (insx :accessor insx  :initform 0 :type fixnum)); used by inser-text
+   
   (:metaclass gobject-class))
 
 ;;------------------------------------------------------------------------------
 
 (defmethod initialize-instance :after ((buffer rbuffer) &key )
    ;; (print "initialize-instance: rbuffer")
-  (g-signal-connect buffer "insert-text" #'on-insert-text :after nil)
+  (g-signal-connect buffer "insert-text" #'on-insert-text-before :after nil)
+  (g-signal-connect buffer "insert-text" #'on-insert-text-after :after t)
   (g-signal-connect buffer "delete-range" #'on-delete-range)
   (with-slots (ptags range root) buffer
     ;; establish buffer modification handlers to sync with the range system
@@ -54,16 +58,25 @@
 
 
 ;;==============================================================================
-;; TODO: bytes and characters...
+;; These report len in bytes, but we want characters!  We could length text,
+;; but it is a little faster to keep the offset before, and subract it from
+;; the offset afer...
+;;
 ;;This is where the magic happens. We locate the range, and insert right into it...
-(defun on-insert-text (buffer iter text len)
+;;
+(defun on-insert-text-before (buffer iter text len)
   "update presentation bounds"
-  (declare (ignore text))
-  (if (%gti-is-end iter)
-      (range:widen-baby (root buffer) len)
-      (let ((off (gti-get-offset iter)))
-	(range:widen (range:at (root buffer) off) len))))
+  (declare (ignore text len)
+	   (optimize (speed 3) (safety 0) (debug 0)))
+  (setf (insx buffer) (the fixnum (gti-offset iter))))
 
+(defun on-insert-text-after  (buffer iter text len)
+  "update presentation bounds"
+    (declare (ignore text len)
+	     (optimize (speed 3) (safety 0) (debug 0)))
+    (let* ((offset (the fixnum (gti-get-offset iter)))
+	   (chars (the fixnum (- offset (the fixnum (insx buffer))))))
+      (range:widen (root buffer) offset chars)))
   
 
 (defun on-delete-range (buffer istart iend)
