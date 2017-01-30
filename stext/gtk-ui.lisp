@@ -91,7 +91,11 @@
     (let ((top (make-frame (make-window (make-wtxt (make-instance 'swarepl)))
 			   :kill t))) 
       
-      (gtk-widget-show-all top))))
+      (gtk-widget-show-all top)
+      (g-idle-add
+       (lambda ()
+	 (-on-initial-display top)
+	 nil)))))
 
 ;;for debugging ranges
 
@@ -144,12 +148,14 @@
 	(time
 	 (loop for i from 1 to 100 do
 	      (with-range buffer (make-instance 'ptest :text1 "hello" :num i :text2 "world")
-		(present it buffer)
+		;(present it buffer)
 		(terpri buffer))
 	      ))
 	
 	(finish-output buffer)
-	(gtk-widget-show-all top)))))
+	(gtk-widget-show-all top)
+
+	))))
 ;;WATCH OUT!
 (defparameter *q* nil)
 

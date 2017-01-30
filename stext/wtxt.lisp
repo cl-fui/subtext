@@ -8,15 +8,18 @@
   ()
   (:metaclass gobject-class)
   )
+(defmacro make-wtxt (buffer &rest rest)
+  `(make-instance 'wtxt :buffer ,buffer ,@rest))
 
+
+
+
+(defmethod -on-initial-display ((wtxt wtxt))
+  (-on-initial-display (gtv-buffer wtxt)))
 ;; This is passed from way above to the view
 (defmethod -on-destroy ((wtxt wtxt)) ;initiated by outer app window
   (-on-destroy (gtk-text-view-buffer wtxt))		;pass to active buffer
 )
-
-(defmacro make-wtxt (buffer &rest rest)
-  `(make-instance 'wtxt :buffer ,buffer ,@rest))
-
 
 
 

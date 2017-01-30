@@ -121,7 +121,7 @@
   (format *standard-output* "~%default connection fallback: ~a~%" forms))
 (defun connect (connection &optional (fallback #'default-fallback))
   "connect to the remote server and process requests, sending unknown
-forms to processor."
+forms to fallback  processor."
   (with-slots (hostname port socket thr rexs histid rexid state) connection
     (let ((sock (usocket:socket-connect hostname
 					port

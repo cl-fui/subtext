@@ -16,7 +16,6 @@
 		 :view content
 		 :orientation :vertical))
 
-
 (defmethod initialize-instance :after ((window window) &key)
   (with-slots (view modeline) window
     (let ((scrolled (make-instance 'gtk-scrolled-window
@@ -29,6 +28,11 @@
 
 (defmethod -on-announce-eli ((window window) eli)
   (-on-announce-eli (view window)  eli))
+
+(defmethod -on-initial-display ((window window))
+  (with-slots (view modeline) window
+    (-on-initial-display view)
+    (-on-initial-display modeline)))
 
 (defmethod -on-destroy ((window window))
   ;;(print "destroy:window")

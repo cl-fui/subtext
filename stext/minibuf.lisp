@@ -36,15 +36,13 @@
       (typecase (cdr found)
 	(function (setf state keymap) ;reset search
 		  (stream-wipe stream);local
-		  (funcall (cdr found) (car found))
-		  t)
+		  (funcall (cdr found) (car found)))
 	(cons (setf state found)
 	      (princ (key->string (car found)) stream)
 	      (finish-output stream)
 	      t)
 	(t (setf state keymap)
 	   (stream-wipe stream)
-
 	   nil)))))
 
 

@@ -3,7 +3,7 @@
 ;;; rbuffer - a gtk-text-buffer 
 ;;;
 ;;OK (ql:quickload :stext)(in-package :stext)
-(defclass rbuffer (gtbstream) 
+(defclass rbuffer (termstream) 
   ((ptags :accessor ptags     :initform nil )
    (root  :accessor root      :initform (range:make)))
   (:metaclass gobject-class))
@@ -16,28 +16,24 @@
   (g-signal-connect buffer "delete-range" #'on-delete-range)
   (with-slots (ptags range root) buffer
     ;; establish buffer modification handlers to sync with the range system
-   (pbuf-create-tags buffer); for now...TODO
-   
-   (setf range root)); for noww...TODO
+    (pbuf-create-tags buffer); for now...TODO
+    ); for noww...TODO
   ;;(print "initialize-instance: rbuffer DONE")
   )
 (defparameter *self-inserting-keys* " 0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ~!@#$%^&*()_+[]{}\|~`,.<>/?")
 (defmethod -on-eli-key ((pbuf rbuffer) key event)
   "process an eli key"
+  #||
   (let ((char (key->character key)))
     (if (find char *self-inserting-keys* :test #'char=)
 	(progn (write-char char pbuf) (finish-output pbuf) t)
-	nil)))
+	nil))
+||# nil)
 
-(defun pbuf-key-backspace (pbuf)
-  (with-slots (iter) pbuf
-    (%gtb-get-iter-at-offset pbuf iter (stream-flush pbuf))
-    (%gtb-backspace pbuf iter nil t)))
 
 (defmethod -on-announce-eli  ((pbuf rbuffer) eli)
   (with-slots (keymap) eli
-    (keymap-define-key
-     keymap #.kb:BS (lambda (gtkkey) (declare ) (pbuf-key-backspace pbuf)) )
+;;    (keymap-define-key    keymap #.kb:BS (lambda (gtkkey) (declare ) (pbuf-key-backspace pbuf)) )
     (keymap-define-key
      keymap #.kb:F1
      (lambda (gtkkey) (declare (ignore gtkkey))

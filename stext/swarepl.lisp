@@ -17,23 +17,38 @@
    )
   (:metaclass gobject-class))
 
-(defun make-swarepl ()
-  (make-instance 'rview
-		 :buffer (setf *pbuf* (make-instance 'swarepl))))
 
+(defmethod initialize-instance :after ((pbuf swarepl) &key)
+  (print "initialize-instance: swarepl")
+  (setf *pbuf* pbuf);***
+  (with-slots (swank) pbuf
+    (setf swank (swa:make-connection "localhost" 5000)))
+  pbuf)
 
+(defmethod -on-announce-eli :after((pbuf swarepl) eli)
+  (with-slots (keymap) eli
+    (keymap-define-key
+     keymap #.kb:RET ; on <RET>, attempt to process input
+     (lambda (gtkkey)
+       (declare (ignore gtkkey))
+					;(write-char #\newline pbuf)
+       (gdk-threads-add-idle
+	(lambda ()
+	  (with-slots (swank) pbuf
+	    (let* ((string (simple-input-get-text pbuf))
+		   (line (swarepl-parse-string string )))
+	      (when line
+		(swa:eval swank line #'prompt-proc))))
+	  nil)); run once.
+       (stream-flush pbuf)
+       nil)))); key processed.
+;;------------------------------------------------------------------------------
 
 ;; view invokes this on destruction...
-(defmethod -on-destroy ((pbuf swarepl))
-  (swa:disconnect (swank pbuf))
-  )
+(defmethod -on-destroy :before ((pbuf swarepl))
+  (swa:disconnect (swank pbuf)))
 
-
-
-
-
-
-(defun init-swank (pbuf)
+(defmethod -on-initial-display :after ((pbuf swarepl))
   (with-slots (swank ) pbuf
     (swa:connect swank #'our-fallback)
     (swa:emacs-rex swank "(swank:connection-info)")
@@ -42,46 +57,40 @@
     ;; This one replies with package and prompt...
     (swa:emacs-rex swank "(swank-repl:create-repl nil :coding-system \"utf-8-unix\")"
 		   :proc (lambda (conn reply id);REX-CALLBACK
-		     (declare (ignore id))
-		     (setf (swa:pkg conn) (first (second reply));symbol..
-			   (swa:prompt conn)  (second (second reply))) ))
- 
-    ;;feed the engine
-    (defun prompt (swank)
-      (with-range pbuf (make-instance 'p-prompt)
-	(with-tag pbuf "prompt"
-	  (fresh-line pbuf)
-	  (format pbuf "~A> " (swa:prompt swank))))
-      (with-range pbuf (make-instance 'p-entry)
-;;	(format pbuf " ")
-	)
-      (finish-output pbuf)
-      )
+			   (declare (ignore id))
+			   (setf (swa:pkg    conn) (first (second reply));symbol..
+				 (swa:prompt conn)   (second (second reply))) ))
     
-        
     ;;---------------------------------------------
-    ;; callback evaluated upon processing of a command line
+    ;; This can be called explicitly
+    (defun prompt (swank)    
+      (with-tag pbuf "prompt"
+	(fresh-line pbuf)
+	(format pbuf "~A> " (swa:prompt swank)))
+      (simple-input-mark pbuf))
+    ;;----------------------------------------------
+    ;; Callback for any eval issued, called on reply
+    ;; careful! callbacks are from another thread!
+    ;;
     (defun prompt-proc (swank reply id);REX-CALLBACK
       (declare (ignore id))
       ;;(format t "~%PROMPT-PROC: ~A~&" reply)
       (if (eq :abort (first reply))
-	  (gsafe (format  pbuf (second reply))))
+	  (gsafe (format pbuf (second reply))))
       (gsafe (prompt swank)))
+    ;;---------------------------------------------------------------------
+    ;; TODO: thread-safety?
     (defun sw-write-string (connection string &optional stream)
       (princ string pbuf))
 
     (let (ob pr)
       (defun sw-presentation-start (connection id stream)
-	(mvb (oldbase promise)
-	     (range-in pbuf (make-instance 'p-pres :id id))
-	     (setf ob oldbase
-		   pr promise)))
+)
       
       (defun sw-presentation-end (connection id stream)
- 
-	(push (make-tag-promise :tag "pres" :start (rangebase pbuf) :end (file-position pbuf))
-	      (promises pbuf) )
-	(range-out pbuf ob pr)
+	
+;	(push (make-tag-promise :tag "pres" :start (rangebase pbuf) :end (file-position pbuf))(promises pbuf) )
+;	(range-out pbuf ob pr)
 
 	))
     
@@ -92,9 +101,8 @@
     ;;-----------------------------------------------------------------------
     ;; Input requested (read-line?).  Keep the id and tag in a range to return
     ;; later, when <enter> is processed.
-    (defun sw-read-string (connection id tag)
-      (with-range pbuf (make-instance 'p-input :id id :tag tag)
-	(format pbuf " ")))
+    (defun sw-read-string (connection id tag)      
+      (simple-input-mark pbuf))
 
     ;; We shall keep the debuggers around in a hashtable, keyed by both thread
     ;; and debug level (TODO: is this really necessary?).
@@ -127,45 +135,11 @@
 	  (remhash (+ level (* 1000 thread)) (sldbs pbuf))
 	  (PRINT "SW-DEBUG-RETURN DONE"))))
     ;; Start ball-roll
-    (prompt swank)))
+    (gsafe (prompt swank))))
 
  
 ;;------------------------------------------------------------------------------
-(defmethod initialize-instance :after ((pbuf swarepl) &key)
-  (print "initialize-instance: swarepl")
-  (setf *pbuf* pbuf)
-;;  (format *pbuf* "fuck")
-;;  (funcall (flush *pbuf*))
-  (with-slots (swank) pbuf
-    (setf swank (swa:make-connection "localhost" 5000))
-    (init-swank pbuf))
-  ;; install <enter> key binding
-  
-  
-  pbuf)
 
-(defmethod -on-announce-eli :after((pbuf swarepl) eli)
-  (with-slots (keymap) eli
-    (labels
-	((pbuf-idle-entry () ;in-scope for pbuf!
-	   (with-slots (swank) pbuf
-	     (let* ((range (range:at (root pbuf) (gtb-get-char-count pbuf)));TODO
-		    (string (range-text pbuf range)))
-	       ;(format t "OFF: ~A  MAX ~A~&" (offset pbuf) (gtb-get-char-count pbuf))
-	       (swa:eval (swank pbuf) ;try to parse string, may be null
-			 (pbuf-parse-string string) #'prompt-proc)))
-	   ;; (with-slots (id tag) range	    (swa:emacs-return-string swank string id tag))	   nil)); remove thyself
-	   nil))
-	   
-      (keymap-define-key
-       keymap #.kb:RET
-       (lambda (gtkkey)
-	 (declare (ignore gtkkey))
-	 (write-char #\newline pbuf)
-	 (gdk-threads-add-idle #'pbuf-idle-entry)
-	 t))
-)))
-;;------------------------------------------------------------------------------
 
 ;; Before evaluating a string via SWANK, we read it here, discarding sexps
 ;; just to make sure it is syntactically OK.  TODO: is this good enough?
@@ -174,10 +148,10 @@
 ;; For consistency, we right-trim ws off (helps with history)
 ;;
 (defparameter ws-bag (format nil " ~C~C" #\tab #\newline))
-(defun pbuf-parse-string (string)
+(defun swarepl-parse-string (string)
   "parse string, discarding sexps. When well-formed, return string after
  right-trimming ws"
-  (mvb (result error)
+  (mvb (result error) 
        (ignore-errors; on error (to wit EOF), malformed sexp... 
 	 (let ((+eof+ (gensym)))
 	   (loop named forms with start = 0 do ;exit on error or eof
@@ -199,11 +173,9 @@
 ;;(let ((sexp 
 ;;(case (car sexp) (:write-string `(swax:write-string ,(cdr sexp)))    (t (print message)))
 ;;(swa:request-listener-eval *swank* "2")
-;;==============================================================================
-;; Prompt
-;; called from init, then, when swank return is processed by callback prompt-proc.
-
-
+;; Fallback routine registered with swank (see init-swank!).  Handles all but
+;; return messages (which are handled with their respective lambdas.
+;; 
 (defun our-fallback (connection message)
   "Process a message from swank. return result or nil."
   (let ((fun (case (first message)

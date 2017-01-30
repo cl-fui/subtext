@@ -32,6 +32,11 @@
 
 (defgeneric -on-eli-key (object key event))
 
+(defmethod -on-initial-display ((frame frame))
+  (with-slots (minibuf content) frame
+    (-on-initial-display minibuf)
+    (-on-initial-display content)))
+
 (defmethod initialize-instance :after ((frame frame) &key kill)
   (with-slots (holder minibuf content) frame
     (setf minibuf (make-minibuf frame))
@@ -58,8 +63,8 @@
 	   (let ((key (make-key gtkkey (gdk-event-key-state event))))
 	     (or (-on-eli-key (minibuf frame) key event)
 		 (-on-eli-key (content frame) key event)
-		 (format t "~&UNHANDLED KEY: ~A ~A~&" key event)))
-	   t))))))
+		 ;(format t "~&UNHANDLED KEY: ~A ~A~&" key event)
+		 ))))))))
 
 
 
