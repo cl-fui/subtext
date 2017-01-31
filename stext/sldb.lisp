@@ -45,19 +45,38 @@
     ;(setf *q* widget)
     ))
 
+;;===============================================================================
+(defun make-wsldb (connection thread level conditio restarts frames continuations)
+  "create the presentation, buffer and view for the debugger."
+  (let* ((sldb (make-instance 
+		'sldb
+		:connection connection
+		:thread thread
+		:level level
+		:conditio conditio
+		:restarts restarts
+		:frames frames
+		:continuations continuations)))
+    (make-rview sldb)))
 
-(defclass sldb (rbuffer range:range)
+(defun wsldb-activate (wsldb)
+  (sldb-activate (gtk-text-view-buffer wsldb)))
+
+(defun wsldb-destroy (wsldb)
+  (let ((frame (frame (sldb-eli (gtk-text-view-buffer wsldb)))))
+    (gtk-widget-destroy frame)))
+
+;;===============================================================================
+(defclass sldb (rbuffer)
   ((connection    :accessor connection    :initarg :connection    :initform nil )
    (thread        :accessor thread        :initarg :thread        :initform nil )
    (level         :accessor level         :initarg :level         :initform nil )
    (conditio      :accessor conditio      :initarg :conditio      :initform nil )
    (restarts      :accessor restarts      :initarg :restarts      :initform nil )
    (frames        :accessor frames        :initarg :frames        :initform nil )
-   (continuations :accessor continuations :initarg :continuations :initform nil )
-   (sldb-eli :accessor sldb-eli)
-;;   (sldb-fr            :accessor sldb-fr :initform nil)
-;;   (sldb-view          :accessor sldb-view :initform nil)
-   )(:metaclass gobject-class))
+   (continuations :accessor continuations :initarg :continuations :initform nil ))
+  (:metaclass gobject-class))
+
 
 (defmethod initialize-instance :after ((sldb sldb) &key)
   (setf *pbuf* sldb);****
@@ -69,14 +88,10 @@
   (pbuf-new-tag sldb :name "label" :foreground "Gray70" :background "Gray18" :editable nil)
   (pbuf-new-tag sldb :name "enum" :foreground "Gray70"  :editable nil)
   (pbuf-new-tag sldb :name "condition" :foreground "plum"  :editable nil)
-  
   (pbuf-new-tag sldb :name "grhigh" :background "darkgreen" :foreground "NavajoWhite" ))
 
 (defmethod -on-announce-eli :after ((sldb sldb) eli)
-  (print "YES")
-  (terpri)
-  (setf (sldb-eli sldb) eli)
-  (with-slots (keymap) eli
+    (with-slots (keymap) eli
     (keymap-define-key keymap #.kb:|q| (lambda (key) (sldb-quit sldb)))))
 
 
@@ -128,66 +143,40 @@
 		))))))
   )
 
-(defun make-wsldb (connection thread level conditio restarts frames continuations)
-  "create the presentation, buffer and view for the debugger."
-  (let* ((sldb (make-instance 
-		'sldb
-		:connection connection
-		:thread thread
-		:level level
-		:conditio conditio
-		:restarts restarts
-		:frames frames
-		:continuations continuations)))
-    (make-rview sldb)))
 
-(defun wsldb-activate (wsldb)
-  (sldb-activate (gtk-text-view-buffer wsldb)))
 
-(defun wsldb-destroy (wsldb)
-  (let ((frame (frame (sldb-eli (gtk-text-view-buffer wsldb)))))
-    (gtk-widget-destroy frame)
-    )
-  
-  )
-
-(defmethod present ((p sldb) stream)
-  (with-slots (conditio restarts frames continuations) p
-    (with-tag stream "normal" 
+(defun sldb-activate (stream)
+  (with-slots (conditio restarts frames continuations) stream
+    (with-tag  "normal" 
       (format stream "~A~&" (first conditio)))
     (with-range stream (make-instance 'pcondition)
-      (with-tag stream "condition"
+      (with-tag "condition"
 	(format stream "~A~&" (second conditio))))
     
-    (with-tag stream "label" (format stream "~%Restarts:~&"))
+    (with-tag  "label" (format stream "~%Restarts:~&"))
     (loop for restart in restarts
        for i from 0 do
 	 (with-range stream (make-instance 'prestart :id i)
-	   (with-tag stream "enum"   (format stream "~2d: [" i))
-	   (with-tag stream "cyan"   (format stream "~A" (first restart)))
-	   (with-tag stream "normal" (format stream "] ~A~&" (second restart)))))
+	   (with-tag  "enum"   (format stream "~2d: [" i))
+	   (with-tag  "cyan"   (format stream "~A" (first restart)))
+	   (with-tag  "normal" (format stream "] ~A~&" (second restart)))))
     ;;-------------------------------------------------------
-    (with-tag stream "label" (format stream "~%Backtrace:~&"))
+    (with-tag  "label" (format stream "~%Backtrace:~&"))
     (loop for frame in frames
        for i from 0 do
 	 (let ((pf (make-instance 'pframe :id i))
 	       (pfx (make-instance 'pframex)	))
 	   (setf (pframex pf) pfx)
 	   (with-range stream pf
-	     (with-tag stream "enum"
+	     (with-tag  "enum"
 	       (format stream "~3d: "  (first frame)))
-	       (with-tag stream (if (third frame) "restartable" "normal")
+	       (with-tag  (if (third frame) "restartable" "normal")
 		 (format stream "~A"   (second frame)))
 	       
 	       (with-range stream pfx
 		 (format stream " "))
 	       (terpri stream)))))
-  (finish-output stream))
-
-(defun sldb-activate (sldb)
-  (present sldb  sldb)
-  
-  )
+  (finish-output stream) )
 
 
 (defun sldb-invoke-restart (sldb restart)

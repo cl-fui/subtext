@@ -39,16 +39,19 @@
   (stream-emit stream char))
 ;;------------------------------------------------------------------------------
 (defmethod trivial-gray-streams:stream-line-column ((stream termstream))
-  ;;(format t "line-col~&")
+  (format t "line-col~&")
   (stream-flush stream)
   (gti-get-line-offset (iter stream)))
 
 (defmethod trivial-gray-streams:stream-start-line-p ((stream termstream))
-  (format t "startlinep~~&")
-  (print (promises stream))
-  (stream-flush stream)
-  (gti-starts-line (iter stream)))
-		;;------------------------------------------------------------------------------
+  (with-slots (index lbuf iter) stream
+    (format t "startlinep ~A~& " (subseq lbuf (max 0 (- index 5)) index))
+    (if (zerop index) ;if buffer has just been flushed, no way to check
+	(progn ;except ask gtk...
+	  (%gtb-get-end-iter stream iter)
+	  (%gti-starts-line iter))
+	(char= #\newline (schar lbuf (1- index))))))
+;;------------------------------------------------------------------------------
 
 
 (defmethod trivial-gray-streams:stream-force-output ((stream termstream))
@@ -89,6 +92,8 @@
   
   (with-slots (iter index lbuf promises) stream
 ;;    (format t "Flushing ~A characters~&" index)
+;;    (format t "PROMISES ~A~&" promises)
+;;    (print "--------------------")
 ;;    (print (root stream))
     (unless (zerop (the fixnum index))
       (setf (schar lbuf (the fixnum index)) #\Nul ;terminate UTF8 lbuf
@@ -154,7 +159,7 @@
 		:content content))
 
 (defun promise-out (stream promise)
-  (declare (optimize (speed 3) (safety 0) (debug 0))
+  (declare ;(optimize (speed 3) (safety 0) (debug 0))
 	   (type termstream stream)
 	   (type promise promise))
   (setf (promise-end promise) (stream-position stream))
@@ -185,9 +190,9 @@
       (gtb-apply-tag-by-name stream tag iter iter1))))
 
 (defmethod promise-fulfill ((range range:range) promise stream)
-  (format t "fulfilling range...~A start ~A end ~A-~&" range	  (promise-start promise) (promise-end promise))
-  (format t "rpad is ~A~&" (- (stream-position stream) (promise-end promise)))
-  (format t "range ~A, ~A~&" range  (range:kids range))
+;;  (format t "fulfilling range...~A start ~A end ~A-~&" range	  (promise-start promise) (promise-end promise))
+;;  (format t "rpad is ~A~&" (- (stream-position stream) (promise-end promise)))
+;;  (format t "range ~A, ~A~&" range  (range:kids range))
   (range:sub range (- (stream-position stream) (promise-end promise)))
   )
  
