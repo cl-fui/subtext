@@ -74,16 +74,17 @@
   "update presentation bounds"
     (declare (ignore text len)
 	     (optimize (speed 3) (safety 0) (debug 0)))
-;;    (format t "on-insert-text-after ~A~&" text)
+   (format t "on-insert-text-after ~A~&" text)
     (let* ((offset (the fixnum (gti-get-offset iter)))
 	   (chars (the fixnum (- offset (the fixnum (insx buffer))))))
       (range:widen (root buffer) offset chars)))
   
 
 (defun on-delete-range (buffer istart iend)
+  (print "AFLJALSDJ~&")
   (let ((o1 (gti-get-offset  istart))
 	(o2 (gti-get-offset  iend)))
-    (format t "~%deleting range: [~D ~D)" o1 o2)
+    (format t "~%deleting range: [~D ~D)~&" o1 o2)
     (range:narrow (range:at (root  buffer) o1) (- o2 o1))))
 
 
@@ -129,18 +130,24 @@
   (with-slots (ptags) pbuf
     (setf
      ptags (make-array 10)
-     (aref ptags 0) (pbuf-new-tag pbuf :name "prompt" :foreground "cyan" :editable nil)
+     (aref ptags 0) (pbuf-new-tag pbuf :name "prompt" :foreground "cyan" :editable t;nil
+				  )
      (aref ptags 1) (pbuf-new-tag pbuf :name "input"  :foreground "AntiqueWhite1" :editable t)
-     (aref ptags 2) (pbuf-new-tag pbuf :name "output" :foreground "NavajoWhite2":editable nil)
-     (aref ptags 3) (pbuf-new-tag pbuf :name "return" :foreground "chartreuse1" :editable nil)
-     (aref ptags 4) (pbuf-new-tag pbuf :name "pres"   :foreground "red" :editable nil)
-     (aref ptags 5) (pbuf-new-tag pbuf :name "error"  :foreground "blue" :editable nil)
-     (aref ptags 6) (pbuf-new-tag pbuf :editable nil)
+     (aref ptags 2) (pbuf-new-tag pbuf :name "output" :foreground "NavajoWhite2":editable t;nil
+				  )
+     (aref ptags 3) (pbuf-new-tag pbuf :name "return" :foreground "chartreuse1" :editable t;nil
+				  )
+     (aref ptags 4) (pbuf-new-tag pbuf :name "pres"   :foreground "red" :editable t;nil
+				  )
+     (aref ptags 5) (pbuf-new-tag pbuf :name "error"  :foreground "blue" :editable t;nil
+				  )
+     (aref ptags 6) (pbuf-new-tag pbuf :editable t;nil
+				  )
      (aref ptags 7) (pbuf-new-tag pbuf :foreground "deepskyblue")
-     (aref ptags 8) (pbuf-new-tag pbuf :name "bg-greenish" :editable nil
+     (aref ptags 8) (pbuf-new-tag pbuf :name "bg-greenish" :editable t;nil
 				  :foreground "deepskyblue";
 				  :background-rgba  (make-gdk-rgba :green 1.0d0 :alpha 0.1d0) )
-     (aref ptags 9) (pbuf-new-tag pbuf :editable nil
+     (aref ptags 9) (pbuf-new-tag pbuf :editable t;nil
 				  :background-rgba (make-gdk-rgba :blue 1.0d0 :alpha 0.1d0)
 				  :foreground "deepskyblue";
 				  )
@@ -185,24 +192,20 @@
 	(gtb-get-text pbuf start end nil)
 	(range:data range))))
 ||#
-(defun range-iters (buffer range)
-  (mvb (start end) (range:bounds range)
-       (values (gtb-get-iter-at-offset buffer start)
-	       (gtb-get-iter-at-offset buffer end))))
+(defun pbuf-range-iters (buffer range)
+  (with-slots (iter iter1) buffer
+    (mvb (start end) (range:bounds range)
+	 (%gtb-get-iter-at-offset buffer iter start)
+	 (%gtb-get-iter-at-offset buffer iter1 end))))
+
 
 (defun range-text (buffer range)
-  (mvb (istart iend) (range-iters buffer range)
-       (gtb-get-text buffer istart iend nil)))
+  (with-slots (iter iter1) buffer
+    (pbuf-range-iters buffer range)
+    (gtb-get-text buffer iter iter1 nil)))
 
 
-
-
-
-
-
-
-
-
-
-
-
+(defun pbuf-set-iters (buffer off off1)
+  (with-slots (iter iter1) buffer
+    (%gtb-get-iter-at-offset buffer iter  off )
+    (%gtb-get-iter-at-offset buffer iter1 off1 )))

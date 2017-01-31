@@ -41,11 +41,11 @@
    :text
    (truncate x)
    (truncate y)))
-
+;;----------------------------------------------------------------------
+;; Extract an iter from window coordinates, from mouse events
 (defun rview-iter-from-xy (view x y)
-  (mvb
-   (xx yy) (gtv-window-to-buffer-coords
-	  view :text x y)
+  (mvb (xx yy)
+       (gtv-window-to-buffer-coords view :text x y)
    (gtv-get-iter-at-location view xx yy)))
 
 (defparameter *rview* nil)
@@ -67,13 +67,14 @@
 	 (1 (-on-button-press  buffer iter event))
 	 (2 (-on-2button-press buffer iter event))
 	 (3 (-on-3button-press buffer iter event))))))
+  
   (g-signal-connect
    rview "motion-notify-event" ;TODO: check widget
    (lambda (view event)
      (let ((buffer (gtv-buffer rview))
 	   (iter (rview-iter-from-xy view
-					(truncate (gdk-event-motion-x event))
-					(truncate (gdk-event-motion-y event)))))
+				     (truncate (gdk-event-motion-x event))
+				     (truncate (gdk-event-motion-y event)))))
        (-on-motion buffer iter event)))))
 ;; Looks like view is the place to handle cursor commands! TODO: improve...
 (defmethod -on-announce-eli ((rview rview) eli)

@@ -1,36 +1,85 @@
 (in-package :stext)
 
+(defclass psldb-line (range:range) ())
+
 (defclass pcondition (range:range) ())
-(defclass prestart   (range:range)
-    ((id :accessor id :initarg :id   :initform nil)))
 
-(defclass pframe     (range:range)
-  ((id :accessor id    :initarg :id   )
-   (pframex :accessor pframex :initform nil
-    )))
+;====================================================================
+(defclass pframe     (psldb-line)
+  ((id   :accessor id    :initarg :id   )
+   (desc :accessor desc  :initarg :desc )
+   (restartable :accessor restartable :initarg :restartable)
+   
+   (pframex :accessor pframex :initform nil)
+   (expand :accessor expand :initform nil)))
 
-(defclass pframex    (range:range) 
-  ((opn :accessor opn  :initarg :opn :initform nil ))
-)
+(defmethod pres-button-press ((p pframe) stream event)
+  (format t "press~&")
+  (with-slots (expand) p
+    (setf expand (not expand))
+    (pframe-toggle p stream expand)
+    ))
 
+(defmethod present ((p pframe) stream extra)
+  (with-slots (id desc restartable pframex) p
+    (with-tag  "enum" (format stream "~3d: " id))
+    (with-tag  (if restartable "restartable" "normal")
+      (format stream "~A" desc))
+    (with-range stream (setf pframex (make-instance 'pframex))
+      (format stream " "))
+    (terpri stream)))
+
+(defun pframe-toggle (p stream expand)
+  (with-slots (pframex) p
+    (with-slots (iter iter1) stream
+      (pbuf-range-iters stream pframex)
+      (if expand
+	  (gtb-insert stream
+		      (format nil "~&FUCK YOU, dickwad") :position iter)
+	  (progn
+	    (gti-backward-char iter1)
+	    (gtb-delete stream iter iter1 :interactive nil))))
+	 )
+  
+  )
+
+;;;====================================================================
+;;; Communicates live with swank!
+;;
+(defclass pframex    (range:range)
+  ((connection :accessor connection :initarg :connection)
+   (opn :accessor opn  :initarg :opn :initform nil )))
+
+(defmethod present ((p pframex) stream extra)
+  (with-slots (id desc restartable) p
+    (with-tag  "enum" (format stream "~3d: " id))
+    (with-tag  (if restartable "restartable" "normal")
+      (format stream "~A" desc))
+    ))
+;;;====================================================================
+(defclass prestart   (psldb-line)
+  ((id :accessor id :initarg :id   :initform nil)))
+
+(defmethod pres-button-press ((p prestart) stream event)
+  (print "INVOKING RESTART")
+  (sldb-invoke-restart stream (id p)))
 
 ;;-------------------------------------------------------------------
 ;; mouse move derived signal is called to highlight/dehighlight
 ;; a presentation when mouse moves over it.
 (defmethod pres-highlight ((p t) stream flag))
-(defmethod pres-highlight ((p pframe) stream flag)
-  (mvb (start end) (range-iters stream p)
-            
-       (if flag
-	   (gtb-apply-tag stream "grhigh" start end )
-	   (gtb-remove-tag stream "grhigh" start end ))))
+(defmethod pres-highlight ((p psldb-line) stream flag)
+  (pbuf-range-iters stream p)
+  (with-slots (iter iter1) stream
+    (if flag
+	(gtb-apply-tag stream "grhigh" iter iter1)
+	(gtb-remove-tag stream "grhigh" iter iter1))))
+
 
 (defmethod pres-button-press ((p t) stream event))
-(defmethod pres-button-press ((p pframe) stream event)
-  (sldb-frame-more stream p))
 
-(defmethod pres-button-press ((p prestart) stream event)
-  (sldb-invoke-restart stream (id p)))
+
+
 
 ;;OK (ql:quickload :stext)(in-package :stext)
 
@@ -63,8 +112,7 @@
   (sldb-activate (gtk-text-view-buffer vsldb)))
 
 (defun vsldb-destroy (vsldb)
-  (rview-destroy-top vsldb )
-)
+  (rview-destroy-top vsldb ))
 
 ;;===============================================================================
 (defclass sldb (rbuffer)
@@ -80,15 +128,15 @@
 
 (defmethod initialize-instance :after ((sldb sldb) &key)
   (setf *pbuf* sldb);****
-  (pbuf-new-tag sldb :name "grayish"  :foreground "gray" :editable nil)
-  (pbuf-new-tag sldb :name "beige"  :foreground "beige" :editable nil)
-  (pbuf-new-tag sldb :name "restartable"  :foreground "LimeGreen" :editable nil)
-  (pbuf-new-tag sldb :name "normal"  :foreground "NavajoWhite" :editable nil)
-  (pbuf-new-tag sldb :name "cyan"  :foreground "cyan" :editable nil)
-  (pbuf-new-tag sldb :name "label" :foreground "Gray70" :background "Gray18" :editable nil)
-  (pbuf-new-tag sldb :name "enum" :foreground "Gray70"  :editable nil)
-  (pbuf-new-tag sldb :name "condition" :foreground "plum"  :editable nil)
-  (pbuf-new-tag sldb :name "grhigh" :background "darkgreen" :foreground "NavajoWhite" ))
+  (pbuf-new-tag sldb :name "grayish"     :foreground "gray"        :editable t)
+  (pbuf-new-tag sldb :name "beige"       :foreground "beige"       :editable t)
+  (pbuf-new-tag sldb :name "restartable" :foreground "LimeGreen"   :editable t)
+  (pbuf-new-tag sldb :name "normal"      :foreground "NavajoWhite" :editable t)
+  (pbuf-new-tag sldb :name "cyan"        :foreground "cyan"        :editable t)
+  (pbuf-new-tag sldb :name "label"       :foreground "Gray70"      :background "Gray18" :editable nil)
+  (pbuf-new-tag sldb :name "enum"        :foreground "Gray70"      :editable t)
+  (pbuf-new-tag sldb :name "condition"   :foreground "plum"        :editable t)
+  (pbuf-new-tag sldb :name "grhigh"      :background "darkgreen"   :foreground "NavajoWhite" ))
 
 (defmethod -on-announce-eli :after ((sldb sldb) eli)
     (with-slots (keymap) eli
@@ -98,18 +146,16 @@
 
 
 (defmethod -on-button-press ((sldb sldb) iter event)
-  (mvb (range off) (range:at (root sldb) (gti-get-offset iter))
+  (mvb (range off) (range:actual (root sldb) (gti-get-offset iter))
 	(pres-button-press range sldb event)))
 
 (let (last)
   (defmethod -on-motion ((sldb sldb) iter event)
-    (let ((range (range:at (root sldb) (gti-get-offset iter))))
-     
-
+    (let ((range (range:actual (root sldb) (gti-get-offset iter))))
       (unless (eq last range)
-	  (pres-highlight last sldb nil)
-	  (pres-highlight range sldb t)
-	  (setf last range)))))
+	(pres-highlight last sldb nil)
+	(pres-highlight range sldb t)
+	(setf last range)))))
 ;;; Return a list (LOCALS TAGS) for vars and catch tags in the frame INDEX.
 ;;; LOCALS is a list of the form ((&key NAME ID VALUE) ...).
 ;;;TAGS has is a list of strings.
@@ -156,29 +202,24 @@
     (with-tag  "label" (format stream "~%Restarts:~&"))
     (loop for restart in restarts
        for i from 0 do
-	 (with-range stream (make-instance 'prestart :id i)
+	 (with-range stream
+	     (make-instance 'prestart :id i)
 	   (with-tag  "enum"   (format stream "~2d: [" i))
 	   (with-tag  "cyan"   (format stream "~A" (first restart)))
 	   (with-tag  "normal" (format stream "] ~A~&" (second restart)))))
     ;;-------------------------------------------------------
     (with-tag  "label" (format stream "~%Backtrace:~&"))
-    (loop for frame in frames
-       for i from 0 do
-	 (let ((pf (make-instance 'pframe :id i))
-	       (pfx (make-instance 'pframex)	))
-	   (setf (pframex pf) pfx)
-	   (with-range stream pf
-	     (with-tag  "enum"
-	       (format stream "~3d: "  (first frame)))
-	       (with-tag  (if (third frame) "restartable" "normal")
-		 (format stream "~A"   (second frame)))
-	       
-	       (with-range stream pfx
-		 (format stream " "))
-	       (terpri stream)))))
+    (loop for frame in frames do
+	 (with-range stream (make-instance
+			     'pframe
+			     :id (first frame)
+			     :desc (second frame)
+			     :restartable (third frame))
+	   (present it stream nil))))
   (finish-output stream) )
 
-
+;;-----------------------------------------------------------------------------
+;; Protocol
 (defun sldb-invoke-restart (sldb restart)
   (with-slots (connection level thread) sldb
     (swa:emacs-rex

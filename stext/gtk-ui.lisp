@@ -87,7 +87,7 @@
   (within-main-loop
    ;; (setf *ui-thread* (bt:current-thread))
     (setf *standard-output* stdout) ;re-enable output
-    (let ((top (make-frame (make-window (make-rview (make-instance 'swarepl)))
+    (let ((top (make-frame (make-window (make-rview (make-instance 'swarepl))) 
 			   :kill t))) 
       
       (gtk-widget-show-all top)
@@ -98,7 +98,7 @@
 
 ;;for debugging ranges
 
-(defgeneric present (it stream))
+(defgeneric present (obj stream extra))
 ;------------------------------------------------
 (defclass  ptest (range:range)
   ((toggle :accessor toggle :initarg :toggle :initform nil)
@@ -107,7 +107,7 @@
    (text2  :accessor text2  :initarg :text2  :initform nil)))
 (defclass pfake (range:range) ())
 (defparameter *tag* nil)
-(defmethod  present ((p ptest) stream)
+(defmethod  present ((p ptest) stream other)
   (with-slots (text1 text2 num toggle) p
     (unless toggle
       (progn
@@ -121,16 +121,17 @@
 
 (defmethod  -on-button-press ((p ptest) iter event)
   (let ((buffer (gti-buffer iter)))
-    (with-slots (toggle) p
-      (setf toggle (not toggle))
-      (mvb (start end) (range-iters buffer p)
-	   (format t "~A ~A~&"start end)
-					;(gtb-apply-tag buffer "input" start end)
-	   (gti-backward-char end)
-	   (%gtb-delete buffer start end)
-	   (present p buffer)
-	   )
-      )))
+    (with-slots (iter iter1) buffer
+      (with-slots (toggle) p
+	(setf toggle (not toggle))
+	(pbuf-range-iters buffer p)
+	(format t "~A ~A~&" iter iter1)
+					;(gtb-apply-tag buffer "input" start end
+	(gti-backward-char iter1)
+	(%gtb-delete buffer iter iter1)
+	(present p buffer nil)
+	 
+	))))
 (defparameter *top* nil)
 (defun t0 ( &key (stdout *standard-output*))
   "final"
@@ -151,7 +152,7 @@
 	      ;;(with-range buffer)
 		(with-range stream
 		    (make-instance 'ptest :text1 "hello" :num i :text2 "world")
-		  (present it buffer))
+		  (present it buffer nil))
 		  
 		(terpri buffer)))))	
       (finish-output buffer)

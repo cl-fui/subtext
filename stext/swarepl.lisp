@@ -136,8 +136,8 @@
       (let ((vsldb (gethash (+ level (* 1000 thread)) (sldbs pbuf))))
 	(when vsldb
 	  (vsldb-destroy vsldb)
-	  (remhash (+ level (* 1000 thread)) (sldbs pbuf))
-	  (PRINT "SW-DEBUG-RETURN DONE"))))
+	  (remhash (+ level (* 1000 thread)) (sldbs pbuf)))))
+
     ;; Start ball-roll
     (gsafe (prompt swank))))
 
