@@ -44,7 +44,8 @@
   (gti-get-line-offset (iter stream)))
 
 (defmethod trivial-gray-streams:stream-start-line-p ((stream termstream))
-  ;;(format t "startlinep~~&")
+  (format t "startlinep~~&")
+  (print (promises stream))
   (stream-flush stream)
   (gti-starts-line (iter stream)))
 		;;------------------------------------------------------------------------------
@@ -152,7 +153,7 @@
   (promise-new :start (stream-position stream)
 		:content content))
 
-(defmethod promise-out (stream promise (content t))
+(defun promise-out (stream promise)
   (declare (optimize (speed 3) (safety 0) (debug 0))
 	   (type termstream stream)
 	   (type promise promise))
@@ -167,7 +168,7 @@
     `(let* ((it ,tag)		    ;anaphoric it for the presentation
 	    (,promise (promise-in stream it)))
        ,@body
-       (promise-out stream ,promise it))))
+       (promise-out stream ,promise))))
 
 (defmethod promise-fulfill ((tag gtk-text-tag) promise stream)
   (with-slots (start end) promise

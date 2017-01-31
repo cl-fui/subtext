@@ -45,9 +45,7 @@
 		  'p-entry :width (length string) :dad (root pbuf)))
 		;; and set color
 		(simple-input-promise pbuf "input")  
-		  
-		
-		(swa:eval swank line #'prompt-proc))))
+ 		(swa:eval swank line #'prompt-proc))))
 	  nil)); run once.
        (stream-flush pbuf)
        nil)))); key processed.
@@ -95,14 +93,13 @@
 
     (let (ob pr)
       (defun sw-presentation-start (connection id stream)
-)
+	(range-in pbuf (make-instance 'p-pres :id id))
+	(setf pr (promise-in pbuf "pres")))
+      
       
       (defun sw-presentation-end (connection id stream)
-	
-;	(push (make-tag-promise :tag "pres" :start (rangebase pbuf) :end (file-position pbuf))(promises pbuf) )
-;	(range-out pbuf ob pr)
-
-	))
+	(promise-out pbuf pr)
+	(range-out pbuf)))
     
     (defun sw-new-package (connection name nickname)
       (setf (swa:pkg connection) name
