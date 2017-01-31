@@ -5,7 +5,7 @@
 ;;OK (ql:quickload :stext)(in-package :stext)
 (defclass rbuffer (termstream) 
   ((ptags :accessor ptags     :initform nil )
-   (root  :accessor root      :initform (range:make))
+   (root  :accessor root      :initform (make-instance 'range:range))
    ;; private
    (insx :accessor insx  :initform 0 :type fixnum)); used by inser-text
    
@@ -74,6 +74,7 @@
   "update presentation bounds"
     (declare (ignore text len)
 	     (optimize (speed 3) (safety 0) (debug 0)))
+;;    (format t "on-insert-text-after ~A~&" text)
     (let* ((offset (the fixnum (gti-get-offset iter)))
 	   (chars (the fixnum (- offset (the fixnum (insx buffer))))))
       (range:widen (root buffer) offset chars)))
@@ -94,7 +95,8 @@
 	 (here (gtb-get-iter-at-offset pbuf offset))
 	 (marks-here (gti-get-marks here))
 	 (tags-here (gti-get-tags here)))
-    (mvb (range off) (range:at (root pbuf) offset )
+    (mvb (range off) (range:actual (root pbuf) offset )
+	 
 	;; (setf *q* range)g
 	 (format t "~%===============================================")
 	 (format t "~%Cursor is at ~D; character [~C](~d $~x)" offset

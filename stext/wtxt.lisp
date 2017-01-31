@@ -78,7 +78,7 @@
        (-on-motion buffer iter event)))))
 ;; Looks like view is the place to handle cursor commands! TODO: improve...
 (defmethod -on-announce-eli ((wtxt wtxt) eli)
-  (defun bind-move-cursor (gtkkey)
+#||  (defun bind-move-cursor (gtkkey)
     (apply #'g-signal-emit wtxt  "move-cursor"
 	   (case gtkkey
 	     (#.kb:LEFT  '(:visual-positions -1))
@@ -90,6 +90,7 @@
     (mapc (lambda (key) (keymap-define-key keymap key  #'bind-move-cursor) )
 	  '(#.kb:LEFT #.kb:RIGHT #.KB:UP #.kb:DOWN))
     )
+||#
   (-on-announce-eli (gtk-text-view-buffer wtxt) eli))
 
 (defun widget-defaults (widget)

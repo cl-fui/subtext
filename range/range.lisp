@@ -10,6 +10,7 @@ We maintain a right-to-left list of widths in the buffer.  Since most of the act
 						   (range-child o))))
 ||#
 
+(deftype non-negative-fixnum () `(integer 0 , most-positive-fixnum))
 
 (define-condition range-error (simple-error)
   ((message :initarg :message :reader message))
@@ -105,7 +106,7 @@ We maintain a right-to-left list of widths in the buffer.  Since most of the act
 	    (at-prim l (the fixnum (- (the fixnum off)
 				   (the fixnum width)))
 		  range) ; try next to the left.
-	    nil; this cannot happen...
+	    nil		; this cannot happen...
 	    ))))
 
 
@@ -116,14 +117,28 @@ it, rem and right node."
     ;;(format t "~&AT ~A off~&" off)
     (at-prim root off nil)))
 
-(defun uat (root from-left)
-  "find a good range, that is not a range:range (often used as a spacer) 
-but a derived type."
-  (loop for val = (at root from-left)
-     then (dad val)
-     while (eq (type-of val) 'range)
-     while val
-     finally (return val)  ))
+(defun in-dad (range off)
+  "return range and offset in parent range..."
+  (declare (optimize (speed 3) (safety 0) (debug 0))
+	   (type fixnum off))
+  (loop for node = (child (dad range)) then (l node)
+     until (eq node range)
+     summing (the fixnum (width node)) into total fixnum
+     finally (return (values (dad range) (the fixnum (+ total off)))))  )
+
+(defun actual-prim (range off)
+  (if (dad range)
+      (if (rangep range)
+	  (multiple-value-bind (r o) (in-dad range off)
+	    (actual-prim r o))
+	  (values range off))
+      (values nil off)))
+
+(defun actual (root from-left)
+  "return range and offset of a non-pad range or nil"
+  (multiple-value-bind (r o) (at root from-left)
+    (actual-prim r o)))
+
 
 
 (defun widen (root at by)
@@ -157,7 +172,7 @@ but a derived type."
 ;;
 ;; Error conditions include - request too wide
 
-(defun sub (range endoff)
+(defun sub1 (range endoff)
   (with-slots (l width dad) range
     (unless (child dad)
       (setf (child dad) (make :dad  dad :width (width dad))))
@@ -197,6 +212,46 @@ but a derived type."
 			 (setf l encloser))))))))
   range)
 
+(defun scan-widths (node w old)
+  (declare (optimize (speed 3) (safety 0) (debug 0))
+	   (type fixnum w))
+  (if node
+      (let ((rem (- w (the fixnum (width node)))))
+	(declare (type fixnum rem))
+	(if (minusp rem)
+	    (values old w)
+	    (scan-widths (l node) rem node)))
+      (values old w)))
+
+
+
+
+
+
+
+;; Insertion is always done into the first child of the intended dad,
+;; which better be a pad!
+(defun sub (range rpad) ;after is right offset
+  (declare (type (non-negative-fixnum) rpad))
+   (declare (optimize (speed 0) (safety 1) (debug 3)))
+  ;;(format t "SUB: range ~A rpad ~A~&" range rpad)
+  (with-slots (l width dad) range
+    (let ((target (or (child dad)
+		      (setf (child dad) (make :width (width dad) :dad dad)))))
+      ;; For now, assuming a l->r insertion order, we should fit into dad...
+      (let* ((avail (width target))
+	     (lpad (- (the fixnum avail) (the fixnum width) rpad)))
+	(declare (type non-negative-fixnum lpad))
+	(format t "MAP: ~A ~A ~A~&" lpad  width rpad)
+	;; set our left pad, if any
+	(setf l (if (zerop lpad); if no lpad
+		    (l target) ;ok, or make one
+		    (make :dad dad :l (l target) :width lpad)))
+	(if (zerop rpad); is there a rpad?
+	    (setf (child dad) range) ;no, we are first!
+	    (setf (width target) rpad ;yes, adjust old target to be rpad
+		  (l target) range) )))))
+
 ;; We _have_ to differentiate between appending new ranges and manipulating old ones, sadly...
 (defun widen-baby (root by)
   "Widen the first (rightmost) range. Make sure we are outputting into a clean null node."
@@ -209,11 +264,18 @@ but a derived type."
 	    (setf child (make :dad root :l child :width by))))
     (incf width by)))
 
-
+(defun childest (range)
+  (if (child range)
+      (childest (child range))
+      range))
 
 (defparameter *a* nil)
 (defparameter *b* nil)
-(defparameter *tab* (make))
+(defparameter *tab* (make :width 10))
+;;(setf (child *tab*) (make :width 2 :dad *tab*))
+
+;;(sub-prim (make :width 3 :dad *tab*) 2)
+
 ;;(setf *b* (conjoin (make :dad *tab*)))
 ;;(widen (at *tab* 0) 5)
 ;;(conjoin (make :dad *tab*))

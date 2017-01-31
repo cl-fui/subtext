@@ -106,7 +106,7 @@
    (text1  :accessor text1  :initarg :text1  :initform nil)
    (num    :accessor num    :initarg :num    :initform nil)
    (text2  :accessor text2  :initarg :text2  :initform nil)))
-
+(defclass pfake (range:range) ())
 (defparameter *tag* nil)
 (defmethod  present ((p ptest) stream)
   (with-slots (text1 text2 num toggle) p
@@ -115,7 +115,7 @@
 	(promising *tag*
 	  (princ text1 stream)
 	  (promising "output"
-	    (promising (range:make)
+	    (with-range stream (make-instance 'pfake)
 	      (format stream "~A"  num)))
 	  (princ text2 stream))))))
 
@@ -140,7 +140,6 @@
     (setf *standard-output* stdout) ;re-enable output
     (let ((buffer (make-instance 'rbuffer)))
       (setf *pbuf* buffer)
-      
       (let ((top (make-frame (make-window (setf *top* (make-wtxt buffer)))
 			     :kill t))
 	    r)
@@ -149,16 +148,12 @@
 	(setf *tag* (gttt-lookup (gtb-tag-table buffer) "prompt" ))
 	(let ((stream buffer))
 	  (time
-	   (loop for i from 1 to 10 do
+	   (loop for i from 1 to 2 do
 	      ;;(with-range buffer)
-
-		(promising
+		(with-range stream
 		    (make-instance 'ptest :text1 "hello" :num i :text2 "world")
-					;(make-instance 'ptest :text1 "hello" :num i :text2 "world")
-		  ;;buffer
-		  
 		  (present it buffer))
-		
+		  
 		(terpri buffer)))))	
       (finish-output buffer)
       

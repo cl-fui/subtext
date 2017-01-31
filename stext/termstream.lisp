@@ -24,7 +24,7 @@
     (setf iter   (gtb-get-start-iter stream)
 	  iter1  (gtb-get-end-iter   stream)
 	  markin (gtb-create-mark stream (null-pointer) iter t)
-	  active-range root)))
+	  active-range (range:make))))
 ;;------------------------------------------------------------------------------
 (defmethod -on-destroy :before ((stream termstream))
   (with-slots (markin) stream
@@ -70,12 +70,13 @@
 (defun stream-emit (stream char)
   (declare (optimize (speed 3) (safety 0) (debug 0)))
   (declare (type character char))
-  (with-slots (index lbuf) stream
-    "Emit a character into stream.  May cache until..."
-    
-    ;;	    (format t "~%Emitting ~C into ~A at ~A" char stream index)
+  (with-slots (index lbuf active-range) stream
+    "Emit a character into stream.  May cache until..."  
+;;    (format t "~%Emitting ~C into ~A at ~A" char stream index)
+;;    (print (range:childest active-range))
     (setf (schar lbuf index) char)
     (incf (the fixnum index))
+    (range::widen-prim (range:childest active-range) 1 )
     (when (> (the fixnum index) 508);
       (stream-flush stream))
     char))
@@ -86,7 +87,8 @@
   (declare (optimize (speed 3) (safety 0) (debug 3)))
   
   (with-slots (iter index lbuf promises) stream
-    ;;(format t "Flushing ~A characters~&" index)
+;;    (format t "Flushing ~A characters~&" index)
+;;    (print (root stream))
     (unless (zerop (the fixnum index))
       (setf (schar lbuf (the fixnum index)) #\Nul ;terminate UTF8 lbuf
 	    index 0)
@@ -144,21 +146,6 @@
   (setf (promise-end promise) (stream-position stream))
   (push promise (promises stream)))
 
-(defmethod promise-in :after (stream (range range:range))
-  (setf (range:dad range) (active-range stream)
-	(active-range stream) range))
-
-;; must be after
-(defmethod promise-out :after (stream promise (range range:range))
-  (setf (active-range stream) (range:dad range)
-	(range:width range) (- (promise-end promise) (promise-start promise)))
-  ;; At this point we have all the information to make a subrange.
-  (format t "SUBRANGING ~A into ~A at offset ~A~&"
-	  range
-	  (range:dad range)
-	  (promise-end promise))
-  
-  )
 ;; this macro requires stream to be called stream!
 ;; injects it for the thing promised...
 
@@ -178,19 +165,67 @@
     (stream-apply-tag stream tag start end)))
 
 (defmethod promise-fulfill ((range range:range) promise stream)
-;;  (format t "fulfill range...~A at offset ~A - dad:~A~&"	  range () (range:dad range))
- )
+  (format t "fulfilling range...~A start ~A end ~A-~&" range
+	  (promise-start promise) (promise-end promise))
+  (format t "rpad is ~A~&" (- (stream-position stream) (promise-end promise)))
+  (format t "range ~A, ~A~&" range  (range:kids range))
+  (range:sub range (- (stream-position stream) (promise-end promise)))
+  )
+ 
 
 
 (defun term-promises (stream)
- ;;; (print (promises stream))
-  ;;(print "---------------")
-  ;; for each promise, fullfil it
+;;  (print (promises stream))
+;; (print "---------------")
+;;  ;; for each promise, fullfil it
+;;  (print (root stream))
   (with-slots (promises iter iter1) stream
-    (loop for promise in (promises stream) do
+    (loop for promise in (reverse (promises stream)) do
 	 (with-slots (start end content) promise
 	   (promise-fulfill content promise stream))))
   (setf (promises stream) nil))
+;;==============================================================================
+(defun range-in (stream range)
+  (with-slots (active-range) stream
+    
+    (setf (range:child active-range) range
+	  (range:dad range) active-range
+	  ;; add a left pad
+	  (range:l   range) (range:make :width (range:width active-range)
+					:dad active-range)
+	  (active-range stream) range)))
+
+(defun range-out (stream)
+  (with-slots (active-range) stream
+    ;; create a pad next to active-range to ensure that it stays where it should
+    (let ((pad (range:make :dad (range:dad active-range)
+			   :l active-range)))
+      
+      (if (range:dad (range:dad active-range))
+	  (setf active-range (range:dad active-range)
+		(range:child active-range) pad)
+	  (progn
+	    (print active-range)
+	    (let* ((here (stream-position stream))
+		   (promise
+		    (make-promise :content active-range
+				  :end here 
+				  :start (- here (range:width active-range)))))
+	      (setf (range:dad active-range) (root stream))
+	      (format t "Promising: ~A start:~A end:~A ~&"
+		      active-range (promise-start promise)(promise-end promise))
+	      ;;(print active-range)
+	      (push promise (promises stream))
+	      (setf active-range (range:make)))
+	    ))
+      )))
+
+(defmacro with-range (stream range &body body)
+  `(let ((it ,range))
+     (range-in ,stream it)
+     ,@body
+     (range-out ,stream)
+     ))
 ;;------------------------------------------------------------------------------
 ;;
 
