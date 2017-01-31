@@ -1,11 +1,11 @@
 ;;
-;; A minibuf is a wtxt (text-view), which processes keys and
+;; A minibuf is an rview (text-view), which processes keys and
 ;; commands.  It has an rbuffer, and displays feedback and
 ;; specials instructions...
 
 (in-package :stext )
 
-(defclass minibuf (wtxt)
+(defclass minibuf (rview)
   ((keymap  :accessor keymap :initform (keymap-make))
    (state   :accessor state) ;state-machine binding pointer
    (frame   :accessor frame :initarg :frame)

@@ -29,8 +29,7 @@
 				   :border-width 0
 				   :hscrollbar-policy :automatic
 				   :vscrollbar-policy :automatic))
-	  (widj (make-wtxt (setf *pbuf* (make-instance 'swarepl;rbuffer
-						       )))))	   
+	  (widj (make-rview (setf *pbuf* (make-instance 'swarepl )))))	   
 	  
       (g-signal-connect window "destroy"
 			(lambda (widget)
@@ -65,7 +64,7 @@
 			  :default-width 640
 			  :default-height 480)) 
 	  (window (make-window
-		   (make-wtxt
+		   (make-rview
 		    (setf *pbuf*
 			  (make-instance 'swarepl))))))
 	  
@@ -88,7 +87,7 @@
   (within-main-loop
    ;; (setf *ui-thread* (bt:current-thread))
     (setf *standard-output* stdout) ;re-enable output
-    (let ((top (make-frame (make-window (make-wtxt (make-instance 'swarepl)))
+    (let ((top (make-frame (make-window (make-rview (make-instance 'swarepl)))
 			   :kill t))) 
       
       (gtk-widget-show-all top)
@@ -140,7 +139,7 @@
     (setf *standard-output* stdout) ;re-enable output
     (let ((buffer (make-instance 'rbuffer)))
       (setf *pbuf* buffer)
-      (let ((top (make-frame (make-window (setf *top* (make-wtxt buffer)))
+      (let ((top (make-frame (make-window (setf *top* (make-rview buffer)))
 			     :kill t))
 	    r)
 	(gtk-widget-show-all top)

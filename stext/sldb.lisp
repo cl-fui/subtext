@@ -139,7 +139,7 @@
 		:restarts restarts
 		:frames frames
 		:continuations continuations)))
-    (make-wtxt sldb)))
+    (make-rview sldb)))
 
 (defun wsldb-activate (wsldb)
   (sldb-activate (gtk-text-view-buffer wsldb)))

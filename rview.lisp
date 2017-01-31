@@ -1,26 +1,24 @@
 (in-package :stext)
 ;;;=============================================================================
-;;; wtxt - a text widjet containin a buffer-derived class..
+;;; rview - a text widget containin a buffer-derived class..
 ;;;
 ;;; passes button and keypress events to the rbuffer. 
 ;;;
-(defclass wtxt (gtk-text-view)
+
+(defclass rview (gtk-text-view)
   ()
-  (:metaclass gobject-class)
-  )
-(defmacro make-wtxt (buffer &rest rest)
-  `(make-instance 'wtxt :buffer ,buffer ,@rest))
+  (:metaclass gobject-class) )
 
+;; a convenience macro
+(defmacro make-rview (buffer &rest rest)
+  `(make-instance 'rview :buffer ,buffer ,@rest))
 
+;; pass some messages to buffer
+(defmethod -on-initial-display ((rview rview))
+  (-on-initial-display (gtv-buffer rview)))
 
-
-(defmethod -on-initial-display ((wtxt wtxt))
-  (-on-initial-display (gtv-buffer wtxt)))
-;; This is passed from way above to the view
-(defmethod -on-destroy ((wtxt wtxt)) ;initiated by outer app window
-  (-on-destroy (gtk-text-view-buffer wtxt))		;pass to active buffer
-)
-
+(defmethod -on-destroy ((rview rview)) 
+  (-on-destroy (gtv-buffer rview)))
 
 
 (defgeneric -on-button-press  (object iter event))
@@ -51,16 +49,16 @@
    (gtv-get-iter-at-location view xx yy)))
 
 
-(defmethod initialize-instance :after ((wtxt wtxt) &key)
+(defmethod initialize-instance :after ((rview rview) &key)
   ;; Since views know about buffers but not vice versa, we must connect here.
   ;; since we don't know what the view is, we have to use generic functions.
   ;; The signaling system seems to not work well here!
-  (widget-defaults wtxt); see gtk-ui.lisp
-  ;;(gtk-widget-add-events wtxt (:button2-mask) )
+  (widget-defaults rview); see gtk-ui.lisp
+  ;;(gtk-widget-add-events rview (:button2-mask) )
   (g-signal-connect
-   wtxt "button-press-event" ;TODO: check widget
+   rview "button-press-event" ;TODO: check widget
    (lambda (view event)
-     (let ((buffer (gtv-buffer wtxt))
+     (let ((buffer (gtv-buffer rview))
 	   (iter (rview-iter-from-xy view
 				     (truncate (gdk-event-button-x event))
 				     (truncate (gdk-event-button-y event)))))
@@ -69,17 +67,17 @@
 	 (2 (-on-2button-press buffer iter event))
 	 (3 (-on-3button-press buffer iter event))))))
   (g-signal-connect
-   wtxt "motion-notify-event" ;TODO: check widget
+   rview "motion-notify-event" ;TODO: check widget
    (lambda (view event)
-     (let ((buffer (gtv-buffer wtxt))
+     (let ((buffer (gtv-buffer rview))
 	   (iter (rview-iter-from-xy view
 					(truncate (gdk-event-motion-x event))
 					(truncate (gdk-event-motion-y event)))))
        (-on-motion buffer iter event)))))
 ;; Looks like view is the place to handle cursor commands! TODO: improve...
-(defmethod -on-announce-eli ((wtxt wtxt) eli)
+(defmethod -on-announce-eli ((rview rview) eli)
 #||  (defun bind-move-cursor (gtkkey)
-    (apply #'g-signal-emit wtxt  "move-cursor"
+    (apply #'g-signal-emit rview  "move-cursor"
 	   (case gtkkey
 	     (#.kb:LEFT  '(:visual-positions -1))
 	     (#.kb:RIGHT '(:visual-positions  1))
@@ -91,7 +89,7 @@
 	  '(#.kb:LEFT #.kb:RIGHT #.KB:UP #.kb:DOWN))
     )
 ||#
-  (-on-announce-eli (gtk-text-view-buffer wtxt) eli))
+  (-on-announce-eli (gtk-text-view-buffer rview) eli))
 
 (defun widget-defaults (widget)
   (gtk-widget-modify-font widget  (pango-font-description-from-string "DejaVu Sans Mono 8.6"))
@@ -103,6 +101,6 @@
 			     )
   (gtk-widget-override-color widget :selected (make-gdk-rgba  :alpha 1.d0) ))
 
-(defmethod -on-eli-key ((view wtxt) key event)
+(defmethod -on-eli-key ((view rview) key event)
   "process an eli key"
   (-on-eli-key (gtv-buffer view) key event))
