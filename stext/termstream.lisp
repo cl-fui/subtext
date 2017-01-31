@@ -101,7 +101,7 @@
 	    index 0)
       (%gtb-get-iter-at-offset stream iter anchor)
       (%gtb-insert stream iter lbuf -1)
-      (when promises (term-promises stream)))))
+      (when promises (promises-fulfill stream)))))
 ;;==============================================================================
 ;; And our extensions...
 

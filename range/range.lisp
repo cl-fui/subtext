@@ -282,3 +282,9 @@ it, rem and right node."
 ;;(conjoin (make :dad *tab*))
 
 
+
+(defun display (range)
+  (format t "~% ~A~&|" range)
+  (loop for kid in (reverse (kids range)) do
+       (format t " ~A |" kid))
+  (terpri ))
