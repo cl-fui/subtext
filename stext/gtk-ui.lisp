@@ -112,9 +112,9 @@
   (with-slots (text1 text2 num toggle) p
     (unless toggle
       (progn
-	(promising *tag*
+	(with-tag *tag*
 	  (princ text1 stream)
-	  (promising "output"
+	  (with-tag "output"
 	    (with-range stream (make-instance 'pfake)
 	      (format stream "~A"  num)))
 	  (princ text2 stream))))))

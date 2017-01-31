@@ -133,10 +133,23 @@
 ;; output is finished,  promises are resolved.  
 (defstruct promise start end content)
 
+(defparameter promise-free-list nil)
+(loop for i from 0 to 200 do (push (make-promise :start 0 :end 0 :content nil) promise-free-list))
+(defun promise-new (&key (start 0) (end 0) (content nil))
+  (let ((promise (pop promise-free-list)))
+    (setf (promise-start promise) start
+	  (promise-end promise) end
+	  (promise-content promise) content)
+    promise))
+
+(defun promise-free (promise)
+  (setf (promise-content promise) nil)
+  (push promise promise-free-list))
+
 (defmethod promise-in (stream (content t))
   (declare (optimize (speed 3) (safety 0) (debug 0))
 	   (type termstream stream))
-  (make-promise :start (stream-position stream)
+  (promise-new :start (stream-position stream)
 		:content content))
 
 (defmethod promise-out (stream promise (content t))
@@ -149,25 +162,31 @@
 ;; this macro requires stream to be called stream!
 ;; injects it for the thing promised...
 
-(defmacro promising (thing &body body)
+(defmacro with-tag (tag &body body)
   (let ((promise (gensym)))
-    `(let* ((it ,thing)
+    `(let* ((it ,tag)		    ;anaphoric it for the presentation
 	    (,promise (promise-in stream it)))
        ,@body
        (promise-out stream ,promise it))))
 
 (defmethod promise-fulfill ((tag gtk-text-tag) promise stream)
   (with-slots (start end) promise
-    (stream-apply-tag stream tag start end)))
+    (with-slots (iter iter1) stream
+      (%gtb-get-iter-at-offset stream iter start)
+      (%gtb-get-iter-at-offset stream iter1 end)
+      (%gtb-apply-tag stream tag iter iter1))))
 
 (defmethod promise-fulfill ((tag string)  promise stream )
   (with-slots (start end) promise
-    (stream-apply-tag stream tag start end)))
+    (with-slots (iter iter1) stream
+      (%gtb-get-iter-at-offset stream iter start)
+      (%gtb-get-iter-at-offset stream iter1 end)
+      (gtb-apply-tag-by-name stream tag iter iter1))))
 
 (defmethod promise-fulfill ((range range:range) promise stream)
-;;  (format t "fulfilling range...~A start ~A end ~A-~&" range	  (promise-start promise) (promise-end promise))
-;;  (format t "rpad is ~A~&" (- (stream-position stream) (promise-end promise)))
-;;  (format t "range ~A, ~A~&" range  (range:kids range))
+  (format t "fulfilling range...~A start ~A end ~A-~&" range	  (promise-start promise) (promise-end promise))
+  (format t "rpad is ~A~&" (- (stream-position stream) (promise-end promise)))
+  (format t "range ~A, ~A~&" range  (range:kids range))
   (range:sub range (- (stream-position stream) (promise-end promise)))
   )
  
@@ -179,20 +198,31 @@
 ;;  ;; for each promise, fullfil it
 ;;  (print (root stream))
   (with-slots (promises iter iter1) stream
+    ;; reverse is important: ranges must fill left to right
     (loop for promise in (reverse (promises stream)) do
-	 (with-slots (start end content) promise
-	   (promise-fulfill content promise stream))))
+	 (promise-fulfill (promise-content promise) promise stream))
+    (loop for promise in (promises stream) do
+	 (promise-free promise)))
+  
   (setf (promises stream) nil))
 ;;==============================================================================
+;; Range-in
+;;
+;; Create a range under active range and switch to it.
+;;
 (defun range-in (stream range)
   (with-slots (active-range) stream
     
-    (setf (range:child active-range) range
-	  (range:dad range) active-range
-	  ;; add a left pad
+    (setf (range:child active-range) range ;we are active's child!
+	  (range:dad range) active-range   ;like so
+	  ;; attach a left pad, so that range:at works... TODO:waste!
 	  (range:l   range) (range:make :width (range:width active-range)
 					:dad active-range)
-	  (active-range stream) range)))
+	  active-range range)))
+;;
+;; To get out, we set active range to our dad.  But, we must create a pad below
+;; next to the old range.  As we expand the dad, the pad will keep the old
+;; range intact.
 
 (defun range-out (stream)
   (with-slots (active-range) stream
@@ -200,14 +230,13 @@
     (let ((pad (range:make :dad (range:dad active-range)
 			   :l active-range)))
       
-      (if (range:dad (range:dad active-range))
+      (if (range:dad (range:dad active-range));; this is how we bottom out!
 	  (setf active-range (range:dad active-range)
 		(range:child active-range) pad)
 	  (progn
-;;	    (print active-range)
 	    (let* ((here (stream-position stream))
 		   (promise
-		    (make-promise :content active-range
+		    (promise-new :content active-range
 				  :end here 
 				  :start (- here (range:width active-range)))))
 	      (setf (range:dad active-range) (root stream))
@@ -215,7 +244,10 @@
 ;;	      (format t "Promising: ~A start:~A end:~A ~&"	      active-range (promise-start promise)(promise-end promise))
 	      ;;(print active-range)
 	      (push promise (promises stream))
-	      (setf active-range (range:make)))
+	      ;;might as well recycle the pad
+	      (setf (range:dad pad) nil
+		    (range:l pad) nil
+		    active-range pad))
 	    ))
       )))
 
@@ -239,13 +271,28 @@
     (stream-flush stream)
     (%gtb-get-end-iter stream iter)
     (%gtb-move-mark stream markin iter)
-    (print
-     markin)))
+    ))
 
 (defun simple-input-get-text (stream)
   "get text from markin to end"
+  (with-slots (iter iter1 markin) stream 
+    (simple-input-iters stream) 
+    (gtb-get-text stream iter iter1 nil)))
+
+(defun simple-input-iters (stream)
+  "set iters to start and end"
   (with-slots (iter iter1 markin) stream
     (stream-flush stream)
     (%gtb-get-iter-at-mark stream iter markin)
-    (%gtb-get-end-iter stream iter1)
-    (print (gtb-get-text stream iter iter1 nil))))
+    (%gtb-get-end-iter stream iter1))
+)
+
+(defun simple-input-promise (stream content)
+  "make a promise on a range of last input"
+  (with-slots (iter iter1 markin promises) stream
+    (simple-input-iters stream)
+    (push 
+     (promise-new :start (gti-offset iter)
+		  :end   (gti-offset iter1)
+		  :content content)
+     promises)))

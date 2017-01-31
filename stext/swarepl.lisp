@@ -1,7 +1,7 @@
 (in-package :stext)
 
 
-(defclass p-entry  ( range:range) ())
+(defclass p-entry  ( range:range) ()) ;command-line entry
 (defclass p-pres   ( range:range)
   ((id :accessor id :initform nil :initarg :id)) )
 (defclass p-input  ( range:range)
@@ -38,6 +38,15 @@
 	    (let* ((string (simple-input-get-text pbuf))
 		   (line (swarepl-parse-string string )))
 	      (when line
+		;; make an entry presentation.
+		(simple-input-promise
+		 pbuf
+		 (make-instance
+		  'p-entry :width (length string) :dad (root pbuf)))
+		;; and set color
+		(simple-input-promise pbuf "input")  
+		  
+		
 		(swa:eval swank line #'prompt-proc))))
 	  nil)); run once.
        (stream-flush pbuf)
@@ -65,7 +74,7 @@
     ;; This can be called explicitly
     (defun prompt (swank)
       (let ((stream pbuf))
-	(promising "prompt"
+	(with-tag "prompt"
 	  (fresh-line pbuf)
 	  (format pbuf "~A> " (swa:prompt swank))))
       (simple-input-mark pbuf))

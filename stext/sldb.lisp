@@ -88,7 +88,7 @@
 
 (let (last)
   (defmethod -on-motion ((sldb sldb) iter event)
-    (let ((range (range:uat (root sldb) (gti-get-offset iter))))
+    (let ((range (range:at (root sldb) (gti-get-offset iter))))
      
 
       (unless (eq last range)

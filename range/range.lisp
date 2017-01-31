@@ -23,6 +23,7 @@ We maintain a right-to-left list of widths in the buffer.  Since most of the act
    (dad   :accessor dad   :initform nil :initarg :dad   :type range)
    (child :accessor child :initform nil :initarg :child :type range))
   )
+
 (declaim (inline rangep))
 (defun rangep (obj)
   (declare (optimize (speed 3) (debug 0) (safety 0)))
@@ -233,7 +234,7 @@ it, rem and right node."
 ;; which better be a pad!
 (defun sub (range rpad) ;after is right offset
   (declare (type (non-negative-fixnum) rpad))
-   (declare (optimize (speed 0) (safety 1) (debug 3)))
+   (declare (optimize (speed 3) (safety 0) (debug 0)))
   ;;(format t "SUB: range ~A rpad ~A~&" range rpad)
   (with-slots (l width dad) range
     (let ((target (or (child dad)
