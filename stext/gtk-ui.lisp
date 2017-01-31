@@ -107,6 +107,8 @@
    (text2  :accessor text2  :initarg :text2  :initform nil)))
 (defclass pfake (range:range) ())
 (defparameter *tag* nil)
+
+
 (defmethod  present ((p ptest) stream other)
   (with-slots (text1 text2 num toggle) p
     (unless toggle
@@ -171,3 +173,19 @@
   (print "2"))
 (defmethod -on-3button-press ((buffer rbuffer) iter event)
   (print "3"))
+
+(defun t4 ( &key (stdout *standard-output*))
+  "final"
+  (within-main-loop
+   ;; (setf *ui-thread* (bt:current-thread))
+    (setf *standard-output* stdout) ;re-enable output
+    (let ((top (make-frame (make-window (make-rview
+					 (setf *pbuf*
+					       (make-instance 'termstream)))) 
+			   :kill t))) 
+      
+      (gtk-widget-show-all top)
+      (g-idle-add
+       (lambda ()
+	 (-on-initial-display top)
+	 nil)))))

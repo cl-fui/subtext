@@ -28,7 +28,10 @@
                (:file "range/range")
 
 	       (:file "stext/rview")
+	       
+	       (:file "stext/basebuf")
 	       (:file "stext/termstream")
+	       (:file "stext/promises")
 	       (:file "stext/rbuffer")
 	       ;;(:file "stext/rstream")
 

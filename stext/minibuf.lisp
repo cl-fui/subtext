@@ -14,7 +14,7 @@
   (:metaclass gobject-class))
 
 (defun make-minibuf (frame)
-  (make-instance 'minibuf :buffer (make-instance 'rbuffer)
+  (make-instance 'minibuf :buffer (make-instance 'termstream)
 		 :frame frame :wrap-mode :none ))
 
 (defmethod initialize-instance :after ((minibuf minibuf) &key)
