@@ -156,8 +156,8 @@
 		    (make-instance 'ptest :text1 "hello" :num i :text2 "world")
 		  (present it buffer nil))
 		  
-		(terpri buffer)))))	
-      (finish-output buffer)
+		(terpri buffer))))	
+	(finish-output buffer))
       
       
 	)))
@@ -174,6 +174,9 @@
 (defmethod -on-3button-press ((buffer rbuffer) iter event)
   (print "3"))
 
+
+(defclass pres1 (range:range) ())
+(defclass pres2 (range:range) ())
 (defun t4 ( &key (stdout *standard-output*))
   "final"
   (within-main-loop
@@ -183,9 +186,24 @@
 					 (setf *pbuf*
 					       (make-instance 'termstream)))) 
 			   :kill t))) 
-      
       (gtk-widget-show-all top)
       (g-idle-add
        (lambda ()
+	 (let ((stream *pbuf*))
+	   (format stream "------")
+	   (with-range stream (make-instance 'pres1)
+	     (format stream "HELL ")
+	     (with-range stream (make-instance 'pres2)
+	       (format stream "fuck "))
+	     (format stream "_AND_")
+	     (with-range stream (make-instance 'pres2)
+	       (format stream "shit "))
+	     (format stream "WHA? "))
+	   (format stream "DONE.")
+	   (finish-output stream)
+	   
+	   )
+
+	 
 	 (-on-initial-display top)
 	 nil)))))

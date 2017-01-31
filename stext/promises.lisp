@@ -15,6 +15,7 @@
 ;; the promising form, the promise is placed on the promises list.  When the
 ;; output is finished,  promises are resolved.  
 (defstruct promise start end content)
+
 ;; Out of desperation, I am keeping a pool of promises to avoid consisng...
 (defun promise-new (stream &key (start 0) (end 0) (content nil))
   (with-slots (promise-free-list) stream
@@ -35,13 +36,13 @@
 	 (promise-free stream promise))))
 ;;------------------------------------------------------------------------------
 ;; Called by with-tag macro.
-(defmethod promise-in (stream (content t))
+(defmethod tag-in (stream (content t))
   (declare (optimize (speed 3) (safety 0) (debug 0))
 	   (type termstream stream))
   (make-promise :start (stream-position stream)
 		:content content))
 
-(defun promise-out (stream promise)
+(defun tag-out (stream promise)
   (declare (optimize (speed 3) (safety 0) (debug 0))
 	   (type termstream stream)
 	   (type promise promise))
@@ -54,9 +55,10 @@
 (defmacro with-tag (tag &body body)
   (let ((promise (gensym)))
     `(let* ((it ,tag)		    ;anaphoric it for the presentation
-	    (,promise (promise-in stream it)))
+	    (,promise (tag-in stream it)))
        ,@body
-       (promise-out stream ,promise))))
+       (tag-out stream ,promise))))
+
 
 (defmethod promise-fulfill ((tag gtk-text-tag) promise stream)
   (with-slots (start end) promise
@@ -101,12 +103,15 @@
 (defun range-in (stream range)
   (with-slots (active-range) stream
     
-    (setf (range:child active-range) range ;we are active's child!
-	  (range:dad range) active-range   ;like so
-	  ;; attach a left pad, so that range:at works... TODO:waste!
-	  (range:l   range) (range:make :width (range:width active-range)
-					:dad active-range)
-	  active-range range)))
+    ;;(range:display active-range)
+    (let ((old (range:child active-range)))
+      (setf (range:child active-range) range ;we are active's child!
+	    (range:dad range) active-range   ;like so
+	    ;; attach a left pad, so that range:at works... TODO:waste!
+	    (range:l range) (if old old
+				(range:make :width (range:width active-range)
+					    :dad active-range))
+	    active-range range))))
 ;;
 ;; To get out, we set active range to our dad.  But, we must create a pad below
 ;; next to the old range.  As we expand the dad, the pad will keep the old
@@ -128,16 +133,12 @@
 				 :end here 
 				 :start (- here (range:width active-range)))))
 	      (setf (range:dad active-range) (root stream))
-	     ;;
-;;	      (format t "Promising: ~A start:~A end:~A ~&"	      active-range (promise-start promise)(promise-end promise))
-	      ;;(print active-range)
 	      (push promise (promises stream))
 	      ;;might as well recycle the pad
 	      (setf (range:dad pad) nil
 		    (range:l pad) nil
 		    active-range pad))
-	    ))
-      )))
+)))))
 
 (defmacro with-range (stream range &body body)
   `(let ((it ,range))
