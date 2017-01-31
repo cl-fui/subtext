@@ -38,7 +38,7 @@
 (defmethod promise-in (stream (content t))
   (declare (optimize (speed 3) (safety 0) (debug 0))
 	   (type termstream stream))
-  (promise-new stream :start (stream-position stream)
+  (make-promise :start (stream-position stream)
 		:content content))
 
 (defun promise-out (stream promise)
@@ -90,7 +90,8 @@
     ;; reverse is important: ranges must fill left to right
     (loop for promise in (reverse promises) do
 	 (promise-fulfill (promise-content promise) promise stream))
-    (promises-free stream promises))
+    ;(promises-free stream promises)
+    )
     (setf (promises stream) nil))
 ;;==============================================================================
 ;; Range-in
@@ -123,8 +124,7 @@
 	  (progn
 	    (let* ((here (stream-position stream))
 		   (promise
-		    (promise-new stream
-				 :content active-range
+		    (make-promise :content active-range
 				 :end here 
 				 :start (- here (range:width active-range)))))
 	      (setf (range:dad active-range) (root stream))
@@ -179,7 +179,7 @@
   (with-slots (iter iter1 markin promises) stream
     (simple-input-iters stream)
     (push 
-     (promise-new stream
+     (make-promise 
 		  :start (gti-offset iter)
 		  :end   (gti-offset iter1)
 		  :content content)

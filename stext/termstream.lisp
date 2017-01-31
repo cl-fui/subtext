@@ -14,7 +14,8 @@
    (promises     :accessor promises :initform nil)
    (active-range :accessor active-range :initform nil )
 
-   (promise-free-list :accessor promise-free-list :initform nil))
+  ;; (promise-free-list :accessor promise-free-list :initform nil)
+   )
   
   (:metaclass gobject-class))
 ;;==============================================================================
@@ -24,8 +25,8 @@
     (setf markin (gtb-create-mark stream (null-pointer) iter t)
 	  active-range (range:make))
 	  
-    (loop for i from 0 to 200 do
-	 (push (make-promise :start 0 :end 0 :content nil) promise-free-list))))
+;;    (loop for i from 0 to 200 do	 (push (make-promise :start 0 :end 0 :content nil) promise-free-list))
+    ))
 ;;------------------------------------------------------------------------------
 (defmethod -on-destroy :before ((stream termstream))
   (with-slots (markin) stream
@@ -83,7 +84,7 @@
     (incf (the fixnum index))
     ;; In order to build detached range structures, widen the 'active range'
     (range::widen-prim (range:childest active-range) 1 )
-    (when (> (the fixnum index) 508);
+    (when (> (the fixnum index) 4090);
       (stream-flush stream))
     char))
 ;;--------------------------------------------------------------------------
