@@ -48,8 +48,9 @@
 	  view :text x y)
    (gtv-get-iter-at-location view xx yy)))
 
-
+(defparameter *rview* nil)
 (defmethod initialize-instance :after ((rview rview) &key)
+  (setf *rview* rview)
   ;; Since views know about buffers but not vice versa, we must connect here.
   ;; since we don't know what the view is, we have to use generic functions.
   ;; The signaling system seems to not work well here!
@@ -104,3 +105,17 @@
 (defmethod -on-eli-key ((view rview) key event)
   "process an eli key"
   (-on-eli-key (gtv-buffer view) key event))
+
+
+;;============================================================================
+(defmacro make-framed-view (view &rest frame-stuff)
+  `(let ((frame (make-frame (make-window ,view)
+			    ,@frame-stuff)))
+     (gtk-widget-show-all frame)
+     frame))
+
+(defun rview-destroy-top (widget)
+  (and widget
+       (if (gtk-widget-is-toplevel widget)
+	   (gtk-widget-destroy widget)
+	   (rview-destroy-top (gtk-widget-parent widget)))))

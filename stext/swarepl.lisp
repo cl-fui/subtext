@@ -119,26 +119,23 @@
     (defun sw-debug (connection thread level condition restarts frames conts)
       ;;(format t "SW-DEBUG: conn ~A thread ~A level ~A&" connection thread level)
       (setf (gethash (+ level (* 1000 thread)) (sldbs pbuf))
-	    (make-wsldb connection thread level condition restarts frames conts)))
+	    (make-vsldb connection thread level condition restarts frames conts)))
     ;; Then, this guy comes to activate the debugger.  We will create a window
     ;; and a frame for it, and display it.
     (defun sw-debug-activate (connection thread level &optional selectl)
-      (let ((wsldb (gethash (+ level (* 1000 thread)) (sldbs pbuf))))
-	(when wsldb
-	  (let ((frame
-		 (make-frame
-		  (make-window  wsldb)
-		  :title (format nil "SLDB ~A ~A"thread level)
-		  :kill nil)))
-	    (gtk-widget-show-all frame))
-	  (wsldb-activate wsldb))))
+      (let ((vsldb (gethash (+ level (* 1000 thread)) (sldbs pbuf))))
+	(when vsldb
+	  (make-framed-view vsldb
+			    :title (format nil "SLDB ~A ~A" thread level)
+			    :kill nil ) 
+	  (vsldb-activate vsldb))))
     ;; Now when this returns, we destroy the widget and remove SLDB from the
     ;; hashtable.  TODO: are all sub-widgets destroyes?
     (defun sw-debug-return (connection thread level stepping)
       ;;(format t "sw-dbug-return: ~A ~A ~A~&" thread level stepping)
-      (let ((wsldb (gethash (+ level (* 1000 thread)) (sldbs pbuf))))
-	(when wsldb
-	  (wsldb-destroy wsldb)
+      (let ((vsldb (gethash (+ level (* 1000 thread)) (sldbs pbuf))))
+	(when vsldb
+	  (vsldb-destroy vsldb)
 	  (remhash (+ level (* 1000 thread)) (sldbs pbuf))
 	  (PRINT "SW-DEBUG-RETURN DONE"))))
     ;; Start ball-roll

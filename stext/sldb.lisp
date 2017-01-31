@@ -46,7 +46,7 @@
     ))
 
 ;;===============================================================================
-(defun make-wsldb (connection thread level conditio restarts frames continuations)
+(defun make-vsldb (connection thread level conditio restarts frames continuations)
   "create the presentation, buffer and view for the debugger."
   (let* ((sldb (make-instance 
 		'sldb
@@ -59,12 +59,12 @@
 		:continuations continuations)))
     (make-rview sldb)))
 
-(defun wsldb-activate (wsldb)
-  (sldb-activate (gtk-text-view-buffer wsldb)))
+(defun vsldb-activate (vsldb)
+  (sldb-activate (gtk-text-view-buffer vsldb)))
 
-(defun wsldb-destroy (wsldb)
-  (let ((frame (frame (sldb-eli (gtk-text-view-buffer wsldb)))))
-    (gtk-widget-destroy frame)))
+(defun vsldb-destroy (vsldb)
+  (rview-destroy-top vsldb )
+)
 
 ;;===============================================================================
 (defclass sldb (rbuffer)
