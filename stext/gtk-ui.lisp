@@ -148,7 +148,7 @@
 	(setf *tag* (gttt-lookup (gtb-tag-table buffer) "prompt" ))
 	(let ((stream buffer))
 	  (time
-	   (loop for i from 1 to 2 do
+	   (loop for i from 1 to 100000 do
 	      ;;(with-range buffer)
 		(with-range stream
 		    (make-instance 'ptest :text1 "hello" :num i :text2 "world")

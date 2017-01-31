@@ -242,7 +242,7 @@ it, rem and right node."
       (let* ((avail (width target))
 	     (lpad (- (the fixnum avail) (the fixnum width) rpad)))
 	(declare (type non-negative-fixnum lpad))
-	(format t "MAP: ~A ~A ~A~&" lpad  width rpad)
+	;;(format t "MAP: ~A ~A ~A~&" lpad  width rpad)
 	;; set our left pad, if any
 	(setf l (if (zerop lpad); if no lpad
 		    (l target) ;ok, or make one

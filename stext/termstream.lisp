@@ -165,10 +165,9 @@
     (stream-apply-tag stream tag start end)))
 
 (defmethod promise-fulfill ((range range:range) promise stream)
-  (format t "fulfilling range...~A start ~A end ~A-~&" range
-	  (promise-start promise) (promise-end promise))
-  (format t "rpad is ~A~&" (- (stream-position stream) (promise-end promise)))
-  (format t "range ~A, ~A~&" range  (range:kids range))
+;;  (format t "fulfilling range...~A start ~A end ~A-~&" range	  (promise-start promise) (promise-end promise))
+;;  (format t "rpad is ~A~&" (- (stream-position stream) (promise-end promise)))
+;;  (format t "range ~A, ~A~&" range  (range:kids range))
   (range:sub range (- (stream-position stream) (promise-end promise)))
   )
  
@@ -205,15 +204,15 @@
 	  (setf active-range (range:dad active-range)
 		(range:child active-range) pad)
 	  (progn
-	    (print active-range)
+;;	    (print active-range)
 	    (let* ((here (stream-position stream))
 		   (promise
 		    (make-promise :content active-range
 				  :end here 
 				  :start (- here (range:width active-range)))))
 	      (setf (range:dad active-range) (root stream))
-	      (format t "Promising: ~A start:~A end:~A ~&"
-		      active-range (promise-start promise)(promise-end promise))
+	     ;;
+;;	      (format t "Promising: ~A start:~A end:~A ~&"	      active-range (promise-start promise)(promise-end promise))
 	      ;;(print active-range)
 	      (push promise (promises stream))
 	      (setf active-range (range:make)))
