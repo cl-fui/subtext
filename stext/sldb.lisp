@@ -152,6 +152,7 @@
 (let (last)
   (defmethod -on-motion ((sldb sldb) iter event)
     (let ((range (range:actual (root sldb) (gti-get-offset iter))))
+      ;;(bug "~A~&" range)
       (unless (eq last range)
 	(pres-highlight last sldb nil)
 	(pres-highlight range sldb t)
@@ -198,8 +199,9 @@
     (with-range stream (make-instance 'pcondition)
       (with-tag "condition"
 	(format stream "~A~&" (second conditio))))
+   (with-tag  "label" (format stream "~%Restarts:~&"))
+  #||  
     
-    (with-tag  "label" (format stream "~%Restarts:~&"))
     (loop for restart in restarts
        for i from 0 do
 	 (with-range stream
@@ -215,7 +217,11 @@
 			     :id (first frame)
 			     :desc (second frame)
 			     :restartable (third frame))
-	   (present it stream nil))))
+	   (present it stream nil)))
+||#
+    
+    )
+  
   (finish-output stream) )
 
 ;;-----------------------------------------------------------------------------

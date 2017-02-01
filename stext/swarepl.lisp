@@ -94,11 +94,11 @@
     (let (ob pr)
       (defun sw-presentation-start (connection id stream)
 	(range-in pbuf (make-instance 'p-pres :id id))
-	(setf pr (promise-in pbuf "pres")))
+	(setf pr (tag-in pbuf "pres")))
       
       
       (defun sw-presentation-end (connection id stream)
-	(promise-out pbuf pr)
+	(tag-out pbuf pr)
 	(range-out pbuf)))
     
     (defun sw-new-package (connection name nickname)

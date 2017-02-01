@@ -165,7 +165,7 @@
 (defparameter *q* nil)
 
 (defmethod -on-button-press ((buffer rbuffer) iter event)
-  (stream-to-iter buffer iter)
+  ;;(stream-to-iter buffer iter)
   (let ((range  (range:at (root buffer) (gti-get-offset iter))))
     (-on-button-press range iter event))
   (print "1"))
@@ -177,6 +177,8 @@
 
 (defclass pres1 (range:range) ())
 (defclass pres2 (range:range) ())
+(defclass pres3 (range:range) ())
+(defparameter *r* nil)
 (defun t4 ( &key (stdout *standard-output*))
   "final"
   (within-main-loop
@@ -191,19 +193,22 @@
        (lambda ()
 	 (let ((stream *pbuf*))
 	   (format stream "------")
-	   (with-range stream (make-instance 'pres1)
-	     (format stream "HELL ")
-	     (with-range stream (make-instance 'pres2)
-	       (format stream "fuck "))
-	     (format stream "_AND_")
-	     (with-range stream (make-instance 'pres2)
-	       (format stream "shit "))
-	     (format stream "WHA? "))
+	   (setf *r* (with-range stream (make-instance 'pres1)
+		       (format stream "HELL ")
+		       (with-range stream (make-instance 'pres2)
+			 (format stream "fuck "))
+		       (format stream "_AND_")
+		       (with-range stream (make-instance 'pres2)
+			 (format stream "shit "))
+		       (format stream "WHA? ")))
 	   (format stream "DONE.")
 	   (finish-output stream)
 	   
-	   )
 
-	 
+	   ;;(file-position stream (range:bounds *r* ))
+
+	   ;;(with-range stream (make-instance 'pres3)   (format stream "|OK, MAN|~&"))  (finish-output stream)
+	   )
 	 (-on-initial-display top)
-	 nil)))))
+	 nil))))
+  )

@@ -44,6 +44,7 @@ We maintain a right-to-left list of widths in the buffer.  Since most of the act
 ;;
 ;; Special case: if the child is a null-node, just take posession of it.
 (defun new-in (dad range)
+  
   "Insert a new range in parent's right side. Return it"
   (declare (optimize (speed 3) (debug 0) (safety 0))
 	   (type range dad)
@@ -96,49 +97,31 @@ We maintain a right-to-left list of widths in the buffer.  Since most of the act
 ;; This routine is used to insert ranges below.  Here we find the encloser,
 ;; as well as the right node so we can fix its l pointer or nil if we are first
 (defun at-prim (range off r)
-    (declare (optimize (speed 3) (safety 0) (debug 0)))
-    (with-slots (width child l) range
-      (declare (type fixnum width))
-    (if (>= (the fixnum width) (the fixnum off)) ;if width>off, it is inside
+  (declare (optimize (speed 3) (safety 0) (debug 0)))
+  (with-slots (width child l) range
+    (declare (type (non-negative-fixnum) width off))
+    (if (>= width off) ;gotcha - it is inside here!
 	(if child; if there are children, 
 	    (at-prim child off nil); maybe?
 	    (values range off r))   ; no children means this is it.
-	(if l; width<= offset, more to go.
-	    (at-prim l (the fixnum (- (the fixnum off)
-				   (the fixnum width)))
-		  range) ; try next to the left.
-	    nil		; this cannot happen...
-	    ))))
-
+	(and l (at-prim l (- off width) range)))))
 
 (defun at (root from-left)
   "Find the range that encloses the offset, and return
 it, rem and right node."
-  (let ((off (- (width root) from-left ))) ; because from right!
-    ;;(format t "~&AT ~A off~&" off)
-    (at-prim root off nil)))
+  (at-prim root (- (width root) from-left ) nil))
 
-(defun in-dad (range off)
-  "return range and offset in parent range..."
-  (declare (optimize (speed 3) (safety 0) (debug 0))
-	   (type fixnum off))
-  (loop for node = (child (dad range)) then (l node)
-     until (eq node range)
-     summing (the fixnum (width node)) into total fixnum
-     finally (return (values (dad range) (the fixnum (+ total off)))))  )
-
-(defun actual-prim (range off)
-  (if (dad range)
-      (if (rangep range)
-	  (multiple-value-bind (r o) (in-dad range off)
-	    (actual-prim r o))
-	  (values range off))
-      (values nil off)))
+(defun in-dad (range)
+  (loop for r = range then (dad r)
+     while (and r (rangep r))
+     finally (return r)))
 
 (defun actual (root from-left)
   "return range and offset of a non-pad range or nil"
-  (multiple-value-bind (r o) (at root from-left)
-    (actual-prim r o)))
+  (in-dad (at root from-left)))
+;;==============================================================================
+;
+
 
 
 
@@ -234,16 +217,18 @@ it, rem and right node."
 ;; which better be a pad!
 (defun sub (range rpad) ;after is right offset
   (declare (type (non-negative-fixnum) rpad))
-   (declare (optimize (speed 3) (safety 0) (debug 0)))
+   (declare (optimize (speed 3) (safety 1) (debug 0)))
   ;;(format t "SUB: range ~A rpad ~A~&" range rpad)
-  (with-slots (l width dad) range
-    (let ((target (or (child dad)
+   (with-slots (l width dad) range
+    ;; (format t " DAD ~A ~A ~&" dad (dad dad) )
+    (let ((target (or (and (dad dad) (rangep dad) dad) ; recycle pads, but not root
+		      (child dad) ;if child, must fit there
 		      (setf (child dad) (make :width (width dad) :dad dad)))))
       ;; For now, assuming a l->r insertion order, we should fit into dad...
-      (let* ((avail (width target))
-	     (lpad (- (the fixnum avail) (the fixnum width) rpad)))
-	(declare (type non-negative-fixnum lpad))
-	;;(format t "MAP: ~A ~A ~A~&" lpad  width rpad)
+      (let* ((avail  (width target))
+	     (lpad (-  avail width rpad)))
+	(declare  (type (non-negative-fixnum) width avail lpad ))
+     ;;(format t "MAP: ~A ~A ~A~&" lpad  width rpad)
 	;; set our left pad, if any
 	(setf l (if (zerop lpad); if no lpad
 		    (l target) ;ok, or make one
@@ -252,6 +237,7 @@ it, rem and right node."
 	    (setf (child dad) range) ;no, we are first!
 	    (setf (width target) rpad ;yes, adjust old target to be rpad
 		  (l target) range) )))))
+
 
 ;; We _have_ to differentiate between appending new ranges and manipulating old ones, sadly...
 (defun widen-baby (root by)
@@ -282,9 +268,19 @@ it, rem and right node."
 ;;(conjoin (make :dad *tab*))
 
 
+(let ((last nil))
+  (defun display (range)
+    (typecase range
+      (range
+       (format t "~%|       ~A     ~&|" range)
+       (loop for kid in (reverse (kids range)) do
+	    (format t " ~A |" kid))
+       (terpri )
+       (setf last range))
+      (number
+       (when last
+	 (display (nth range (reverse (kids last))))))))
+  
+  
+  )
 
-(defun display (range)
-  (format t "~%|       ~A     ~&|" range)
-  (loop for kid in (reverse (kids range)) do
-       (format t " ~A |" kid))
-  (terpri ))

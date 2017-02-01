@@ -40,7 +40,7 @@
   (declare (optimize (speed 3) (safety 0) (debug 0))
 	   (type termstream stream))
   (make-promise :start (stream-position stream)
-		:content content))
+		    :content content))
 
 (defun tag-out (stream promise)
   (declare (optimize (speed 3) (safety 0) (debug 0))
@@ -65,7 +65,8 @@
     (with-slots (iter iter1) stream
       (%gtb-get-iter-at-offset stream iter start)
       (%gtb-get-iter-at-offset stream iter1 end)
-      (%gtb-apply-tag stream tag iter iter1))))
+      (%gtb-apply-tag stream tag iter iter1)))
+)
 
 (defmethod promise-fulfill ((tag string)  promise stream )
   (with-slots (start end) promise
@@ -75,10 +76,11 @@
       (gtb-apply-tag-by-name stream tag iter iter1))))
 
 (defmethod promise-fulfill ((range range:range) promise stream)
-;;  (format t "fulfilling range...~A start ~A end ~A-~&" range	  (promise-start promise) (promise-end promise))
-;;  (format t "rpad is ~A~&" (- (stream-position stream) (promise-end promise)))
-;;  (format t "range ~A, ~A~&" range  (range:kids range))
-  (range:sub range (- (stream-position stream) (promise-end promise)))
+ ;; (format t "fulfilling range...~A start ~A end ~A-~&" range	  (promise-start promise) (promise-end promise))
+  ;;(format t "rpad is ~A~&" (- (stream-position stream) (promise-end promise)))
+  ;;(format t "range ~A, ~A~&" range  (range:kids range))
+					;
+ (range:sub range (- (stream-position stream) (promise-end promise)))
   )
  
 
@@ -91,7 +93,12 @@
   (with-slots (promises iter iter1) stream
     ;; reverse is important: ranges must fill left to right
     (loop for promise in (reverse promises) do
-	 (promise-fulfill (promise-content promise) promise stream))
+	 (print "-----------------")
+	 (print promise)
+	 (range:display (root stream))
+	 (promise-fulfill (promise-content promise) promise stream)
+	 (range:display (root stream))
+	 (print "-----------------"))
     ;(promises-free stream promises)
     )
     (setf (promises stream) nil))
@@ -102,8 +109,7 @@
 ;;
 (defun range-in (stream range)
   (with-slots (active-range) stream
-    
-    ;;(range:display active-range)
+   
     (let ((old (range:child active-range)))
       (setf (range:child active-range) range ;we are active's child!
 	    (range:dad range) active-range   ;like so
@@ -120,9 +126,12 @@
 (defun range-out (stream)
   (with-slots (active-range) stream
     ;; create a pad next to active-range to ensure that it stays where it should
+   
+  (range:display (root stream))
+
     (let ((pad (range:make :dad (range:dad active-range)
 			   :l active-range)))
-      
+     
       (if (range:dad (range:dad active-range));; this is how we bottom out!
 	  (setf active-range (range:dad active-range)
 		(range:child active-range) pad)
@@ -145,7 +154,7 @@
      (range-in ,stream it)
      ,@body
      (range-out ,stream)
-     ))
+     it))
 ;;------------------------------------------------------------------------------
 ;;
 

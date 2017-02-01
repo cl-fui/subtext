@@ -109,6 +109,13 @@ Note: a single underline in label will crate a 'mnemonic'; two __ is _"
 
 
 
+;;; ----------------------------------------------------------------------------
+;;; For debugg output use
+(defmacro bug (&rest rest)
+  `(format t ,@rest))
+
+(defmacro bugx (&rest rest)
+  )
 #||
 (defun achoice (x) (print "FUCK SECOND"))
 (defun mtest ()
