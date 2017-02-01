@@ -4,6 +4,7 @@
   (:export
    :range :width :child :dad :l :make
    :new-in
+   :eliminate
    :end
    :bounds
    :widen :narrow

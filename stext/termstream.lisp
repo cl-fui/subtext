@@ -47,7 +47,9 @@
 
 (defmethod trivial-gray-streams:stream-start-line-p ((stream termstream))
   (with-slots (index lbuf iter anchor) stream
-    (format t "startlinep ~A~& " (subseq lbuf (max 0 (- index 5)) index))
+    (format t "startlinep ~A ~C~& "
+	    (subseq lbuf (max 0 (- index 5)) index)
+	    (if (> 0 index) (schar lbuf (1- index)) #\_))
     (if (zerop index) ;if buffer has just been flushed, no way to check
 	(progn ;except ask gtk...
 	  (%gtb-get-iter-at-offset stream iter anchor)

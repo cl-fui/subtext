@@ -24,22 +24,40 @@
   (with-slots (id desc restartable pframex) p
     (with-tag  "enum" (format stream "~3d: " id))
     (with-tag  (if restartable "restartable" "normal")
-      (format stream "~A" desc))
-    (with-range stream (setf pframex (make-instance 'pframex))
-      (format stream " "))
-    (terpri stream)))
+      (format stream "~A" desc))))
 
 (defun pframe-toggle (p stream expand)
   (with-slots (pframex) p
     (with-slots (iter iter1) stream
       (pbuf-range-iters stream pframex)
+      (format t "FRA<EX ~A~&" pframex)
+      (setf *r* pframex)
       (if expand
-	  (gtb-insert stream
-		      (format nil "~&FUCK YOU, dickwad") :position iter)
 	  (progn
-	    (gti-backward-char iter1)
-	    (gtb-delete stream iter iter1 :interactive nil))))
-	 )
+	    (with-slots (connection thread) stream
+	      (with-slots (id opn) p
+		(swa:emacs-rex
+		 connection
+		 (format nil "(swank:frame-locals-and-catch-tags ~A)" id)
+		 :thread thread
+		 :proc
+		 (lambda (connection reply id)
+		   (file-position stream (gti-offset iter))
+		   (print (active-range stream))
+		   (terpri stream) (princ  "     " stream)
+		   (with-tag "grayloc:" (princ "Locals:" stream))
+		   (loop for item in (first (second reply)) do
+			(terpri stream)
+			(princ "      " stream)
+			(with-tag "locleft" (princ (second item) stream))
+			(with-tag "normal"  (princ " = "  stream))
+			(with-tag "pres"    (princ (sixth item) stream)))
+		   (finish-output stream))))))
+	  ;; (gtb-insert stream	      (format nil "~&FUCK YOU, dickwad") :position iter)
+	  (progn
+	    (format t "TYRING TO ELIMINATE ~A~&" pframex) 
+	    (pbuf-range-minimize stream pframex))))
+    )
   
   )
 
@@ -136,8 +154,9 @@
   (pbuf-new-tag sldb :name "label"       :foreground "Gray70"      :background "Gray18" :editable nil)
   (pbuf-new-tag sldb :name "enum"        :foreground "Gray70"      :editable t)
   (pbuf-new-tag sldb :name "condition"   :foreground "plum"        :editable t)
-  (pbuf-new-tag sldb :name "grhigh"      :background "darkgreen"   :foreground "NavajoWhite" ))
-
+  (pbuf-new-tag sldb :name "grhigh"      :background "darkgreen"   :foreground "NavajoWhite" :editable nil)
+  (pbuf-new-tag sldb :name "grayloc:"    :background "Gray20"      :foreground "Gray70"      :editable nil )
+  (pbuf-new-tag sldb :name "locleft"     :foreground "yellow"                                :editable nil))
 (defmethod -on-announce-eli :after ((sldb sldb) eli)
     (with-slots (keymap) eli
     (keymap-define-key keymap #.kb:|q| (lambda (key) (sldb-quit sldb)))))
@@ -165,29 +184,7 @@
 
 
 (defun sldb-frame-more (sldb range)
-  (with-slots (connection thread) sldb
-        (with-slots (id opn) range
-      (swa:emacs-rex
-       connection
-       (format nil "(swank:frame-locals-and-catch-tags ~A)" id)
-       :thread thread
-       :proc
-       (lambda (connection reply id)
-	 (unless opn
-	   (mvb (start end) (range:bounds range)
-		(file-position sldb (1- end))
-		(format t "DDDDD ~A~% "end)
-		;;-----------------------------
-		(format sldb "~%     Locals:")
-		(format t "EEEEE ~A~% "end)
-		(loop for item in (first (second reply)) do
-		     (format sldb "~%       ~A = ~A" (second item) (sixth item)))
-		(finish-output sldb)
-		;;-----------------------------
-		(setf opn t)
-		;;(print (first (second reply)) sldb)
-		;;(print (second (second reply)) sldb)
-		))))))
+  
   )
 
 
@@ -198,9 +195,8 @@
       (format stream "~A~&" (first conditio)))
     (with-range stream (make-instance 'pcondition)
       (with-tag "condition"
-	(format stream "~A~&" (second conditio))))
-   (with-tag  "label" (format stream "~%Restarts:~&"))
-  #||  
+	(format stream "~A" (second conditio))))
+    (with-tag  "label" (format stream "~%Restarts:~&")) 
     
     (loop for restart in restarts
        for i from 0 do
@@ -212,15 +208,19 @@
     ;;-------------------------------------------------------
     (with-tag  "label" (format stream "~%Backtrace:~&"))
     (loop for frame in frames do
-	 (with-range stream (make-instance
-			     'pframe
-			     :id (first frame)
-			     :desc (second frame)
-			     :restartable (third frame))
-	   (present it stream nil)))
-||#
-    
-    )
+	 (let (pframe)
+	   (with-range stream
+	       (make-instance
+		'pframe
+		:id (first frame)
+		:desc (second frame)
+		:restartable (third frame))
+	     (present it stream nil)
+	     (setf pframe it))
+	   (with-range stream
+	       (make-instance 'pframex)
+	     (terpri stream)
+	     (setf (pframex pframe) it)))))
   
   (finish-output stream) )
 

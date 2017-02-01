@@ -93,12 +93,13 @@
   (with-slots (promises iter iter1) stream
     ;; reverse is important: ranges must fill left to right
     (loop for promise in (reverse promises) do
-	 (print "-----------------")
-	 (print promise)
-	 (range:display (root stream))
+	 ;;(print "-----------------")
+	 ;;(print promise)
+	 ;;(range:display (root stream))
 	 (promise-fulfill (promise-content promise) promise stream)
-	 (range:display (root stream))
-	 (print "-----------------"))
+	 ;;(range:display (root stream))
+	 ;;(print "-----------------")
+	 )
     ;(promises-free stream promises)
     )
     (setf (promises stream) nil))
@@ -127,7 +128,7 @@
   (with-slots (active-range) stream
     ;; create a pad next to active-range to ensure that it stays where it should
    
-  (range:display (root stream))
+;;  (range:display (root stream))
 
     (let ((pad (range:make :dad (range:dad active-range)
 			   :l active-range)))

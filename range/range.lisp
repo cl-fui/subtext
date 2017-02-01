@@ -256,6 +256,40 @@ it, rem and right node."
       (childest (child range))
       range))
 
+(defun find-right (range)
+  "find the node that points at us..."
+ (declare (optimize (speed 3) (safety 0) (debug 0)))
+ (loop for node = (child (dad range)) then (l node)
+     while node
+     until (eq range (l node))
+     finally (return node)))
+;;==============================================================================
+;; eliminate
+;;
+(defun eliminate (range)
+  (let ((da (dad range))
+	(le (l range)))
+    (if (eq range (child da))
+	(setf (child da) le)	; we are first child!
+	(let ((rt (find-right range)))
+	  (if rt
+	      (setf (l rt) le); just a node
+	      (error "RANGE:ELIMINATE node ~A is disjointed" range))
+	  ;; since we will cut the buffer which will shrink us here, we need
+	  ;; to fill it
+	  (if le (incf (width le) (width range))
+	      (incf (width rt) (width range)))))    ))
+
+
+
+
+
+
+
+
+
+
+
 (defparameter *a* nil)
 (defparameter *b* nil)
 (defparameter *tab* (make :width 10))

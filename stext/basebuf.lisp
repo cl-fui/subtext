@@ -214,3 +214,13 @@
   (with-slots (iter iter1) buffer
     (%gtb-get-start-iter buffer iter )
     (%gtb-get-end-iter   buffer iter1 )))
+
+
+(defun pbuf-range-minimize (buffer range)
+  "minimize a range to a single character at the end"
+  (with-slots (iter iter1) buffer
+    (pbuf-range-iters buffer range)
+    (setf (range:child range) nil) ;eliminate children
+    (gtb-remove-all-tags buffer iter iter1)
+    (gti-backward-char iter1)
+    (%gtb-delete buffer iter iter1)))
