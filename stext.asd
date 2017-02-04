@@ -24,11 +24,12 @@
 	       (:file "swank/swank-protocol")
 	       (:file "swank/utf8")
 
-               (:file "range/package")
-               (:file "range/range")
+               ;;(:file "mtree/package")
+               ;;(:file "mtree/mtree")
 
 	       (:file "stext/rview")
 	       
+	       (:file "stext/tb")
 	       (:file "stext/basebuf")
 	       (:file "stext/termstream")
 	       (:file "stext/promises")
@@ -55,9 +56,9 @@
 ;;	       (:file "stext/redit")
 ;;	       (:file "stext/sldb")
 	       ;;	       (:file "stext/types")
-	       (:file "stext/sldb")
+;;	       (:file "stext/sldb")
 	       (:file "swank/swank-parser") ;it knows about tags...
-	       (:file "stext/swarepl")
+;;	       (:file "stext/swarepl")
              (:file "stext/gtk-ui")
 
 	      ; (:file "stext/cline1")

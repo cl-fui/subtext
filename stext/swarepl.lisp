@@ -1,6 +1,6 @@
 (in-package :stext)
 
-
+(defclass range () ())
 (defclass p-entry  ( range:range) ()) ;command-line entry
 (defclass p-pres   ( range:range)
   ((id :accessor id :initform nil :initarg :id)) )

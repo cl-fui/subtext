@@ -40,13 +40,14 @@
   (declare (optimize (speed 3) (safety 0) (debug 0))
 	   (type termstream stream))
   (make-promise :start (stream-position stream)
-		    :content content))
+	        :content content))
 
 (defun tag-out (stream promise)
   (declare (optimize (speed 3) (safety 0) (debug 0))
 	   (type termstream stream)
 	   (type promise promise))
   (setf (promise-end promise) (stream-position stream))
+;;  (format t "TAG-OUT: promise ~A" promise)
   (push promise (promises stream)))
 
 ;; this macro requires stream to be called stream!
@@ -58,6 +59,7 @@
 	    (,promise (tag-in stream it)))
        ,@body
        (tag-out stream ,promise))))
+
 
 
 (defmethod promise-fulfill ((tag gtk-text-tag) promise stream)
@@ -75,13 +77,24 @@
       (%gtb-get-iter-at-offset stream iter1 end)
       (gtb-apply-tag-by-name stream tag iter iter1))))
 
-(defmethod promise-fulfill ((range range:range) promise stream)
- ;; (format t "fulfilling range...~A start ~A end ~A-~&" range	  (promise-start promise) (promise-end promise))
-  ;;(format t "rpad is ~A~&" (- (stream-position stream) (promise-end promise)))
-  ;;(format t "range ~A, ~A~&" range  (range:kids range))
-					;
- (range:sub range (- (stream-position stream) (promise-end promise)))
-  )
+(defmethod promise-fulfill ((pres pres) promise stream)
+  (with-slots (start end) promise
+    (with-slots (iter iter1 presarr) stream
+      (%gtb-get-iter-at-offset stream iter start)
+      (%gtb-get-iter-at-offset stream iter1 end)
+      (when (tag pres)
+	(gtb-apply-tag stream (tag pres) iter iter1))
+;;      (format t "PROMISE-FULFILL: pres ~A ~A~&" start end)
+					;(mtree:split (mtree stream) start pres)
+      (gtb-add-mark stream (make-instance 'pmark :pres pres) iter)
+
+     ;; (gtb-create-mark stream (null-pointer) iter t)
+     ;; (make-instance 'gtk-text-mark)
+      nil
+;      ;;now mark right edge as presentation end
+ ;;     (tb-mark-pres-end stream end pres)
+      )))
+
  
 
 
@@ -103,95 +116,6 @@
     ;(promises-free stream promises)
     )
     (setf (promises stream) nil))
-;;==============================================================================
-;; Range-in
-;;
-;; Create a range under active range and switch to it.
-;;
-(defun range-in (stream range)
-  (with-slots (active-range) stream
-   
-    (let ((old (range:child active-range)))
-      (setf (range:child active-range) range ;we are active's child!
-	    (range:dad range) active-range   ;like so
-	    ;; attach a left pad, so that range:at works... TODO:waste!
-	    (range:l range) (if old old
-				(range:make :width (range:width active-range)
-					    :dad active-range))
-	    active-range range))))
-;;
-;; To get out, we set active range to our dad.  But, we must create a pad below
-;; next to the old range.  As we expand the dad, the pad will keep the old
-;; range intact.
-
-(defun range-out (stream)
-  (with-slots (active-range) stream
-    ;; create a pad next to active-range to ensure that it stays where it should
-   
-;;  (range:display (root stream))
-
-    (let ((pad (range:make :dad (range:dad active-range)
-			   :l active-range)))
-     
-      (if (range:dad (range:dad active-range));; this is how we bottom out!
-	  (setf active-range (range:dad active-range)
-		(range:child active-range) pad)
-	  (progn
-	    (let* ((here (stream-position stream))
-		   (promise
-		    (make-promise :content active-range
-				 :end here 
-				 :start (- here (range:width active-range)))))
-	      (setf (range:dad active-range) (root stream))
-	      (push promise (promises stream))
-	      ;;might as well recycle the pad
-	      (setf (range:dad pad) nil
-		    (range:l pad) nil
-		    active-range pad))
-)))))
-
-(defmacro with-range (stream range &body body)
-  `(let ((it ,range))
-     (range-in ,stream it)
-     ,@body
-     (range-out ,stream)
-     it))
 ;;------------------------------------------------------------------------------
 ;;
 
-
-;;==============================================================================
-;; Simple-Input support
-;; A very simple interface to 
-(defun simple-input-mark (stream)
-  ;; Keep a marker as start of input.
-  "Set input mark to end of buffer after flushing."
-  (with-slots (iter markin) stream
-    (stream-flush stream)
-    (%gtb-get-end-iter stream iter) ;in this case, really want an end iter!
-    (%gtb-move-mark stream markin iter)))
-
-(defun simple-input-get-text (stream)
-  "get text from markin to end"
-  (with-slots (iter iter1 markin) stream 
-    (simple-input-iters stream) 
-    (gtb-get-text stream iter iter1 nil)))
-
-(defun simple-input-iters (stream)
-  "set iters to start and end"
-  (with-slots (iter iter1 markin) stream
-    (stream-flush stream)
-    (%gtb-get-iter-at-mark stream iter markin)
-    (%gtb-get-end-iter stream iter1))
-)
-
-(defun simple-input-promise (stream content)
-  "make a promise on a range of last input"
-  (with-slots (iter iter1 markin promises) stream
-    (simple-input-iters stream)
-    (push 
-     (make-promise 
-		  :start (gti-offset iter)
-		  :end   (gti-offset iter1)
-		  :content content)
-     promises)))

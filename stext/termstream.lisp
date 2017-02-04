@@ -3,7 +3,17 @@
 ;; gtbstream
 ;;
 ;; output at the end only!
+(defclass pres ()
+  ((tag :accessor tag :initform nil :initarg :tag)
+   ))
 
+(defclass pmark (gtk-text-mark)
+  ((pres :accessor pres :initarg :pres))
+  (:metaclass gobject-class))
+
+(defmethod print-object ((mark pmark) out)
+   (print-unreadable-object (mark out :type t)
+    (format out "~A" (pres mark) )))
 (defclass termstream (basebuf
 		      trivial-gray-streams:fundamental-character-output-stream)
   
@@ -12,28 +22,19 @@
    (lbuf         :accessor lbuf   :initform (make-array 4096 :element-type 'character))
    (index        :accessor index  :initform 0   :type fixnum)
    (promises     :accessor promises :initform nil)
-   (active-range :accessor active-range :initform nil )
-
-  ;; (promise-free-list :accessor promise-free-list :initform nil)
-   )
+   ;; for now keep presentations in an array indexed by string in tag
+  )
   
   (:metaclass gobject-class))
 ;;==============================================================================
 (defmethod initialize-instance :after ((stream termstream) &key)
  ;; (print "init-inst TERMSTREAM")
   (with-slots (active-range iter iter1 markin root promise-free-list) stream
-    (setf markin (gtb-create-mark stream (null-pointer) iter t)
-	  active-range (range:make))
-	  
-;;    (loop for i from 0 to 200 do	 (push (make-promise :start 0 :end 0 :content nil) promise-free-list))
-    ))
+    (setf markin (gtb-create-mark stream (null-pointer) iter t))    ))
 ;;------------------------------------------------------------------------------
 (defmethod -on-destroy :before ((stream termstream))
   (with-slots (markin) stream
     (%gtb-delete-mark stream markin)))
-
-
-
 ;;==============================================================================
 ;;
 (defmethod trivial-gray-streams:stream-write-char ((stream termstream) char)
@@ -41,15 +42,16 @@
   (stream-emit stream char))
 ;;------------------------------------------------------------------------------
 (defmethod trivial-gray-streams:stream-line-column ((stream termstream))
-  (format t "line-col~&")
+  ;;(format t "line-col~&")
   (stream-flush stream)
   (gti-get-line-offset (iter stream)))
 
 (defmethod trivial-gray-streams:stream-start-line-p ((stream termstream))
   (with-slots (index lbuf iter anchor) stream
-    (format t "startlinep ~A ~C~& "
+  #||  (format t "startlinep ~A ~C~& "
 	    (subseq lbuf (max 0 (- index 5)) index)
 	    (if (> 0 index) (schar lbuf (1- index)) #\_))
+    ||#
     (if (zerop index) ;if buffer has just been flushed, no way to check
 	(progn ;except ask gtk...
 	  (%gtb-get-iter-at-offset stream iter anchor)
@@ -85,7 +87,6 @@
     (setf (schar lbuf index) char)
     (incf (the fixnum index))
     ;; In order to build detached range structures, widen the 'active range'
-    (range::widen-prim (range:childest active-range) 1 )
     (when (> (the fixnum index) 4090);
       (stream-flush stream))
     char))
@@ -107,8 +108,6 @@
       (when promises (promises-fulfill stream)))))
 ;;==============================================================================
 ;; And our extensions...
-
-
 (defun stream-position (stream)
      (declare (optimize (speed 3) (safety 0) (debug 3)))
      (the fixnum (+ (the fixnum (anchor stream))
@@ -122,3 +121,41 @@
 	  anchor 0
 	  promises nil)))
 
+
+
+
+;;==============================================================================
+;; Simple-Input support
+;; A very simple interface to 
+(defun simple-input-mark (stream)
+  ;; Keep a marker as start of input.
+  "Set input mark to end of buffer after flushing."
+  (with-slots (iter markin) stream
+    (stream-flush stream)
+    (%gtb-get-end-iter stream iter) ;in this case, really want an end iter!
+    (%gtb-move-mark stream markin iter)))
+
+(defun simple-input-get-text (stream)
+  "get text from markin to end"
+  (with-slots (iter iter1 markin) stream 
+    (simple-input-iters stream) 
+    (gtb-get-text stream iter iter1 nil)))
+
+(defun simple-input-iters (stream)
+  "set iters to start and end"
+  (with-slots (iter iter1 markin) stream
+    (stream-flush stream)
+    (%gtb-get-iter-at-mark stream iter markin)
+    (%gtb-get-end-iter stream iter1))
+)
+
+(defun simple-input-promise (stream content)
+  "make a promise on a range of last input"
+  (with-slots (iter iter1 markin promises) stream
+    (simple-input-iters stream)
+    (push 
+     (make-promise 
+		  :start (gti-offset iter)
+		  :end   (gti-offset iter1)
+		  :content content)
+     promises)))

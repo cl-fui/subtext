@@ -1,5 +1,5 @@
 (in-package :stext)
-
+#||
 (defclass psldb-line (range:range) ())
 
 (defclass pcondition (range:range) ())
@@ -239,3 +239,4 @@
 
 
 
+||#

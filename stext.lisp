@@ -1,6 +1,5 @@
 (in-package :stext)
 
-
 (defun make-synonym (old newname &key (package (symbol-package old)) (overwrite nil))
   "make a synonym for old symbol using newname, optionally in a different package.
  Functions only."
@@ -19,7 +18,7 @@ starting with 'old-prefix' in :package.  Remember to capitalize "
     (do-symbols (sym (find-package package))
       (when (fboundp sym) ;functions only
        	(let ((sym-name (symbol-name sym)))
-	  (when-let (match (search old-prefix sym-name))
+	  (alexandria:when-let (match (search old-prefix sym-name))
 	    (when (zerop match)
 	      (let* ((abbrev-sym-name
 		      (concatenate 'string new-prefix
@@ -58,13 +57,10 @@ starting with 'old-prefix' in :package.  Remember to capitalize "
 	 (setf ,place ,temp)
 	 ,@rest))))
 ;;==============================================================================
-(defmethod print-object ((mark gtk-text-mark) out)
-  (let ((offset (gtk:gtk-text-iter-get-offset (gtk:gtk-text-buffer-get-iter-at-mark
-				 (gtk:gtk-text-mark-get-buffer mark) mark))))
-    (print-unreadable-object (mark out :type t)
-      (format out "~s @~A" (gtk:gtk-text-mark-name mark) offset))))
 
-
+(defmethod print-object ((tag gtk-text-mark) out)
+   (print-unreadable-object (tag out :type t)
+    (format out "~s" (gtm-name tag))))
 
 (defmethod print-object ((tag gtk-text-tag) out)
    (print-unreadable-object (tag out :type t)
@@ -116,6 +112,8 @@ Note: a single underline in label will crate a 'mnemonic'; two __ is _"
 
 (defmacro bugx (&rest rest)
   )
+
+
 #||
 (defun achoice (x) (print "FUCK SECOND"))
 (defun mtest ()

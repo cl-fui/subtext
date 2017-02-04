@@ -5,6 +5,7 @@
 ;;; passes button and keypress events to the rbuffer. 
 ;;;
 
+
 (defclass rview (gtk-text-view)
   ()
   (:metaclass gobject-class) )
