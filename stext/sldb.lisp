@@ -1,11 +1,28 @@
 (in-package :stext)
-#||
-(defclass psldb-line (range:range) ())
 
-(defclass pcondition (range:range) ())
+;;====================================================================
+;; To be able to hightlight a line as we move the mouse, use this:
+(defgeneric pres-highlight (p stream flag))
+(defmethod  pres-highlight ((p t) stream flag))
+
+;; a simple line-based presentation
+(defclass psldb-line (pres) ())
+;;-------------------------------------------------------------------
+;; mouse move derived signal is called to highlight/dehighlight
+;; a presentation when mouse moves over it.
+
+(defmethod pres-highlight ((p psldb-line) stream flag)
+  (pbuf-range-iters stream p)
+  (with-slots (iter iter1) stream
+    (if flag
+	(gtb-apply-tag stream "grhigh" iter iter1)
+	(gtb-remove-tag stream "grhigh" iter iter1))))
+
+
+(defclass pcondition (pres) ())
 
 ;====================================================================
-(defclass pframe     (psldb-line)
+(defclass pframe (pres)
   ((id   :accessor id    :initarg :id   )
    (desc :accessor desc  :initarg :desc )
    (restartable :accessor restartable :initarg :restartable)
@@ -64,7 +81,7 @@
 ;;;====================================================================
 ;;; Communicates live with swank!
 ;;
-(defclass pframex    (range:range)
+(defclass pframex    (pres)
   ((connection :accessor connection :initarg :connection)
    (opn :accessor opn  :initarg :opn :initform nil )))
 
@@ -81,17 +98,6 @@
 (defmethod pres-button-press ((p prestart) stream event)
   (print "INVOKING RESTART")
   (sldb-invoke-restart stream (id p)))
-
-;;-------------------------------------------------------------------
-;; mouse move derived signal is called to highlight/dehighlight
-;; a presentation when mouse moves over it.
-(defmethod pres-highlight ((p t) stream flag))
-(defmethod pres-highlight ((p psldb-line) stream flag)
-  (pbuf-range-iters stream p)
-  (with-slots (iter iter1) stream
-    (if flag
-	(gtb-apply-tag stream "grhigh" iter iter1)
-	(gtb-remove-tag stream "grhigh" iter iter1))))
 
 
 (defmethod pres-button-press ((p t) stream event))
@@ -239,4 +245,3 @@
 
 
 
-||#

@@ -1,13 +1,13 @@
 (in-package :stext)
 
-(defclass range () ())
-(defclass p-entry  ( range:range) ()) ;command-line entry
-(defclass p-pres   ( range:range)
+
+(defclass p-entry  (pres) ()) ;command-line entry
+(defclass p-pres   (pres)
   ((id :accessor id :initform nil :initarg :id)) )
-(defclass p-input  ( range:range)
+(defclass p-input  (pres)
   ((id :accessor id :initform nil :initarg :id)
    (tag :accessor tag :initform nil :initarg :tag)) )
-(defclass p-prompt ( range:range) ()  )
+
 
 
 ;;OK (ql:quickload :stext)(in-package :stext)
@@ -32,17 +32,17 @@
      (lambda (gtkkey)
        (declare (ignore gtkkey))
 					;(write-char #\newline pbuf)
-       (gdk-threads-add-idle
+       (gdk-threads-add-idle ; Idly,
 	(lambda ()
 	  (with-slots (swank) pbuf
 	    (let* ((string (simple-input-get-text pbuf))
-		   (line (swarepl-parse-string string )))
+		   (line (swarepl-parse-string string)))
 	      (when line
-		;; make an entry presentation.
+		;; Convert entered text to 'entry presentation
 		(simple-input-promise
 		 pbuf
 		 (make-instance
-		  'p-entry :width (length string) :dad (root pbuf)))
+		  'p-entry ))
 		;; and set color
 		(simple-input-promise pbuf "input")  
  		(swa:eval swank line #'prompt-proc))))
@@ -56,6 +56,9 @@
   (swa:disconnect (swank pbuf)))
 
 (defmethod -on-initial-display :after ((pbuf swarepl))
+  ;; all instance of p'entry share the tag 'input
+  (pres-setup-tag pbuf 'p-entry "input")
+  (pres-setup-tag pbuf 'p-pres  "pres")
   (with-slots (swank ) pbuf
     (swa:connect swank #'our-fallback)
     (swa:emacs-rex swank "(swank:connection-info)")
@@ -93,13 +96,10 @@
 
     (let (ob pr)
       (defun sw-presentation-start (connection id stream)
-	(range-in pbuf (make-instance 'p-pres :id id))
-	(setf pr (tag-in pbuf "pres")))
-      
+	(setf pr (tag-in pbuf (make-instance 'p-pres :id id))))
       
       (defun sw-presentation-end (connection id stream)
-	(tag-out pbuf pr)
-	(range-out pbuf)))
+	(tag-out pbuf pr)))
     
     (defun sw-new-package (connection name nickname)
       (setf (swa:pkg connection) name
@@ -207,7 +207,7 @@
 ;; history for repl
 ;;
 (defun pbuf-hist-prim (pbuf replacement)
-  (when replacement; could be nill on startup...
+ #|| (when replacement; could be nill on startup...
     (with-slots ( histid) pbuf
       (let ((range (range:at (root pbuf) (gtb-cursor-position pbuf))))
 	(when (eq 'p-entry (type-of range))
@@ -216,7 +216,8 @@
 	       ;;(print start) (print end)
 	       (unless (gti-equal start end)
 		 (gtb-delete pbuf start end))
-	       (gtb-insert pbuf replacement :position start)))))))
+	       (gtb-insert pbuf replacement :position start))))))
+||#)
 
 (defun pbuf-c-up (pbuf)
   (pbuf-hist-prim pbuf (swa:history-back (swank pbuf))))

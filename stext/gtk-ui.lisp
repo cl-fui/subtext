@@ -92,7 +92,7 @@
 	  
 	(let ((stream buffer))
 	  (time
-	   (loop for i from 1 to 100000 do
+	   (loop for i from 1 to 10 do
 	      ;;(with-range buffer)
 	      ;;(stream  (make-instance 'ptest :text1 "hello" :num i :text2 "world" )(present it buffer nil))
 		(format buffer "Hello ")
@@ -108,3 +108,20 @@
       
 	)))
 
+;;;-----------------------------------------------------------------------------------
+;;;
+;;; SWANK REPL
+
+(defun t3 ( &key (stdout *standard-output*))
+  "final"
+  (within-main-loop
+    ;; (setf *ui-thread* (bt:current-thread))
+    (setf *standard-output* stdout) ;re-enable output
+    (let ((top (make-frame (make-window (make-rview (make-instance 'swarepl))) 
+			   :kill t))) 
+      
+      (gtk-widget-show-all top)
+      (g-idle-add
+       (lambda ()
+	 (-on-initial-display top)
+	 nil)))))

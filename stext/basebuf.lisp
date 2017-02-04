@@ -1,6 +1,6 @@
 (in-package :stext)
 ;;;=============================================================================
-;;; basebuf - some basic buffer functionality
+;;; basebuf - some default tags...
 ;;;
 ;;OK (ql:quickload :stext)(in-package :stext)
 (defclass basebuf (tb) 
@@ -14,7 +14,6 @@
 
 
 ;;------------------------------------------------------------------------------
-
 (defmethod initialize-instance :after ((buffer basebuf) &key )
    (print "initialize-instance: basebuf")
   (with-slots (ptags range root) buffer
@@ -54,7 +53,9 @@
   (pbuf-bounds pbuf)
   (with-slots (iter iter1) pbuf
     (gtb-remove-all-tags pbuf iter iter1)
-    (gtk::%gtk-text-buffer-delete pbuf iter iter1)))
+    (gtk::%gtk-text-buffer-delete pbuf iter iter1))
+  ;;TODO: remove all marks!
+  )
 
 
 
@@ -68,10 +69,6 @@
 	 (marks-here (gti-get-marks here))
 	 (tags-here (gti-get-tags here)))
       ;; are we inside a presentation?
-     ;
-     
-	   
-	   ;; (setf *q* range)g
 
       (format t "~%===============================================")
       (format t "~%Cursor is at ~D; character [~C](~d $~x)" offset
@@ -93,36 +90,20 @@
  
   (bufstat-prim buffer (gtb-cursor-position buffer)) )
 
-;;==============================================================================;
-;; a quick way to make a tag
-(defmacro pbuf-new-tag (pbuf &rest x)
-  `(let ((tag (make-instance 'ptag ,@x)))
-     (gttt-add (gtb-tag-table ,pbuf) tag)
-     tag))
-
-
 
 (defun pbuf-create-tags (pbuf)
    
   (with-slots (ptags) pbuf
     (setf
      ptags (make-array 10)
-     (aref ptags 5) (pbuf-new-tag pbuf :name "error"  :foreground "blue" :editable t;nil
-				  )
-     
-
-     (aref ptags 0) (pbuf-new-tag pbuf :name "prompt" :foreground "cyan" :editable t;nil
-				  )
-     (aref ptags 4) (pbuf-new-tag pbuf :name "pres"   :foreground "red" :editable t;nil
-				  )
+     (aref ptags 5) (pbuf-new-tag pbuf :name "error"  :foreground "blue" :editable nil)
+     (aref ptags 0) (pbuf-new-tag pbuf :name "prompt" :foreground "cyan" :editable nil)
+     (aref ptags 4) (pbuf-new-tag pbuf :name "pres"   :foreground "red" :editable nil)
      (aref ptags 1) (pbuf-new-tag pbuf :name "input"  :foreground "AntiqueWhite1" :editable t)
-     (aref ptags 2) (pbuf-new-tag pbuf :name "output" :foreground "NavajoWhite2":editable t;nil
-				  )
-     (aref ptags 3) (pbuf-new-tag pbuf :name "return" :foreground "chartreuse1" :editable t;nil
-				  )
+     (aref ptags 2) (pbuf-new-tag pbuf :name "output" :foreground "NavajoWhite2":editable nil)
+     (aref ptags 3) (pbuf-new-tag pbuf :name "return" :foreground "chartreuse1" :editable nil)
   
-     (aref ptags 6) (pbuf-new-tag pbuf :editable t;nil
-				  )
+     (aref ptags 6) (pbuf-new-tag pbuf :editable t)
      (aref ptags 7) (pbuf-new-tag pbuf :foreground "deepskyblue")
      (aref ptags 8) (pbuf-new-tag pbuf :name "bg-greenish" :editable t;nil
 				  :foreground "deepskyblue";
@@ -135,8 +116,6 @@
      )))
 
 ;; Move cursor to end and create a subrange at end...
-
-
  
 (defun pbuf-tag-at-offsets (stream tag start end)
   (with-slots (iter iter1) stream

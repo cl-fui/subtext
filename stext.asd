@@ -58,7 +58,7 @@
 	       ;;	       (:file "stext/types")
 ;;	       (:file "stext/sldb")
 	       (:file "swank/swank-parser") ;it knows about tags...
-;;	       (:file "stext/swarepl")
+	       (:file "stext/swarepl")
              (:file "stext/gtk-ui")
 
 	      ; (:file "stext/cline1")

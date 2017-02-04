@@ -1,19 +1,9 @@
 (in-package :stext)
 ;;------------------------------------------------------------------------------
-;; gtbstream
+;; gtbstream - streaming io, simple-input, promises
 ;;
 ;; output at the end only!
-(defclass pres ()
-  ((tag :accessor tag :initform nil :initarg :tag)
-   ))
 
-(defclass pmark (gtk-text-mark)
-  ((pres :accessor pres :initarg :pres))
-  (:metaclass gobject-class))
-
-(defmethod print-object ((mark pmark) out)
-   (print-unreadable-object (mark out :type t)
-    (format out "~A" (pres mark) )))
 (defclass termstream (basebuf
 		      trivial-gray-streams:fundamental-character-output-stream)
   
@@ -148,14 +138,30 @@
     (%gtb-get-iter-at-mark stream iter markin)
     (%gtb-get-end-iter stream iter1))
 )
-
+;;----------------------------------------------------------------------
+;; A promise
 (defun simple-input-promise (stream content)
   "make a promise on a range of last input"
-  (with-slots (iter iter1 markin promises) stream
+  (with-slots (iter iter1 promises) stream
     (simple-input-iters stream)
-    (push 
-     (make-promise 
-		  :start (gti-offset iter)
-		  :end   (gti-offset iter1)
-		  :content content)
-     promises)))
+    (push (make-promise  :start (gti-offset iter)
+			 :end (gti-offset iter1)
+			 :content content)
+	  promises)))
+
+
+;;------------------------------------------------------------------------------
+(defun pres-setup-tag (stream pres-class tagname)
+  ;;TODO: fix this to just address the class instead of creating an instance...
+  (setf (tag (make-instance pres-class))
+	(gttt-lookup  (gtb-tag-table stream) tagname)))
+
+
+;;(defmethod -on-button-press ((sldb sldb) iter event))
+
+  ;; get the presentation
+;;  (mvb (range off) (range:actual (root sldb) (gti-get-offset iter))	(pres-button-press range sldb event))
+  
+
+;;
+

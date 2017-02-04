@@ -5,18 +5,32 @@
 ;;------------------------------------------------------------------------------
 ;; Promises
 ;;
-;; A promise is a contract to perform some task on the buffer in the future. A
-;; promise has start and end offsets, and the content, such as tag..
-;; We keep offsets as numeric offsets.  That should mostly work as insertion
-;; happes at the end.  Should we make a promise, then insert in the beginning
-;; of a buffer, bad things will happen TODO~
+;; A promise is a contract to perform some task on the buffer in the future, A
+;; promise has start and end offsets, and the content, such as tag or a pres.  
+;; We keep offsets as numeric offsets.  Note that the offsets are future-bound:
+;; the buffer may not even be long enough to allow some offset, but will be
+;; in the future, when the promises are fulfilled!
 ;;
-;; Promises are made with a (promising "bold" whatever) forms.  At the end of
-;; the promising form, the promise is placed on the promises list.  When the
-;; output is finished,  promises are resolved.  
+;; Promises are resolved when (finish-output) is issued on the stream, or some
+;; other event causes the stream to flush.
 (defstruct promise start end content)
 
+(defclass pres ()
+  ((tag :accessor tag :initform nil :initarg :tag :allocation :class)))
+
+;; This is a mark inserted by a promise with a presentation. 
+(defclass pmark (gtk-text-mark)
+  ((pres :accessor pres :initarg :pres))
+  (:metaclass gobject-class))
+
+(defmethod print-object ((mark pmark) out)
+   (print-unreadable-object (mark out :type t)
+    (format out "~A" (pres mark) )))
+
+
+
 ;; Out of desperation, I am keeping a pool of promises to avoid consisng...
+#||
 (defun promise-new (stream &key (start 0) (end 0) (content nil))
   (with-slots (promise-free-list) stream
     (let ((promise (pop promise-free-list)))
@@ -34,6 +48,7 @@
   (with-slots (promise-free-list) stream
     (loop for promise in promises do
 	 (promise-free stream promise))))
+||#
 ;;------------------------------------------------------------------------------
 ;; Called by with-tag macro.
 (defmethod tag-in (stream (content t))
@@ -82,9 +97,10 @@
     (with-slots (iter iter1 presarr) stream
       (%gtb-get-iter-at-offset stream iter start)
       (%gtb-get-iter-at-offset stream iter1 end)
+      
       (when (tag pres)
 	(gtb-apply-tag stream (tag pres) iter iter1))
-;;      (format t "PROMISE-FULFILL: pres ~A ~A~&" start end)
+    ;;  (format t "PROMISE-FULFILL: pres ~A ~A~&" start end)
 					;(mtree:split (mtree stream) start pres)
       (gtb-add-mark stream (make-instance 'pmark :pres pres) iter)
 
@@ -97,7 +113,7 @@
 
  
 
-
+;;----------------------------------------------------------------
 (defun promises-fulfill (stream)
 ;;  (print (promises stream))
 ;; (print "---------------")
