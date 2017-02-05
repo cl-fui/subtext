@@ -130,17 +130,17 @@
 	;;	(with-range buffer (range:make)	  (format buffer "hello~&"))
 
 	(let ((stream buffer))
-	  (defpres p3 buffer :tag (:foreground "blue"))
-	  (defpres p4 buffer :tag (:foreground "green"))
+	  (defpres buffer p3 (pres) :tag (:foreground "blue"))
+	  (defpres buffer p4 (pres) :tag (:foreground "green"))
 
 	  (time
 	   (loop for i from 1 to 10 do
 	      ;;(with-range buffer)
 	      ;;(stream  (make-instance 'ptest :text1 "hello" :num i :text2 "world" )(present it buffer nil))
-		(with-tag (make-instance 'p3 )
+		(with-tag 'p4
 		  (format buffer "Hello "))
 		
-		(with-tag (make-instance 'p4 )
+		(with-tag 'p3
 		  (format buffer "world"))
 		
 		(format buffer "...~&")

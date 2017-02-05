@@ -43,6 +43,12 @@
   (make-promise :start (stream-position stream)
 	        :content content))
 
+(defmethod tag-in (stream (content symbol))
+  (declare (optimize (speed 3) (safety 0) (debug 0))
+	   (type termstream stream))
+  (make-promise :start (stream-position stream)
+	        :content (make-instance content)))
+
 (defun tag-out (stream promise)
   (declare (optimize (speed 3) (safety 0) (debug 0))
 	   (type termstream stream)
@@ -59,8 +65,11 @@
     `(let* ((it ,tag)		    ;anaphoric it for the presentation
 	    (,promise (tag-in stream it)))
        ,@body
-       (tag-out stream ,promise))))
+       (tag-out stream ,promise)
+       it)))
 
+(defmacro with-pres (prestype &body body)
+  `(with-tag (make-instance ',prestype) ,@body))
 
 
 (defmethod promise-fulfill ((tag gtk-text-tag) promise stream)
@@ -86,6 +95,7 @@
       (%gtb-get-iter-at-offset stream iter1 end)
     ;;  (format t "promise fulfill at ~A ~A pres ~A ~tag ~A ~&" start end pres (tag pres))
       (%gtb-apply-tag stream (tag pres) iter iter1)
+      ;(setf (stream pres) stream)
       (pres-mark stream iter pres)
       nil)))
 
