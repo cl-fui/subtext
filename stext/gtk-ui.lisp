@@ -42,7 +42,8 @@
       (gtk-widget-show-all top)
       (g-idle-add
        (lambda ()
-	 (let ((stream *pbuf*))
+	 (let* ((stream *pbuf*)
+	       (tag-error (pbuf-find-tag stream "error" )))
 	   (format stream "------")
 	   (with-tag (make-instance 'pres :tag "error")
 	     (setf *r* (with-tag  (make-instance 'pres :tag "prompt")
@@ -72,12 +73,15 @@
 
 (defparameter *top* nil)
 (defparameter *tag* nil)
+(defclass p1 (pres) ())
+(defclass p2 (pres) ())
+
 (defun t10 ( &key (stdout *standard-output*))
   "final"
   (within-main-loop
    ;; (setf *ui-thread* (bt:current-thread))
     (setf *standard-output* stdout) ;re-enable output
-    (let ((buffer (make-instance 'termstream)))
+    (let ((buffer (make-instance 'rbuffer)))
       (setf *pbuf* buffer)
       (let ((top (make-frame (make-window (setf *top* (make-rview buffer)))
 			     :kill t))
@@ -87,21 +91,60 @@
 	(format t "SHOWING~&")
 	;;	(with-range buffer (range:make)	  (format buffer "hello~&"))
 
-	(setf *tag* (gttt-lookup (gtb-tag-table buffer) "prompt" ))
+
+	(let ((tag-prompt (pbuf-find-tag buffer "prompt"))
+	      (tag-pres   (pbuf-find-tag buffer "pres")))
+	  (let ((stream buffer))
+	    (time
+	     (loop for i from 1 to 10 do
+		;;(with-range buffer)
+		;;(stream  (make-instance 'ptest :text1 "hello" :num i :text2 "world" )(present it buffer nil))
+		  (with-tag (make-instance 'p1 :tag tag-prompt)
+		    (format buffer "Hello "))
+		  
+		  (with-tag (make-instance 'p2 :tag tag-pres)
+		    (format buffer "world"))
+		  
+		  (format buffer "...~&")
+		;;	(terpri buffer)
+		  ))))	
+	(finish-output buffer))
+      
+      
+      )))
+
+
+(defun t11 ( &key (stdout *standard-output*))
+  "final"
+  (within-main-loop
+   ;; (setf *ui-thread* (bt:current-thread))
+    (setf *standard-output* stdout) ;re-enable output
+    (let ((buffer (make-instance 'rbuffer)))
+      (setf *pbuf* buffer)
+      (let ((top (make-frame (make-window (setf *top* (make-rview buffer)))
+			     :kill t))
+	    r)
+	(gtk-widget-show-all top)
 	
-	  
+	(format t "SHOWING~&")
+	;;	(with-range buffer (range:make)	  (format buffer "hello~&"))
+
 	(let ((stream buffer))
+	  (defpres p3 buffer (:foreground "blue"))
+	  (defpres p4 buffer (:foreground "green"))
+
 	  (time
 	   (loop for i from 1 to 10 do
 	      ;;(with-range buffer)
 	      ;;(stream  (make-instance 'ptest :text1 "hello" :num i :text2 "world" )(present it buffer nil))
-		(format buffer "Hello ")
-	
-		(with-tag (make-instance 'pres :tag *tag*)
+		(with-tag (make-instance 'p3 )
+		  (format buffer "Hello "))
+		
+		(with-tag (make-instance 'p4 )
 		  (format buffer "world"))
 		
 		(format buffer "...~&")
-	;;	(terpri buffer)
+	      ;;	(terpri buffer)
 		)))	
 	(finish-output buffer))
       

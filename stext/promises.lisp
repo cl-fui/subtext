@@ -16,16 +16,8 @@
 (defstruct promise start end content)
 
 (defclass pres ()
-  ((tag :accessor tag :initform nil :initarg :tag :allocation :class)))
-
-;; This is a mark inserted by a promise with a presentation. 
-(defclass pmark (gtk-text-mark)
-  ((pres :accessor pres :initarg :pres))
-  (:metaclass gobject-class))
-
-(defmethod print-object ((mark pmark) out)
-   (print-unreadable-object (mark out :type t)
-    (format out "~A" (pres mark) )))
+  ((tag :accessor tag :initarg :tag )) ;for verification
+  )
 
 
 
@@ -39,7 +31,7 @@
 	    (promise-content promise) content)
       promise)))
 
-(defun promise-free (stream promise)
+(defun promise-free (stream promise)a
   (with-slots (promise-free-list) stream
     (setf (promise-content promise) nil)
     (push promise promise-free-list)))
@@ -92,24 +84,16 @@
       (%gtb-get-iter-at-offset stream iter1 end)
       (gtb-apply-tag-by-name stream tag iter iter1))))
 
+;; presentation tags must be tags, not names of tags
 (defmethod promise-fulfill ((pres pres) promise stream)
   (with-slots (start end) promise
     (with-slots (iter iter1 presarr) stream
       (%gtb-get-iter-at-offset stream iter start)
       (%gtb-get-iter-at-offset stream iter1 end)
-      
-      (when (tag pres)
-	(gtb-apply-tag stream (tag pres) iter iter1))
-    ;;  (format t "PROMISE-FULFILL: pres ~A ~A~&" start end)
-					;(mtree:split (mtree stream) start pres)
-      (gtb-add-mark stream (make-instance 'pmark :pres pres) iter)
-
-     ;; (gtb-create-mark stream (null-pointer) iter t)
-     ;; (make-instance 'gtk-text-mark)
-      nil
-;      ;;now mark right edge as presentation end
- ;;     (tb-mark-pres-end stream end pres)
-      )))
+    ;;  (format t "promise fulfill at ~A ~A pres ~A ~tag ~A ~&" start end pres (tag pres))
+      (%gtb-apply-tag stream (tag pres) iter iter1)
+      (pres-mark stream iter pres)
+      nil)))
 
  
 

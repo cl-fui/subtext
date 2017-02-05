@@ -58,6 +58,8 @@
   )
 
 
+(defun pres-here (pbuf off)
+  )
 
 ;;==============================================================================
 ;; Debugging tools
@@ -67,7 +69,8 @@
     (let*
 	((here (gtb-get-iter-at-offset pbuf offset))
 	 (marks-here (gti-get-marks here))
-	 (tags-here (gti-get-tags here)))
+	 (tags-here (gti-get-tags here))
+)
       ;; are we inside a presentation?
 
       (format t "~%===============================================")
@@ -80,9 +83,19 @@
 	   ;;(format t "~%Tags here: ~A" tags-here)
 
       (format t "~%Marks here: ~A" marks-here )
-;;      (if pres	  (format t "~%presentations ~A ~A at ~A ~A~&" pres off iter iter1   ))
+
       
-      ;;      (format t "~%Inside presentation: ~A" (pbuf-get-pres pbuf here))
+      ;;(format t "~%Inside presentation: ~A" (gti-tags here))
+
+      (loop for tag in (progn
+			 (%gtb-get-iter-at-offset pbuf iter offset)
+			 (gti-tags iter))
+	 when (subtypep (type-of tag) 'ptag) do
+	   
+	   (pres-bounds pbuf offset tag)
+	   (format t "~%Pres: ~A ~A ~A" (pres-bounds pbuf offset tag)
+		   (gti-offset iter) (gti-offset iter1)))
+      
       )))
 
 ;; 
@@ -148,6 +161,8 @@
     (%gtb-get-start-iter buffer iter )
     (%gtb-get-end-iter   buffer iter1 )))
 
+(defun pbuf-find-tag (pbuf tagname)
+  (gttt-lookup  (gtb-tag-table pbuf) tagname))
 #||
 (defun pbuf-range-minimize (buffer range)
   "minimize a range to a single character at the end"

@@ -3,10 +3,8 @@
 
 (defclass p-entry  (pres) ()) ;command-line entry
 (defclass p-pres   (pres)
-  ((id :accessor id :initform nil :initarg :id)) )
-(defclass p-input  (pres)
-  ((id :accessor id :initform nil :initarg :id)
-   (tag :accessor tag :initform nil :initarg :tag)) )
+  () )
+
 
 
 
@@ -15,12 +13,20 @@
   ((swank :initform nil :accessor swank) ;swank communication channel
    (sldbs :accessor sldbs :initform (make-hash-table)); track debuggers by '
    )
-  (:metaclass gobject-class))
+  (:metaclass gobject-class)
+  )
 
 
 (defmethod initialize-instance :after ((pbuf swarepl) &key)
   (print "initialize-instance: swarepl")
   (setf *pbuf* pbuf);***
+
+  (defpres p-entry pbuf (:foreground "AntiqueWhite" :editable nil))
+  (defpres p-pres  pbuf (:foreground "red" :editable nil)
+	   (id :accessor id :initform nil :initarg :id))
+  (defpres p-input pbuf (:foreground "blue" :editable t))
+  
+  
   (with-slots (swank) pbuf
     (setf swank (swa:make-connection "localhost" 5000)))
   pbuf)
@@ -57,9 +63,7 @@
 
 (defmethod -on-initial-display :after ((pbuf swarepl))
   ;; all instance of p'entry share the tag 'input
-  (pres-setup-tag pbuf 'p-entry "input")
-  (pres-setup-tag pbuf 'p-pres  "pres")
-  (with-slots (swank ) pbuf
+    (with-slots (swank ) pbuf
     (swa:connect swank #'our-fallback)
     (swa:emacs-rex swank "(swank:connection-info)")
     (swa:emacs-rex swank "(swank:swank-require '(swank-presentations swank-repl))")
