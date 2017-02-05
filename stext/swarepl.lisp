@@ -1,12 +1,6 @@
 (in-package :stext)
 
 
-(defclass p-entry  (pres) ()) ;command-line entry
-(defclass p-pres   (pres)
-  () )
-
-
-
 
 ;;OK (ql:quickload :stext)(in-package :stext)
 (defclass swarepl (rbuffer)
@@ -20,10 +14,12 @@
 (defmethod initialize-instance :after ((pbuf swarepl) &key)
   (print "initialize-instance: swarepl")
   (setf *pbuf* pbuf);***
-
+  ;;---------------------------------------------------------------------------
+  ;; Define presentation classes and associated tags.
   (defpres p-entry pbuf (:foreground "AntiqueWhite" :editable nil))
-  (defpres p-pres  pbuf (:foreground "red" :editable nil)
-	   (id :accessor id :initform nil :initarg :id))
+  (defpres p-pres  pbuf
+    (:foreground "red" :editable nil); these are tag parameters
+    (id :accessor id :initform nil :initarg :id)); and these are pres slots
   (defpres p-input pbuf (:foreground "blue" :editable t))
   
   
