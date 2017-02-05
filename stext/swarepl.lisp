@@ -102,7 +102,7 @@
 	(setf pr (tag-in pbuf (make-instance 'p-pres :id id))))
       
       (defun sw-presentation-end (connection id stream)
-	(tag-out pbuf pr)))
+	(print (tag-out pbuf pr))))
     
     (defun sw-new-package (connection name nickname)
       (setf (swa:pkg connection) name

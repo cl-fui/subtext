@@ -71,7 +71,10 @@
   ;;(print "AFLJALSDJ~&")
   (let ((o1 (gti-get-offset  istart))
 	(o2 (gti-get-offset  iend)))
-    ;;(format t "~%deleting range: [~D ~D)~&" o1 o2)
+
+    (when (<= o1 (the fixnum (anchor buffer)))
+      (decf (the fixnum (anchor buffer)) (- o2 o1))
+      (format t "~%deleting range: [~D ~D)~&" o1 o2))
    ;; (range:narrow (range:at (root  buffer) o1) (- o2 o1))
 ))
 
