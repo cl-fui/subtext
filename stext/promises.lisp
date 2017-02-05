@@ -15,12 +15,6 @@
 ;; other event causes the stream to flush.
 (defstruct promise start end content)
 
-(defclass pres ()
-  ((tag :accessor tag :initarg :tag )) ;for verification
-  )
-
-
-
 ;; Out of desperation, I am keeping a pool of promises to avoid consisng...
 #||
 (defun promise-new (stream &key (start 0) (end 0) (content nil))

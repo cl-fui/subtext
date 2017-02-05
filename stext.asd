@@ -32,6 +32,7 @@
 	       (:file "stext/tb")
 	       (:file "stext/basebuf")
 	       (:file "stext/termstream")
+	       (:file "stext/pres")
 	       (:file "stext/promises")
 	       (:file "stext/rbuffer")
 	       ;;(:file "stext/rstream")

@@ -58,9 +58,9 @@ starting with 'old-prefix' in :package.  Remember to capitalize "
 	 ,@rest))))
 ;;==============================================================================
 
-(defmethod print-object ((tag gtk-text-mark) out)
-   (print-unreadable-object (tag out :type t)
-    (format out "~s" (gtm-name tag))))
+(defmethod print-object ((mark gtk-text-mark) out)
+   (print-unreadable-object (mark out :type t)
+    (format out "~s" (gtk:gtk-text-mark-name mark))))
 
 (defmethod print-object ((tag gtk-text-tag) out)
    (print-unreadable-object (tag out :type t)

@@ -7,11 +7,6 @@
   ((ptags :accessor ptags     :initform nil )) 
   (:metaclass gobject-class))
 
-;; For now, differentiate our presentation tags
-(defclass ptag (gtk-text-tag)
-  ()
-  (:metaclass gobject-class))
-
 
 ;;------------------------------------------------------------------------------
 (defmethod initialize-instance :after ((buffer basebuf) &key )
@@ -90,7 +85,7 @@
       (loop for tag in (progn
 			 (%gtb-get-iter-at-offset pbuf iter offset)
 			 (gti-tags iter))
-	 when (subtypep (type-of tag) 'ptag) do
+	 when (subtypep (type-of tag) 'ptag-base) do
 	   
 	   (pres-bounds pbuf offset tag)
 	   (format t "~%Pres: ~A ~A ~A" (pres-bounds pbuf offset tag)

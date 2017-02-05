@@ -14,7 +14,7 @@
 (defclass tb (gtk-text-buffer)
   ((iter   :accessor iter   :initform nil :type gtk-text-iter)
    (iter1  :accessor iter1  :initform nil :type gtk-text-iter)
-   (root   :accessor root   :initform nil)
+   ;(root   :accessor root   :initform nil)
    (anchor :accessor anchor :initform 0 :type fixnum)
 
    (oldx   :accessor oldx   :initform 0   :type fixnum) ;insert-text position
@@ -31,7 +31,7 @@
   (with-slots (iter iter1 root anchor) buffer
     (setf iter   (gtb-get-start-iter buffer)
 	  iter1  (gtb-get-end-iter   buffer)
-	  root (make-instance 'pres )
+	 ; root (make-instance 'pres )
   ))
   (g-signal-connect buffer "insert-text" #'on-insert-text-before :after nil)
   (g-signal-connect buffer "insert-text" #'on-insert-text-after :after t)
@@ -78,7 +78,7 @@
 ;;==============================================================================;
 ;; a quick way to make a tag
 (defmacro pbuf-new-tag (pbuf &rest x)
-  `(let ((tag (make-instance 'ptag ,@x)))
+  `(let ((tag (make-instance 'gtk-text-tag ,@x)))
      (gttt-add (gtb-tag-table ,pbuf) tag)
      tag))
 

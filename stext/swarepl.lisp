@@ -19,7 +19,7 @@
   (defpres p-entry pbuf (:foreground "AntiqueWhite" :editable nil))
   (defpres p-pres  pbuf
     (:foreground "red" :editable nil); these are tag parameters
-    (id :accessor id :initform nil :initarg :id)); and these are pres slots
+    :slots(id)); and these are pres slots
   (defpres p-input pbuf (:foreground "blue" :editable t))
   
   
@@ -41,16 +41,12 @@
 		   (line (swarepl-parse-string string)))
 	      (when line
 		;; Convert entered text to 'entry presentation
-		(simple-input-promise
-		 pbuf
-		 (make-instance
-		  'p-entry ))
+		(simple-input-promise pbuf (make-instance 'p-entry ))
 		;; and set color
-		(simple-input-promise pbuf "input")  
  		(swa:eval swank line #'prompt-proc))))
 	  nil)); run once.
        (stream-flush pbuf)
-       nil)))); key processed.
+       nil))));TODO: for now, just let gtk process enter...
 ;;------------------------------------------------------------------------------
 
 ;; view invokes this on destruction...
@@ -111,6 +107,7 @@
     (defun sw-read-string (connection id tag)      
       (simple-input-mark pbuf))
 
+    
     ;; We shall keep the debuggers around in a hashtable, keyed by both thread
     ;; and debug level (TODO: is this really necessary?).
     ;;
