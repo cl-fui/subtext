@@ -6,6 +6,8 @@
 (defclass swarepl (rbuffer)
   ((swank :initform nil :accessor swank) ;swank communication channel
    (sldbs :accessor sldbs :initform (make-hash-table)); track debuggers by '
+   (read-id :accessor read-id :initform 0)   ;0=commandline, otherwise read-line
+   (read-tag :accessor read-tag :initform 0) ;TODO: terminology?
    )
   (:metaclass gobject-class)
   )
@@ -36,14 +38,16 @@
 					;(write-char #\newline pbuf)
        (gdk-threads-add-idle ; Idly,
 	(lambda ()
-	  (with-slots (swank) pbuf
-	    (let* ((string (simple-input-get-text pbuf))
-		   (line (swarepl-parse-string string)))
-	      (when line
-		;; Convert entered text to 'entry presentation
-		(simple-input-promise pbuf (make-instance 'p-entry ))
-		;; and set color
- 		(swa:eval swank line #'prompt-proc))))
+	  (with-slots (swank read-id read-tag) pbuf
+	    (let ((string (simple-input-get-text pbuf)))
+	      (if (zerop read-id)
+		  (let ((line (swarepl-parse-string string)))
+		    (when line
+		      ;; Convert entered text to 'entry presentation
+		      (simple-input-promise pbuf (make-instance 'p-entry ))
+		      ;; and set color
+		      (swa:eval swank line #'prompt-proc)))
+		  (swa:emacs-return-string swank string read-id read-tag  ))))
 	  nil)); run once.
        (stream-flush pbuf)
        nil))));TODO: for now, just let gtk process enter...
@@ -70,6 +74,9 @@
     ;;---------------------------------------------
     ;; This can be called explicitly
     (defun prompt (swank)
+      (with-slots (read-id read-tag) pbuf
+	(setf read-id 0
+	      read-tag 0))
       (let ((stream pbuf))
 	(with-tag "prompt"
 	  (fresh-line pbuf)
@@ -104,7 +111,10 @@
     ;;-----------------------------------------------------------------------
     ;; Input requested (read-line?).  Keep the id and tag in a range to return
     ;; later, when <enter> is processed.
-    (defun sw-read-string (connection id tag)      
+    (defun sw-read-string (connection id tag)
+      (with-slots (read-id read-tag) pbuf
+	(setf read-id id
+	      read-tag tag))
       (simple-input-mark pbuf))
 
     
