@@ -16,11 +16,11 @@
   (setf *pbuf* pbuf);***
   ;;---------------------------------------------------------------------------
   ;; Define presentation classes and associated tags.
-  (defpres p-entry pbuf (:foreground "AntiqueWhite" :editable nil))
+  (defpres p-entry pbuf :tag (:foreground "AntiqueWhite" :editable nil))
   (defpres p-pres  pbuf
-    (:foreground "red" :editable nil); these are tag parameters
+    :tag  (:foreground "red" :editable nil); these are tag parameters
     :slots(id)); and these are pres slots
-  (defpres p-input pbuf (:foreground "blue" :editable t))
+  (defpres p-input pbuf :tag (:foreground "blue" :editable t))
   
   
   (with-slots (swank) pbuf

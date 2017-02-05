@@ -130,8 +130,8 @@
 	;;	(with-range buffer (range:make)	  (format buffer "hello~&"))
 
 	(let ((stream buffer))
-	  (defpres p3 buffer (:foreground "blue"))
-	  (defpres p4 buffer (:foreground "green"))
+	  (defpres p3 buffer :tag (:foreground "blue"))
+	  (defpres p4 buffer :tag (:foreground "green"))
 
 	  (time
 	   (loop for i from 1 to 10 do
