@@ -107,6 +107,7 @@
 
 (defmethod -on-eli-key ((view rview) key event)
   "process an eli key"
+;;  (format t "RVIEW on-eli-key ~A~&" key)
   (-on-eli-key (gtv-buffer view) key event))
 
 

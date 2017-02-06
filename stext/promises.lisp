@@ -42,7 +42,9 @@
 	   (type termstream stream))
   (make-promise :start (stream-position stream)
 	        :content content))
-
+;;
+;; SYMBOL - we mean a presentation type!
+;; 
 (defmethod tag-in (stream (content symbol))
   (declare (optimize (speed 3) (safety 0) (debug 0))
 	   (type termstream stream))

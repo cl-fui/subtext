@@ -59,7 +59,7 @@
   (let* ((offset (oldx buffer))
 	 (chars (- (the fixnum (gti-offset iter)) offset)))
     (declare (type fixnum offset chars))
-   ;;   (format t "on-insert-text-at ~A characters at ~A~&" chars offset )
+;;      (format t "on-insert-text-at ~A characters at ~A~&" chars offset )
     ;; maintain a right-gravity anchor 
     (when (<= offset (the fixnum (anchor buffer)))
       (incf (the fixnum (anchor buffer))  chars))

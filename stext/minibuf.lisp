@@ -30,6 +30,7 @@
 (defmethod -on-eli-key ((view minibuf) key event)
   "process a key with modifiers..."
   (declare (ignore event))
+  ;;    (format t "ON_ANPOUNE_ELI MINI~&")
   (with-slots (state keymap lock) view
     (let ((found (keymap-lookup state key))
 	  (stream (gtv-buffer view )));local eli buffer

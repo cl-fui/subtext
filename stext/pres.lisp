@@ -27,6 +27,10 @@
 ;;    different arguments to change colors etc at make-instance time?
 ;; A: Don't forget that tags coalesce when overlapped.  So creating sub-
 ;;    presentations is impossible if both share the same tag class.
+;; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+;; Q: Why is there a 'tag' slot in the presentation classes?
+;; A: To clarify, the slot is in the _class_, not instances.  Each presentation
+;;    class holds the single tag that establishes bounds for instances.
 ;;
 ;; create presentation classes after the buffer exists
 ;;
@@ -37,7 +41,9 @@
 ;; All presentation tags contain a symbol representing the type of the mark
 ;; used with that presentation!
 (defclass ptag-base (gtk-text-tag)
-  ((mark-type :accessor mark-type :initform nil :initarg :mark-type))
+  ((mark-type :accessor mark-type :initform nil :initarg :mark-type)
+  ;; (desc :accessor desc :initform desc )
+   )
   (:metaclass gobject-class))
 
 ;;------------------------------------------------------------------------------
@@ -52,26 +58,21 @@
      (format out "*~s ~A ~A" (gtm-name mark) (pres mark) (tag (pres mark)) )))
 ;;------------------------------------------------------------------------------
 ;; All presentations are derived from this one.  Note that derived classes
-;; all introduce a tag slot
+;; all introduce a tag slot in the derived class (not instance!)
 (defclass pres ()
-  ()
-)
+  ())
 
 
 ;;------------------------------------------------------------------------------
 ;; presentation magic
 ;;
 ;; A macro to define a presentation class.
-;; - create a tag for all presentations of this type
-;; - attach tag to buffer (buffer must already exist!
-;; - create a mark-derived class
-;; This is complicated by the fact
-;; that we also need a tag to represent presentations, but tags must
-;; be attached to a buffer via tag-table... Therefore:
+;; - create a tag class for all presentations of this type
+;; - create a mark-derived class, saving instructions for creating a tag
+;;   instance
 ;;
-(defmacro defpres (buffer classname direct-superclass &key (slots nil) (tag nil) )
-  "Create a presentation class for an existing buffer, with a new tag 
-initialized with :tag (..) arguments, and containing optional slots"
+(defmacro defpres (classname direct-superclass &key (slots nil) (tag nil) )
+  "Create a presentation class and a tag class."
   (let ((tagsym (intern  (concatenate 'string "TAG-" (symbol-name classname))))
 	(slot-descriptors
 	 (loop for slotsym in slots
@@ -80,14 +81,24 @@ initialized with :tag (..) arguments, and containing optional slots"
     `(progn
        (defclass ,tagsym (ptag-base) () (:metaclass gobject-class))
        ;; now that tag class is defined
-       (let ((mytag (make-instance ',tagsym
-				 :mark-type ',classname ,@tag)))
-	 (gttt-add (gtb-tag-table ,buffer) mytag)
-	 (defclass ,classname ,direct-superclass
-	   (,@slot-descriptors 
-	    (tag :accessor tag :initform mytag)))
-	 ))))
+       (defclass ,classname ,direct-superclass
+	 (,@slot-descriptors 
+	  (tagdesc :accessor tagdesc :initform ',tag :allocation :class)
+	  (buffer :accessor buffer :initform nil :allocation :class)
+	  (tag :accessor tag :initform nil :allocation :class))))))
 
+
+(defun pres-in-buffer (buffer class)
+  "attach the presentation class and its tag to the buffer"
+  (format t "pres-in-buf ~A ~A |||~&" buffer (find-symbol (concatenate 'string "TAG-" (symbol-name class))) )
+  (let* ((tagclass  (find-class (find-symbol (concatenate 'string "TAG-" (symbol-name class)))))
+	 (temp (print (make-instance (find-class  class))))
+	 (tagdesc (tagdesc temp)))
+    (print "FUCK")
+    (setf (buffer temp) buffer
+	  (tag    temp) (apply #'make-instance tagclass tagdesc))
+    (gttt-add (gtb-tag-table buffer)
+	      (tag temp))))
 
 
 ;;------------------------------------------------------------------------------

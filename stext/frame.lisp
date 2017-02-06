@@ -43,28 +43,33 @@
     (gtk-box-pack-end holder minibuf :expand nil)
     (and content (gtk-box-pack-start holder content))
     (gtk-container-add frame holder)
+
     (g-signal-connect
      frame "destroy"
      (lambda (widget) (-on-destroy widget)
 	     (if kill (leave-gtk-main))))
+
     ;; process keystrokes in minibuf...
     (-on-announce-eli content minibuf)
     (setf *frame* frame)
- 
+    
+    
 					;(gtk-widget-add-events frame )
     ;; Key processing: gtk stuff is done here, from here on we use
     ;; (-on-eli-key object key)
     ;;
+    (print *package*)
     (g-signal-connect
-     frame "key-press-event"
-     (lambda (frame event)
-       (let ((gtkkey (gdk-event-key-keyval event)))
-	 (unless (modifier-p gtkkey); if modifier, let gtk handle it!
-	   (let ((key (make-key gtkkey (gdk-event-key-state event))))
-	     (or (-on-eli-key (minibuf frame) key event)
-		 (-on-eli-key (content frame) key event)
-		 ;(format t "~&UNHANDLED KEY: ~A ~A~&" key event)
-		 ))))))))
+	frame "key-press-event"
+	(lambda (frame event)
+;;	  (format t "FRAME:KEY ~A~&" event)
+	  (let ((gtkkey (gdk-event-key-keyval event)))
+	    (unless (modifier-p gtkkey)	; if modifier, let gtk handle it!
+	      (let ((key (make-key gtkkey (gdk-event-key-state event))))
+		(or (-on-eli-key (minibuf frame) key event)
+		    (-on-eli-key (content frame) key event)
+					;(format t "~&UNHANDLED KEY: ~A ~A~&" key event)
+		    ))))))))
 
 
 

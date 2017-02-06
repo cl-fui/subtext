@@ -12,17 +12,21 @@
   (:metaclass gobject-class)
   )
 
+(defpres p-entry (pres)  :tag (:foreground "AntiqueWhite" :editable nil))
+(defpres p-pres  (pres)
+  :tag  (:foreground "red" :editable nil); these are tag parameters
+  :slots(id)); and these are pres slots
+(defpres p-input (pres) :tag (:foreground "blue" :editable t))
 
 (defmethod initialize-instance :after ((pbuf swarepl) &key)
   (print "initialize-instance: swarepl")
   (setf *pbuf* pbuf);***
   ;;---------------------------------------------------------------------------
   ;; Define presentation classes and associated tags.
-  (defpres pbuf p-entry (pres)  :tag (:foreground "AntiqueWhite" :editable nil))
-  (defpres pbuf p-pres  (pres)
-    :tag  (:foreground "red" :editable nil); these are tag parameters
-    :slots(id)); and these are pres slots
-  (defpres pbuf p-input (pres) :tag (:foreground "blue" :editable t))
+  (print *package*)
+  (pres-in-buffer pbuf 'p-entry)
+  (pres-in-buffer pbuf 'p-pres)
+  (pres-in-buffer pbuf 'p-input)
   
   
   (with-slots (swank) pbuf
@@ -102,7 +106,7 @@
 	(setf pr (tag-in pbuf (make-instance 'p-pres :id id))))
       
       (defun sw-presentation-end (connection id stream)
-	(print (tag-out pbuf pr))))
+	(tag-out pbuf pr)))
     
     (defun sw-new-package (connection name nickname)
       (setf (swa:pkg connection) name

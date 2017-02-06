@@ -94,6 +94,9 @@
 
 	(let ((tag-prompt (pbuf-find-tag buffer "prompt"))
 	      (tag-pres   (pbuf-find-tag buffer "pres")))
+	 	  
+
+
 	  (let ((stream buffer))
 	    (time
 	     (loop for i from 1 to 10 do
@@ -114,33 +117,38 @@
       )))
 
 
-(defun t11 ( &key (stdout *standard-output*))
+(defpres p3 (pres) :tag (:foreground "blue"))
+(defpres p4 (pres) :tag (:foreground "green"))
+
+
+(defun t11 ( &key (stdout *standard-output*) (package *package*))
   "final"
   (within-main-loop
    ;; (setf *ui-thread* (bt:current-thread))
     (setf *standard-output* stdout) ;re-enable output
-    (let ((buffer (make-instance 'rbuffer)))
+    (setf *package* package)
+    (let ((*standard-output* stdout)
+	  (*package* package)
+	  (buffer (make-instance 'rbuffer)))
       (setf *pbuf* buffer)
       (let ((top (make-frame (make-window (setf *top* (make-rview buffer)))
 			     :kill t))
 	    r)
 	(gtk-widget-show-all top)
-	
+	(pres-in-buffer buffer 'p3)
+	(pres-in-buffer buffer 'p4)
 	(format t "SHOWING~&")
 	;;	(with-range buffer (range:make)	  (format buffer "hello~&"))
 
 	(let ((stream buffer))
-	  (defpres buffer p3 (pres) :tag (:foreground "blue"))
-	  (defpres buffer p4 (pres) :tag (:foreground "green"))
-
 	  (time
 	   (loop for i from 1 to 10 do
 	      ;;(with-range buffer)
 	      ;;(stream  (make-instance 'ptest :text1 "hello" :num i :text2 "world" )(present it buffer nil))
-		(with-tag 'p4
+		(with-pres p4
 		  (format buffer "Hello "))
 		
-		(with-tag 'p3
+		(with-pres p3
 		  (format buffer "world"))
 		
 		(format buffer "...~&")
@@ -155,16 +163,43 @@
 ;;;
 ;;; SWANK REPL
 
-(defun t3 ( &key (stdout *standard-output*))
+(defun t3 ( &key (stdout *standard-output*) (package *package*))
   "final"
   (within-main-loop
     ;; (setf *ui-thread* (bt:current-thread))
-    (setf *standard-output* stdout) ;re-enable output
-    (let ((top (make-frame (make-window (make-rview (make-instance 'swarepl))) 
+    (let* ((*standard-output* stdout)
+	  (*package* package)			;re-enable output
+	  (top (make-frame (make-window (make-rview (make-instance 'swarepl))) 
 			   :kill t))) 
-      
+	
       (gtk-widget-show-all top)
       (g-idle-add
        (lambda ()
 	 (-on-initial-display top)
 	 nil)))))
+
+
+
+(defun t99 (&key (stdout *standard-output*) (package *package*))
+  (within-main-loop
+   ;; (setf *standard-output* stdout)
+    (let* ((*standard-output* stdout);; (*package* package)
+	   (win (make-instance 'gtk-window :type :toplevel :default-width 640 :default-height 480)))
+      (g-signal-connect win "destroy" (lambda (widget) (print widget) (leave-gtk-main)))
+      (g-signal-connect win "key-press-event" (lambda (widget event) (print event) nil))
+      (gtk-widget-show-all win)
+      (print *package*))
+    ))
+
+(defun t100 ()
+  (within-main-loop
+    (let (;; Create a toplevel window.
+          (window (gtk-window-new :toplevel)))
+      ;; Signal handler for the window to handle the signal "destroy".
+      (g-signal-connect window "destroy"
+                        (lambda (widget)
+			  
+                          (declare (ignore widget))
+                          (leave-gtk-main)))
+      ;; Show the window.
+      (gtk-widget-show-all window))))
