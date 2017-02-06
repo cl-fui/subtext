@@ -3,16 +3,21 @@
 
 
 ;;OK (ql:quickload :stext)(in-package :stext)
+;;;=============================================================================
+;;; Swank REPL buffer
+;;;
 (defclass swarepl (rbuffer)
   ((swank :initform nil :accessor swank) ;swank communication channel
-   (sldbs :accessor sldbs :initform (make-hash-table)); track debuggers by '
-   (read-id :accessor read-id :initform 0)   ;0=commandline, otherwise read-line
+   (sldbs :accessor sldbs :initform (make-hash-table)) ; track debuggers by '
+   (read-id :accessor read-id :initform 0) ;0=commandline, otherwise read-line
    (read-tag :accessor read-tag :initform 0) ;TODO: terminology?
    )
-  (:metaclass gobject-class)
-  )
+  (:metaclass gobject-class))
 
-(defpres p-entry (pres)  :tag (:foreground "AntiqueWhite" :editable nil))
+;;==============================================================================
+;; Define presentation types
+(defpres p-entry (pres)
+  :tag (:foreground "AntiqueWhite" :editable nil))
 (defpres p-pres  (pres)
   :tag  (:foreground "red" :editable nil); these are tag parameters
   :slots(id)); and these are pres slots
@@ -22,12 +27,10 @@
   (print "initialize-instance: swarepl")
   (setf *pbuf* pbuf);***
   ;;---------------------------------------------------------------------------
-  ;; Define presentation classes and associated tags.
-  (print *package*)
-  (pres-in-buffer pbuf 'p-entry)
-  (pres-in-buffer pbuf 'p-pres)
-  (pres-in-buffer pbuf 'p-input)
-  
+  ;; Associate presentations to this buffer
+  (pbuf-pres-classes pbuf '(p-entry p-pres p-input))
+
+  ;;---------------------------------------------------------------------------
   
   (with-slots (swank) pbuf
     (setf swank (swa:make-connection "localhost" 5000)))
@@ -63,8 +66,9 @@
 
 (defmethod -on-initial-display :after ((pbuf swarepl))
   ;; all instance of p'entry share the tag 'input
+  (format t "ON-INITIAL-DISPLAY of SWAREPL: ~A ~A~&" *standard-output* *package*)
     (with-slots (swank ) pbuf
-    (swa:connect swank #'our-fallback)
+    (swa:connect swank :fallback #'our-fallback :out *standard-output* :pack *package*)
     (swa:emacs-rex swank "(swank:connection-info)")
     (swa:emacs-rex swank "(swank:swank-require '(swank-presentations swank-repl))")
     (swa:emacs-rex swank  "(swank:init-presentations)")

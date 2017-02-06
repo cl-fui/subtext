@@ -165,18 +165,16 @@
 
 (defun t3 ( &key (stdout *standard-output*) (package *package*))
   "final"
+  ;;(format t "AAA STANDARD OUTPUT?~A ~A ~&"*standard-output* *package*)
   (within-main-loop
-    ;; (setf *ui-thread* (bt:current-thread))
+    (setf *standard-output* stdout); Why can't I just bind it?
     (let* ((*standard-output* stdout)
-	  (*package* package)			;re-enable output
-	  (top (make-frame (make-window (make-rview (make-instance 'swarepl))) 
-			   :kill t))) 
-	
+	   (*package* package)			;re-enable output
+;;	   (ass  (format t "STANDARD OUTPUT?~A ~A ~&"*standard-output* *package*))
+	   (top (make-frame (make-window (make-rview (make-instance 'swarepl))) 
+			    :kill t))) 
       (gtk-widget-show-all top)
-      (g-idle-add
-       (lambda ()
-	 (-on-initial-display top)
-	 nil)))))
+      (-on-initial-display top))))
 
 
 
@@ -185,11 +183,20 @@
    ;; (setf *standard-output* stdout)
     (let* ((*standard-output* stdout);; (*package* package)
 	   (win (make-instance 'gtk-window :type :toplevel :default-width 640 :default-height 480)))
+      (format t "FUCK!!!!~&")
       (g-signal-connect win "destroy" (lambda (widget) (print widget) (leave-gtk-main)))
-      (g-signal-connect win "key-press-event" (lambda (widget event) (print event) nil))
+      (g-signal-connect win "key-press-event" (lambda (widget event) (print event stdout) nil))
       (gtk-widget-show-all win)
-      (print *package*))
-    ))
+      (print *package*))))
+
+(defun t101 (&key (stdout *standard-output*))
+  (within-main-loop
+    (let* ((*standard-output* stdout))
+      (format t "HELLO!!!!~&")
+)
+))
+
+
 
 (defun t100 ()
   (within-main-loop

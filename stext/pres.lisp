@@ -30,7 +30,19 @@
 ;; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ;; Q: Why is there a 'tag' slot in the presentation classes?
 ;; A: To clarify, the slot is in the _class_, not instances.  Each presentation
-;;    class holds the single tag that establishes bounds for instances.
+;;    class holds the single tag that establishes bounds for instances. The
+;;    other slots in the class, are buffer and tagdesc.
+;; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+;; Q: What's the deal with tagdesc?  How is it different from tag?
+;; A: The presentation is defined before the buffer is instantiated.  However
+;;    it relies on tags which need to be connected to a live buffer.  So we
+;;    keep track of what kind of a tag the presentation needs by storing the
+;;    tag instantiation parameters (the keyword list sent to make-instance
+;;    'ptag...) in tagdesc, in the presentation _class_.  Later, after the
+;;    buffer is established, the tag is actually created using tagdesc, and
+;;    attached to the presentation _class_ .  When we work with presentations
+;;    they will have access to the tag in the buffer.
+;;
 ;;
 ;; create presentation classes after the buffer exists
 ;;
@@ -60,9 +72,16 @@
 ;; All presentations are derived from this one.  Note that derived classes
 ;; all introduce a tag slot in the derived class (not instance!)
 (defclass pres ()
+  ;; In the wild, there are class-allocated slots for:
+  ;; tagdesc: a list to pass to (create-instance 'tag ...)
   ())
 
-
+;;------------------------------------------------------------------------------
+;; A prototype of a presentation.  We can create it early on, and realize it
+;; later, when the buffer is active.
+(defstruct proto-pres name super slotdesc tagdesc)
+(defun make-pres (name super slotdesc tagdesc)
+       (make-proto-pres :name name :super super :slotdesc slotdesc))
 ;;------------------------------------------------------------------------------
 ;; presentation magic
 ;;
@@ -87,20 +106,25 @@
 	  (buffer :accessor buffer :initform nil :allocation :class)
 	  (tag :accessor tag :initform nil :allocation :class))))))
 
-
+;Note: this is prone to errors due to class being in a wrong package!
 (defun pres-in-buffer (buffer class)
   "attach the presentation class and its tag to the buffer"
-  (format t "pres-in-buf ~A ~A |||~&" buffer (find-symbol (concatenate 'string "TAG-" (symbol-name class))) )
+;;  (format t "pres-in-buf: current package is ~A~&" *package*)
+;;  (format t "pres-in-buf ~A ~A |||~&" buffer (find-symbol (concatenate 'string "TAG-" (symbol-name class))) )
   (let* ((tagclass  (find-class (find-symbol (concatenate 'string "TAG-" (symbol-name class)))))
 	 (temp (print (make-instance (find-class  class))))
 	 (tagdesc (tagdesc temp)))
-    (print "FUCK")
+    (format t "PRES-IN-BUFFER creating tag using ~A~&" tagdesc)
     (setf (buffer temp) buffer
 	  (tag    temp) (apply #'make-instance tagclass tagdesc))
+    (format t"PRES-IN-BUFFER adding tag ~A to table~&" (tag temp))
     (gttt-add (gtb-tag-table buffer)
 	      (tag temp))))
 
-
+(defun pbuf-pres-classes (buffer list-of-symbols)
+  "connect the presentation classes to this buffer"
+  (mapc #'(lambda (sym) (pres-in-buffer buffer sym))
+	 list-of-symbols))
 ;;------------------------------------------------------------------------------
 ;; This is a mark inserted by a promise with a presentation. 
 (defun pres-mark (buffer iter pres)

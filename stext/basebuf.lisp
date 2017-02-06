@@ -61,6 +61,7 @@
 ;; Debugging tools
 ;;
 (defun bufstat-prim (pbuf offset)
+  
   (with-slots (iter iter1) pbuf
     (let*
 	((here (gtb-get-iter-at-offset pbuf offset))
@@ -68,7 +69,7 @@
 	 (tags-here (gti-get-tags here))
 )
       ;; are we inside a presentation?
-
+ 
       (format t "~%===============================================")
       (format t "~%Cursor is at ~D; character [~C](~d $~x)" offset
 	      (gti-get-char here) (char-code (gti-get-char here))

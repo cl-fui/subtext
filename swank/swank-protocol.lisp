@@ -119,7 +119,9 @@
 (defun default-fallback (connection forms)
   (declare (ignore connection))
   (format *standard-output* "~%default connection fallback: ~a~%" forms))
-(defun connect (connection &optional (fallback #'default-fallback))
+
+(defun connect (connection &key (fallback #'default-fallback)
+			     out pack)
   "connect to the remote server and process requests, sending unknown
 forms to fallback  processor."
   (with-slots (hostname port socket thr rexs histid rexid state) connection
@@ -134,7 +136,10 @@ forms to fallback  processor."
 	    thr
 	    (bt:make-thread
 	     (lambda ()
-	       (let ((stream (usocket:socket-stream socket)))
+	       (let ((stream (usocket:socket-stream socket))
+		     (*standard-output* out)
+		     (*package* pack))
+		 (format t "AAAAA: ~A~&" *package*)
 		 (loop named waiter do
 		      (usocket:wait-for-input socket :ready-only t :timeout 0.2)
 		    ;; socket may have been destroyed
