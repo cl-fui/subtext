@@ -116,9 +116,9 @@
       
       )))
 
-
-(defpres p3 (pres) :tag (:foreground "blue"))
-(defpres p4 (pres) :tag (:foreground "green"))
+;;;======================================
+(defpres p3 (pres) ())
+(defpres p4 (pres) ())
 
 
 (defun t11 ( &key (stdout *standard-output*) (package *package*))
@@ -135,8 +135,8 @@
 			     :kill t))
 	    r)
 	(gtk-widget-show-all top)
-	(pres-in-buffer buffer 'p3)
-	(pres-in-buffer buffer 'p4)
+	(pres-tag buffer p3 (:foreground "green"))
+	(pres-tag buffer p4 (:foreground "blue"))
 	(format t "SHOWING~&")
 	;;	(with-range buffer (range:make)	  (format buffer "hello~&"))
 

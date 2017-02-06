@@ -16,30 +16,30 @@
 
 ;;==============================================================================
 ;; Define presentation types
-(defpres p-entry (pres)
-  :tag (:foreground "AntiqueWhite" :editable nil))
-(defpres p-pres  (pres)
-  :tag  (:foreground "red" :editable nil); these are tag parameters
-  :slots(id)); and these are pres slots
-(defpres p-input (pres) :tag (:foreground "blue" :editable t))
+(defpres p-entry (pres) ())
+(defpres p-pres (pres)
+  ((id :accessor id :initarg :id)))
+(defpres p-input (pres) ())
 
 (defmethod initialize-instance :after ((pbuf swarepl) &key)
   (print "initialize-instance: swarepl")
   (setf *pbuf* pbuf);***
   ;;---------------------------------------------------------------------------
   ;; Associate presentations to this buffer
-  (pbuf-pres-classes pbuf '(p-entry p-pres p-input))
+  (pres-tag pbuf p-entry (:foreground "AntiqueWhite" :editable nil) )
+  (pres-tag pbuf p-pres  (:foreground "red" :editable nil));
+  (pres-tag pbuf p-input (:foreground "blue" :editable t))
 
   ;;---------------------------------------------------------------------------
+
   
   (with-slots (swank) pbuf
-    (setf swank (swa:make-connection "localhost" 5000)))
-  pbuf)
-
-(defmethod -on-announce-eli :after((pbuf swarepl) eli)
-  (with-slots (keymap) eli
-    (keymap-define-key
-     keymap #.kb:RET ; on <RET>, attempt to process input
+    (setf swank (swa:make-connection "localhost" 5000))
+    pbuf) )
+  (defmethod -on-announce-eli :after((pbuf swarepl) eli)
+    (with-slots (keymap) eli
+      (keymap-define-key
+       keymap #.kb:RET ; on <RET>, attempt to process input
      (lambda (gtkkey)
        (declare (ignore gtkkey))
 					;(write-char #\newline pbuf)
@@ -68,16 +68,16 @@
   ;; all instance of p'entry share the tag 'input
   (format t "ON-INITIAL-DISPLAY of SWAREPL: ~A ~A~&" *standard-output* *package*)
     (with-slots (swank ) pbuf
-    (swa:connect swank :fallback #'our-fallback :out *standard-output* :pack *package*)
-    (swa:emacs-rex swank "(swank:connection-info)")
-    (swa:emacs-rex swank "(swank:swank-require '(swank-presentations swank-repl))")
-    (swa:emacs-rex swank  "(swank:init-presentations)")
-    ;; This one replies with package and prompt...
-    (swa:emacs-rex swank "(swank-repl:create-repl nil :coding-system \"utf-8-unix\")"
-		   :proc (lambda (conn reply id);REX-CALLBACK
-			   (declare (ignore id))
-			   (setf (swa:pkg    conn) (first (second reply));symbol..
-				 (swa:prompt conn)   (second (second reply))) ))
+      (swa:connect swank :fallback #'our-fallback :out *standard-output* :pack *package*)
+      (swa:emacs-rex swank "(swank:connection-info)")
+      (swa:emacs-rex swank "(swank:swank-require '(swank-presentations swank-repl))")
+      (swa:emacs-rex swank  "(swank:init-presentations)")
+      ;; This one replies with package and prompt...
+      (swa:emacs-rex swank "(swank-repl:create-repl nil :coding-system \"utf-8-unix\")"
+		     :proc (lambda (conn reply id);REX-CALLBACK
+			     (declare (ignore id))
+			     (setf (swa:pkg    conn) (first (second reply));symbol..
+				   (swa:prompt conn)   (second (second reply))) ))
     
     ;;---------------------------------------------
     ;; This can be called explicitly

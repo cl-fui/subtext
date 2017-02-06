@@ -82,44 +82,6 @@
 (defstruct proto-pres name super slotdesc tagdesc)
 (defun make-pres (name super slotdesc tagdesc)
        (make-proto-pres :name name :super super :slotdesc slotdesc))
-;;------------------------------------------------------------------------------
-;; presentation magic
-;;
-;; A macro to define a presentation class.
-;; - create a tag class for all presentations of this type
-;; - create a mark-derived class, saving instructions for creating a tag
-;;   instance
-;;
-(defmacro defpres (classname direct-superclass &key (slots nil) (tag nil) )
-  "Create a presentation class and a tag class."
-  (let ((tagsym (intern  (concatenate 'string "TAG-" (symbol-name classname))))
-	(slot-descriptors
-	 (loop for slotsym in slots
-	      for slot-initarg = (intern (symbol-name slotsym) 'keyword)
-	    collect `(,slotsym :accessor ,slotsym :initarg ,slot-initarg))))
-    `(progn
-       (defclass ,tagsym (ptag-base) () (:metaclass gobject-class))
-       ;; now that tag class is defined
-       (defclass ,classname ,direct-superclass
-	 (,@slot-descriptors 
-	  (tagdesc :accessor tagdesc :initform ',tag :allocation :class)
-	  (buffer :accessor buffer :initform nil :allocation :class)
-	  (tag :accessor tag :initform nil :allocation :class))))))
-
-;Note: this is prone to errors due to class being in a wrong package!
-(defun pres-in-buffer (buffer class)
-  "attach the presentation class and its tag to the buffer"
-;;  (format t "pres-in-buf: current package is ~A~&" *package*)
-;;  (format t "pres-in-buf ~A ~A |||~&" buffer (find-symbol (concatenate 'string "TAG-" (symbol-name class))) )
-  (let* ((tagclass  (find-class (find-symbol (concatenate 'string "TAG-" (symbol-name class)))))
-	 (temp (print (make-instance (find-class  class))))
-	 (tagdesc (tagdesc temp)))
-    (format t "PRES-IN-BUFFER creating tag using ~A~&" tagdesc)
-    (setf (buffer temp) buffer
-	  (tag    temp) (apply #'make-instance tagclass tagdesc))
-    (format t"PRES-IN-BUFFER adding tag ~A to table~&" (tag temp))
-    (gttt-add (gtb-tag-table buffer)
-	      (tag temp))))
 
 (defun pbuf-pres-classes (buffer list-of-symbols)
   "connect the presentation classes to this buffer"
@@ -156,3 +118,28 @@
 
 
 (defgeneric present (obj stream extra))
+
+
+
+;;------------------------------------------------------------------------------
+;; presentation magic
+;;
+;; 
+;;
+(defmacro defpres (classname direct-superclass slots )
+  "Create a presentation class and a tag class."
+  `(defclass ,classname ,direct-superclass
+     (,@slots
+      (out :accessor out :initform nil :allocation :class)
+      (tag :accessor tag :initform nil :allocation :class))) )
+
+(defmacro pres-tag (buffer class tag-options)
+  (let ((buf (gensym))
+	(pres (gensym))
+	(tag (gensym)))
+    `(let ((,buf ,buffer)
+	   (,pres (make-instance ',class))
+	   (,tag  (make-instance 'ptag-base ,@tag-options)))
+       (setf (out ,pres) ,buf
+	     (tag    ,pres) ,tag)
+       (gttt-add (gtb-tag-table ,buffer) ,tag))))
