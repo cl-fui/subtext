@@ -83,15 +83,9 @@
 
       
       ;;(format t "~%Inside presentation: ~A" (gti-tags here))
+      (do-pres-at-off pbuf offset (lambda (pres)
+				    (format t "~%Pres: ~A"pres)) )
 
-      (loop for tag in (progn
-			 (%gtb-get-iter-at-offset pbuf iter offset)
-			 (gti-tags iter))
-	 when (subtypep (type-of tag) 'ptag-base) do
-	   
-;;	   (pres-tag-bounds pbuf offset tag)
-	   (format t "~%Pres: ~A ~A ~A" (pres-tag-bounds pbuf offset tag)
-		   (gti-offset iter) (gti-offset iter1)))
       
       )))
 

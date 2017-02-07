@@ -103,7 +103,7 @@ for all newly introduced ones, call entering.  Return new."
   (let* ((same (intersection old new)); these have not changed...
 	 (out (set-difference old same)); these are phased out.
 	 (in  (set-difference new same))) ; and these are newly introduced.
-;;    (format t "ON_MOTION SAME: ||~A||~&  IN:~A OUT: ~A~&" same in out)
+    (format t "ON_MOTION SAME: ||~A||~&  IN:~A OUT: ~A~&" same in out)
     (loop for pres in out do (-pres-on-mouse pres nil))
     (loop for pres in in  do (-pres-on-mouse pres t))
     new

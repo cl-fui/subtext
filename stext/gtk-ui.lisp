@@ -14,7 +14,6 @@
 
 ;;for debugging ranges
 
-(defgeneric present (obj stream extra))
 ;------------------------------------------------
 #||
 
@@ -49,7 +48,7 @@
 (defpres p5 (pres) ())
 
 
-(defmethod -pres-on-mouse ((pres p5) enterp)
+(defmethod -pres-on-mouse ((pres p5)  enterp)
   (with-slots (out) pres
     (pres-bounds out pres)
     (if enterp

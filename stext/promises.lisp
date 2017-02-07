@@ -72,16 +72,17 @@
 
 ;; bind local symbols: presentation and out
 (defmacro with-pres (prestype &body body)
+  "Initially create a presentation and perform 'body' in its context"
   `(let* ((presentation (make-instance ',prestype))
 	  (out (out presentation)))
      (declare (ignorable presentation out))
      (with-tag presentation ,@body)))
 
-(defmacro in-pres (pres &body body)
-  `(let* ((presentation ,pres)
-	  (out (out presentation)))
-     (declare (ignorable  presentation out))
-     (with-tag presentation ,@body)))
+(defmacro defpresenter ((name type) &body body)
+  "create a present method for a presentation type"
+  `(defmethod present ((,name ,type))
+    (with-slots(out) ,name
+      (with-tag ,name ,@body))))
 
 
 (defmethod promise-fulfill ((tag gtk-text-tag) promise stream)

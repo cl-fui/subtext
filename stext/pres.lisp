@@ -162,9 +162,6 @@
 
 
 
-(defgeneric present (obj stream extra))
-
-
 
 ;;------------------------------------------------------------------------------
 ;; presentation magic
@@ -179,6 +176,8 @@
       (tag :accessor tag :initform nil :allocation :class))
      (:metaclass gobject-class))
   )
+
+
 ;; Call this during buffer initialization, to create a matching tag
 (defmacro pres-tag (buffer class tag-options)
   (let ((buf (gensym))
@@ -190,3 +189,22 @@
        (setf (out ,pres) ,buf
 	     (tag    ,pres) ,tag)
        (gttt-add (gtb-tag-table ,buffer) ,tag))))
+
+
+;; slots can be either slotnames, in which case we make an accessor and an
+;; initform, or whatever you want inside ()...
+(defmacro defpres (classname direct-superclass slots )
+  "Create a presentation class and a tag class."
+  (let ((newslots
+	 (loop for slot in slots
+	    collect
+	      (typecase slot
+		(symbol (let ((keyname (intern (string-upcase slot) :keyword)))
+			  `(,slot :accessor ,slot :initarg ,keyname )) )
+		(t slot)))))
+    `(defclass ,classname ,direct-superclass
+       (,@newslots
+	(out :accessor out :initform nil :allocation :class)
+	(tag :accessor tag :initform nil :allocation :class))
+       (:metaclass gobject-class)))
+  )

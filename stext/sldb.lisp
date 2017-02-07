@@ -17,6 +17,7 @@
 
   (pres-tag sldb pcondition (:foreground "plum" :editable nil))
   (pres-tag sldb prestart   (:foreground "yellow" :editable nil))
+  (pres-tag sldb pframe     ())
   
   (setf *q* (make-instance 'pcondition)   )
   (pbuf-new-tag sldb :name "grayish"     :foreground "gray"        :editable t)
@@ -31,19 +32,27 @@
   (pbuf-new-tag sldb :name "grayloc:"    :background "Gray20"      :foreground "Gray70"      :editable nil )
   (pbuf-new-tag sldb :name "locleft"     :foreground "yellow"                                :editable nil))
 
-
+;;===============================================================================
+;; Initial display
+;;
 (defun sldb-activate (out)
   (with-slots (conditio restarts frames continuations) out
     (format t "~A ~A ~A ~A~&" conditio restarts frames continuations)
     (with-tag "enum" (format out "~A~&" (first conditio)))
     (with-pres pcondition (format out "~A" (second conditio)))
     (with-tag  "label" (format out "~%Restarts:~&"))   
-
     (loop for restart in restarts
        for i from 0 do
-	 (present1 (make-instance 'prestart :id i :info restart))
+	 (present (make-instance 'prestart :id i :info restart))
+	 (terpri out))
+    ;;
+    (with-tag  "label" (format out "~%Backtrace:~&"))
+    (loop for frame in frames do
+	 (present
+	  (make-instance 'pframe :id (first frame) :desc (second frame)
+			 :restartable (third frame)))
 	 (terpri out)))
-
+  
   
   (finish-output out) )
 ;;===============================================================================
@@ -68,32 +77,50 @@
 (defun vsldb-destroy (vsldb)
   (rview-destroy-top vsldb ))
 ;;===============================================================================
-
-
-
+;;
 (defpres pcondition (pres) () )
 
-(defpres psldbline (pres) ())
-;;====================================================================
-;; To be able to hightlight a line as we move the mouse, use this:
-(defgeneric pres-highlight (p stream flag))
-(defmethod  pres-highlight ((p t) strea flag))
-(defmethod  pres-highlight ((p psldbline) stream flag)
-  (pres-iters p)
-  (with-slots (iter iter1) stream
-    (if flag
-	(gtb-apply-tag stream "grhigh" iter iter1)
-	(gtb-remove-tag stream "grhigh" iter iter1))))
+;;===============================================================================
+;; Restart
+;;
+;; Protocol: (RETRY "Retry SLIME REPL evaluation request.")
+;;
+(defpres prestart (pres)
+  ((id :accessor id :initarg :id :initform 0)
+   (info :accessor info :initarg :info :initform nil)))
 
 
-(defpres prestart (psldbline)
-  ((id :accessor id :initarg :id) ;generated sequential id
-   (info :accessor info :initarg :info) ;first: retry/abort; second:desc
-   ))
-(defmethod present1 ((prestart prestart))
-  (in-pres prestart
-    (with-slots (id info) prestart
-      (with-tag  "enum"   (format out "~2d: [" id))
-      (with-tag  "cyan"   (format out "~A" (first info)))
-      (with-tag  "normal" (format out "] ~A" (second info))))))
+(defpresenter ((p prestart))
+  (with-slots (id info) p
+    (with-tag  "enum"   (format out "~2d: [" id))
+    (with-tag  "cyan"   (format out "~A" (first info)))
+    (with-tag  "normal" (format out "] ~A" (second info)))))
 
+(defmethod  -pres-on-mouse ((pres prestart) flag)
+  (with-slots (out) pres
+    (with-slots (iter iter1) out
+      (pres-bounds out pres)
+      (if flag
+	  (gtb-apply-tag out "grhigh" iter iter1)
+	  (gtb-remove-tag out "grhigh" iter iter1)))))
+
+;;===============================================================================
+;; frame
+;;
+;; Protocol: (4 (SWANK-REPL::TRAC...) (RESTARTABLE T))
+(defpres pframe (pres)
+  (id desc restartable pframex expand))
+
+(defpresenter ((p pframe))
+  (with-slots (id desc restartable pframex expand) p
+    (with-tag  "enum" (format out "~3d: " id))
+    (with-tag  (if restartable "restartable" "normal")
+      (format out "~A" desc))))
+
+(defmethod  -pres-on-mouse ((pres pframe) flag)
+  (with-slots (out) pres
+    (with-slots (iter iter1) out
+      (pres-bounds out pres)
+      (if flag
+	  (gtb-apply-tag out "grhigh" iter iter1)
+	  (gtb-remove-tag out "grhigh" iter iter1)))))
