@@ -7,7 +7,10 @@
 
 
 (defclass rview (gtk-text-view)
-  ()
+  
+  (;; Track last offset from mousemove; issue -on-motion only on change.
+   (last-motion-off :accessor last-motion-off :initform 999999) 
+   )
   (:metaclass gobject-class) )
 
 ;; a convenience macro
@@ -78,6 +81,8 @@
 	 (2 (-on-2button-press buffer iter event))
 	 (3 (-on-3button-press buffer iter event))))))
   ;;----------------------------------------------------------------------
+  ;; Mouse motion.  We are not interested in sub-character motion; 
+  ;; simply ignore motion events unless an iterator's offset changes.
   (g-signal-connect
    rview "motion-notify-event" ;TODO: check widget
    (lambda (view event)
@@ -85,7 +90,10 @@
 	   (iter (rview-iter-from-xy view
 				      (gdk-event-motion-x event)
 				      (gdk-event-motion-y event))))
-       (-on-motion buffer iter event)))))
+       (with-slots (last-motion-off) view 
+	 (when (/= last-motion-off (gti-offset iter)); interesting?
+	   (setf last-motion-off (gti-offset iter))
+	   (-on-motion buffer iter event)))))))
 ;; Looks like view is the place to handle cursor commands! TODO: improve...
 (defmethod -on-announce-eli ((rview rview) eli)
 #||  (defun bind-move-cursor (gtkkey)

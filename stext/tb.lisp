@@ -20,6 +20,7 @@
    (oldx   :accessor oldx   :initform 0   :type fixnum) ;insert-text position
    (oldw   :accessor oldw   :initform 0   :type fixnum) ;pre-xpand buffer width
 
+   (old-mouse :accessor old-mouse :initform nil );old mouse presentation-lists
   ;; (mtree  :accessor mtree  :initform (make-instance 'mtree:mtree))
    )
   
@@ -86,3 +87,29 @@
      tag))
 
 
+;;===============================================================================
+;; Motion handler
+;;
+(defgeneric -pres-on-mouse (pres inp))
+
+(defmethod -pres-on-mouse ((pres t) inp))
+
+;; TODO: this loses order!
+
+(defun presentations-on-motion (tb old new)
+  "scan the old and new lists of presentations, and note presentations that are
+different.  For all presentations that are no longer in the list, call exiting;
+for all newly introduced ones, call entering.  Return new."
+  (let* ((same (intersection old new)); these have not changed...
+	 (out (set-difference old same)); these are phased out.
+	 (in  (set-difference new same))) ; and these are newly introduced.
+;;    (format t "ON_MOTION SAME: ||~A||~&  IN:~A OUT: ~A~&" same in out)
+    (loop for pres in out do (-pres-on-mouse pres nil))
+    (loop for pres in in  do (-pres-on-mouse pres t))
+    new
+))
+
+(defmethod -on-motion ((tb tb) iter event)
+  (with-slots (old-mouse) tb
+    (setf old-mouse
+	  (presentations-on-motion tb old-mouse (presentations-at tb iter)))))

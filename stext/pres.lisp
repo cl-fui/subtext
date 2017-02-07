@@ -112,7 +112,8 @@
        (return mark)))
 
 ;;
-;;
+;; Perform a function for each presentation at xiter.  Fuction
+;; is called as (fun pres), with iters set to range!
 (defun do-pres-at (stream xiter fun)
   "for every presentation at xiter, call (fun pres).  If it returns t, stop"
   (with-slots (iter iter1) stream
@@ -132,7 +133,33 @@
     nil))
 
 (defun do-pres-at-off (stream off fun)
-  (do-ptags-at stream (gtb-get-iter-at-offset stream off) fun))
+  (do-pres-at stream (gtb-get-iter-at-offset stream off) fun))
+
+;;------------------------------------------------------------------------------
+(defun presentations-at (stream xiter)
+  "for every presentation at xiter, call (fun pres).  If it returns t, stop"
+  (with-slots (iter iter1) stream
+    (loop for tag in (reverse (gti-tags xiter));TODO: is reverse good enough?
+       when (subtypep (type-of tag) 'ptag-base) ;only care about ptags!
+       ;; set iter to start of tag
+       collect
+	 (progn
+	   (%gtb-get-iter-at-offset stream iter (gti-offset xiter));iter at ptag
+	   (or (gti-begins-tag iter tag); either we start a tag
+	       (gti-backward-to-tag-toggle iter tag)); or move back to start
+	   (find (mark-type tag) (gti-marks iter); find matching mark
+		       :test (lambda (key item)  (eq key (type-of item))))))))
+
+(defun presentations-at-off (stream off)
+  (presentations-at stream (gtb-get-iter-at-offset stream off)))
+;;------------------------------------------------------------------------------
+(defun pres-bounds(stream pres)
+  (with-slots (iter iter1) stream
+    (%gtb-get-iter-at-mark stream iter pres)
+    (%gtb-get-iter-at-mark stream iter1 pres)
+    ;; We know that tag begins here, and what kind of tag...
+    (gti-forward-to-tag-toggle iter1 (tag pres))))
+
 
 
 (defgeneric present (obj stream extra))
@@ -152,7 +179,7 @@
       (tag :accessor tag :initform nil :allocation :class))
      (:metaclass gobject-class))
   )
-
+;; Call this during buffer initialization, to create a matching tag
 (defmacro pres-tag (buffer class tag-options)
   (let ((buf (gensym))
 	(pres (gensym))

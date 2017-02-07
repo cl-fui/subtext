@@ -39,7 +39,23 @@
 ;;;======================================
 (defpres p3 (pres) ())
 (defpres p4 (pres) ())
+(defmethod -pres-on-mouse ((pres p4) enterp)
+  (with-slots (out) pres
+    (pres-bounds out pres)
+    (if enterp
+	(gtb-apply-tag out "bg-bluish" (iter out) (iter1 out) )
+	(gtb-remove-tag out "bg-bluish" (iter out) (iter1 out) ))))
+
 (defpres p5 (pres) ())
+
+
+(defmethod -pres-on-mouse ((pres p5) enterp)
+  (with-slots (out) pres
+    (pres-bounds out pres)
+    (if enterp
+	(gtb-apply-tag out "bg-greenish" (iter out) (iter1 out) )
+	(gtb-remove-tag out "bg-greenish" (iter out) (iter1 out) ))))
+
 
 (defun t11 ( &key (stdout *standard-output*) (package *package*))
   "final"

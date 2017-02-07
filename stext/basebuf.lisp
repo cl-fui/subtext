@@ -118,12 +118,15 @@
      (aref ptags 8) (pbuf-new-tag pbuf :name "bg-greenish" :editable t;nil
 				  :foreground "deepskyblue";
 				  :background-rgba  (make-gdk-rgba :green 1.0d0 :alpha 0.1d0) )
+     
      (aref ptags 9) (pbuf-new-tag pbuf :editable t;nil
 				  :background-rgba (make-gdk-rgba :blue 1.0d0 :alpha 0.1d0)
 				  :foreground "deepskyblue";
 				  )
      
-     )))
+     )
+    (pbuf-new-tag pbuf :name "bg-bluish" :editable t;ni
+		  :background-rgba  (make-gdk-rgba :blue 1.0d0 :alpha 0.2d0) )))
 
 ;; Move cursor to end and create a subrange at end...
  
