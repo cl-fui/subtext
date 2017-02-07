@@ -25,10 +25,15 @@
 (defgeneric -on-button-press  (object iter event))
 (defgeneric -on-2button-press (object iter event))
 (defgeneric -on-3button-press (object iter event))
+;;==============================================================================
+;;
 (defgeneric -on-motion        (object iter event))
 (defmethod -on-motion ((o t) view event)
   (declare (ignore o view event)))
 
+;;==============================================================================
+;;
+;;
 (defmethod -on-button-press ((o t) view event)
   (declare (ignore o iter event)))
 (defmethod -on-2button-press ((o t) view event)
@@ -36,6 +41,9 @@
 (defmethod -on-3button-press ((o t) view event)
   (declare (ignore o iter event)))
 
+;;==============================================================================
+;;
+;;
 (defun rview-buffer-coordinates (view x y)
   (gtv-window-to-buffer-coords
    view
