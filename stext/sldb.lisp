@@ -1,38 +1,6 @@
 (in-package :stext)
 
-(defpres pcondition (pres) () )
 
-(defpres psldbline (pres) ())
-;;====================================================================
-;; To be able to hightlight a line as we move the mouse, use this:
-(defgeneric pres-highlight (p stream flag))
-(defmethod  pres-highlight ((p t) strea flag))
-(defmethod  pres-highlight ((p psldbline) stream flag)
-  (pres-iters p)
-  (with-slots (iter iter1) stream
-    (if flag
-	(gtb-apply-tag stream "grhigh" iter iter1)
-	(gtb-remove-tag stream "grhigh" iter iter1))))
-(let (last)
-  (defmethod -on-motion ((sldb sldb) iter event) ;see rview.lisp
-    (let ((pres (pres-at sldb iter)))
-      (format t "~A~&" pres)
-      (unless (eq last pres)
-	(pres-highlight last sldb nil)
-	(pres-highlight pres sldb t)
-	(setf last pres)))))
-
-(defpres prestart (psldbline)
-  ((id :accessor id :initarg :id) ;generated sequential id
-   (info :accessor info :initarg :info) ;first: retry/abort; second:desc
-   ))
-(defmethod present1 ((prestart prestart))
-  (in-pres prestart
-    (with-slots (id info) prestart
-      (with-tag  "enum"   (format out "~2d: [" id))
-      (with-tag  "cyan"   (format out "~A" (first info)))
-      (with-tag  "normal" (format out "] ~A" (second info))))))
-;;===============================================================================
 (defclass sldb (rbuffer)
   ((connection    :accessor connection    :initarg :connection    :initform nil )
    (thread        :accessor thread        :initarg :thread        :initform nil )
@@ -103,3 +71,29 @@
 
 
 
+(defpres pcondition (pres) () )
+
+(defpres psldbline (pres) ())
+;;====================================================================
+;; To be able to hightlight a line as we move the mouse, use this:
+(defgeneric pres-highlight (p stream flag))
+(defmethod  pres-highlight ((p t) strea flag))
+(defmethod  pres-highlight ((p psldbline) stream flag)
+  (pres-iters p)
+  (with-slots (iter iter1) stream
+    (if flag
+	(gtb-apply-tag stream "grhigh" iter iter1)
+	(gtb-remove-tag stream "grhigh" iter iter1))))
+
+
+(defpres prestart (psldbline)
+  ((id :accessor id :initarg :id) ;generated sequential id
+   (info :accessor info :initarg :info) ;first: retry/abort; second:desc
+   ))
+(defmethod present1 ((prestart prestart))
+  (in-pres prestart
+    (with-slots (id info) prestart
+      (with-tag  "enum"   (format out "~2d: [" id))
+      (with-tag  "cyan"   (format out "~A" (first info)))
+      (with-tag  "normal" (format out "] ~A" (second info))))))
+;;===============================================================================

@@ -111,22 +111,23 @@
 	       (eq ptag (tag (pres mark)))) do
        (return mark)))
 
-
+;;
+;;
 (defun do-pres-at (stream xiter fun)
   "for every presentation at xiter, call (fun pres).  If it returns t, stop"
   (with-slots (iter iter1) stream
-    (loop for tag in (reverse (gti-tags xiter))
-       when (subtypep (type-of tag) 'ptag-base) do
+    (loop for tag in (reverse (gti-tags xiter));TODO: is reverse good enough?
+       when (subtypep (type-of tag) 'ptag-base) do ;only care about ptags!
        ;; set iter to start of tag
-	 (%gtb-get-iter-at-offset stream iter (gti-offset xiter))
-	 (or (gti-begins-tag iter tag)
-	     (gti-backward-to-tag-toggle iter tag))
-	 (let ((pres (find (mark-type tag) (gti-marks iter)
+	 (%gtb-get-iter-at-offset stream iter (gti-offset xiter));iter at ptag
+	 (or (gti-begins-tag iter tag); either we start a tag
+	     (gti-backward-to-tag-toggle iter tag)); or move back to start
+	 (let ((pres (find (mark-type tag) (gti-marks iter); find matching mark
 			   :test (lambda (key item)  (eq key (type-of item))))))
-	   (%gtb-get-iter-at-offset stream iter1 (gti-offset xiter))
-	   (or (gti-ends-tag iter1 tag)
-	       (gti-forward-to-tag-toggle iter1 tag))
-	   (when (funcall fun pres)
+	   (%gtb-get-iter-at-offset stream iter1 (gti-offset xiter));iter1
+	   (or (gti-ends-tag iter1 tag) ;either we end a tag
+	       (gti-forward-to-tag-toggle iter1 tag)); or forward to end
+	   (when (funcall fun pres) ;call function with iterators set
 	     (return pres))))
     nil))
 
