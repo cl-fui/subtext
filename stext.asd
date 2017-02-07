@@ -57,10 +57,9 @@
 ;;	       (:file "stext/redit")
 ;;	       (:file "stext/sldb")
 	       ;;	       (:file "stext/types")
-;;	       (:file "stext/sldb")
-;;	       (:file "swank/swank-parser") ;it knows about tags...
-;;	       (:file "stext/swarepl")
-             (:file "stext/gtk-ui")
+	       (:file "stext/sldb")
+	       (:file "stext/swarepl")
+	       (:file "stext/gtk-ui")
 
 	      ; (:file "stext/cline1")
 	;;       (:file "bnn/edition")

@@ -85,7 +85,7 @@
       (with-slots (read-id read-tag) pbuf
 	(setf read-id 0
 	      read-tag 0))
-      (let ((stream pbuf))
+      (let ((out pbuf))
 	(with-tag "prompt"
 	  (fresh-line pbuf)
 	  (format pbuf "~A> " (swa:prompt swank))))

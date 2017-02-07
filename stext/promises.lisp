@@ -59,19 +59,29 @@
 ;;  (format t "TAG-OUT: promise ~A" promise)
   (push promise (promises stream)))
 
-;; this macro requires stream to be called stream!
+;; this macro requires stream to be called out!
+;; Out is provided by with-pres and in-pres...
 ;; injects it for the thing promised...
-
 (defmacro with-tag (tag &body body)
   (let ((promise (gensym)))
     `(let* ((it ,tag)		    ;anaphoric it for the presentation
-	    (,promise (tag-in stream it)))
+	    (,promise (tag-in out it)))
        ,@body
-       (tag-out stream ,promise)
+       (tag-out out ,promise)
        it)))
 
+;; bind local symbols: presentation and out
 (defmacro with-pres (prestype &body body)
-  `(with-tag (make-instance ',prestype) ,@body))
+  `(let* ((presentation (make-instance ',prestype))
+	  (out (out presentation)))
+     (declare (ignorable presentation out))
+     (with-tag presentation ,@body)))
+
+(defmacro in-pres (pres &body body)
+  `(let* ((presentation ,pres)
+	  (out (out presentation)))
+     (declare (ignorable  presentation out))
+     (with-tag presentation ,@body)))
 
 
 (defmethod promise-fulfill ((tag gtk-text-tag) promise stream)

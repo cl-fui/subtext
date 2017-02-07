@@ -89,8 +89,8 @@
 			 (gti-tags iter))
 	 when (subtypep (type-of tag) 'ptag-base) do
 	   
-	   (pres-bounds pbuf offset tag)
-	   (format t "~%Pres: ~A ~A ~A" (pres-bounds pbuf offset tag)
+;;	   (pres-tag-bounds pbuf offset tag)
+	   (format t "~%Pres: ~A ~A ~A" (pres-tag-bounds pbuf offset tag)
 		   (gti-offset iter) (gti-offset iter1)))
       
       )))

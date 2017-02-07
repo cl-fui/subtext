@@ -57,54 +57,43 @@
   ;; (desc :accessor desc :initform desc )
    )
   (:metaclass gobject-class))
+(defmethod print-object ((tag ptag-base) out)
+   (format out "<PTAG for '~A>"  (mark-type tag) ))
 
 ;;------------------------------------------------------------------------------
 ;; All presentation marks are instances of pmark.  They ref the presentation
-(defclass pmark (gtk-text-mark)
-  ((pres :accessor pres :initarg :pres))
+(defclass pres (gtk-text-mark)
+  (;(pres :accessor pres :initarg :pres)
+   )
    ;for verification
   (:metaclass gobject-class))
 
-(defmethod print-object ((mark pmark) out)
+(defmethod print-object ((mark pres) out)
    (print-unreadable-object (mark out :type t)
-     (format out "*~s ~A ~A" (gtm-name mark) (pres mark) (tag (pres mark)) )))
-;;------------------------------------------------------------------------------
-;; All presentations are derived from this one.  Note that derived classes
-;; all introduce a tag slot in the derived class (not instance!)
-(defclass pres ()
-  ;; In the wild, there are class-allocated slots for:
-  ;; tagdesc: a list to pass to (create-instance 'tag ...)
-  ())
+     (format out "*PRES ~A"   (tag mark) )))
 
-;;------------------------------------------------------------------------------
-;; A prototype of a presentation.  We can create it early on, and realize it
-;; later, when the buffer is active.
-(defstruct proto-pres name super slotdesc tagdesc)
-(defun make-pres (name super slotdesc tagdesc)
-       (make-proto-pres :name name :super super :slotdesc slotdesc))
-
-(defun pbuf-pres-classes (buffer list-of-symbols)
-  "connect the presentation classes to this buffer"
-  (mapc #'(lambda (sym) (pres-in-buffer buffer sym))
-	 list-of-symbols))
 ;;------------------------------------------------------------------------------
 ;; This is a mark inserted by a promise with a presentation. 
 (defun pres-mark (buffer iter pres)
   "mark presentation at iter"
 ;;  (format t "ADDING MARK: ~A ~A~&" pres (type-of pres))
-  (gtb-add-mark buffer (make-instance 'pmark :pres pres) iter))
+  (gtb-add-mark buffer pres iter;(make-instance 'pmark :pres pres) iter
+		))
 
 (defun gti-pmarks (iter)
     (remove-if-not (lambda (val) (eq (type-of val) 'pmark)) (gti-marks iter)))
 
-(defun pres-mark-for-ptag (iter ptag)
-  (loop for mark in (gti-marks iter)
-     when (and (typep mark 'pmark); only care about presentations
-	       (eq ptag (tag (pres mark)))) do
-       (return mark)))
+(defun pres-iters (pres)
+  (declare (optimize (speed 3) (debug 0) (safety 0)))
+  (with-slots (out tag) pres
+    (with-slots (iter iter1) out
+      (%gtb-get-iter-at-mark out iter pres)
+      (%gtb-get-iter-at-mark out iter1 pres)
+      (gti-forward-to-tag-toggle iter1 tag))))
 
-(defun pres-bounds (stream at ptag)
-  "assuming ptag really is here..."
+
+(defun pres-tag-bounds (stream at ptag)
+  "set iters to tag bounds of a tag; at is inside it"
    (with-slots (iter iter1) stream
     (%gtb-get-iter-at-offset stream iter at)
     (%gtb-get-iter-at-offset stream iter1 at)
@@ -112,9 +101,37 @@
     (prog2
 	(or (gti-begins-tag iter ptag)
 	    (gti-backward-to-tag-toggle iter ptag))
-	(pres-mark-for-ptag iter ptag)
+;;	(pres-mark-for-ptag iter ptag)
       (or (gti-ends-tag iter1 ptag)
 	  (gti-forward-to-tag-toggle iter1 ptag)))))
+;; at the start of ptag
+(defun pres-mark-for-ptag (iter ptag)
+  (loop for mark in (gti-marks iter)
+     when (and (typep mark 'pmark); only care about presentations
+	       (eq ptag (tag (pres mark)))) do
+       (return mark)))
+
+
+(defun do-pres-at (stream xiter fun)
+  "for every presentation at xiter, call (fun pres).  If it returns t, stop"
+  (with-slots (iter iter1) stream
+    (loop for tag in (reverse (gti-tags xiter))
+       when (subtypep (type-of tag) 'ptag-base) do
+       ;; set iter to start of tag
+	 (%gtb-get-iter-at-offset stream iter (gti-offset xiter))
+	 (or (gti-begins-tag iter tag)
+	     (gti-backward-to-tag-toggle iter tag))
+	 (let ((pres (find (mark-type tag) (gti-marks iter)
+			   :test (lambda (key item)  (eq key (type-of item))))))
+	   (%gtb-get-iter-at-offset stream iter1 (gti-offset xiter))
+	   (or (gti-ends-tag iter1 tag)
+	       (gti-forward-to-tag-toggle iter1 tag))
+	   (when (funcall fun pres)
+	     (return pres))))
+    nil))
+
+(defun do-pres-at-off (stream off fun)
+  (do-ptags-at stream (gtb-get-iter-at-offset stream off) fun))
 
 
 (defgeneric present (obj stream extra))
@@ -131,7 +148,9 @@
   `(defclass ,classname ,direct-superclass
      (,@slots
       (out :accessor out :initform nil :allocation :class)
-      (tag :accessor tag :initform nil :allocation :class))) )
+      (tag :accessor tag :initform nil :allocation :class))
+     (:metaclass gobject-class))
+  )
 
 (defmacro pres-tag (buffer class tag-options)
   (let ((buf (gensym))
@@ -139,7 +158,7 @@
 	(tag (gensym)))
     `(let ((,buf ,buffer)
 	   (,pres (make-instance ',class))
-	   (,tag  (make-instance 'ptag-base ,@tag-options)))
+	   (,tag  (make-instance 'ptag-base ,@tag-options :mark-type ',class)))
        (setf (out ,pres) ,buf
 	     (tag    ,pres) ,tag)
        (gttt-add (gtb-tag-table ,buffer) ,tag))))
