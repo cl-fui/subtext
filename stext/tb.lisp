@@ -103,7 +103,7 @@ for all newly introduced ones, call entering.  Return new."
   (let* ((same (intersection old new)); these have not changed...
 	 (out (set-difference old same)); these are phased out.
 	 (in  (set-difference new same))) ; and these are newly introduced.
-    (format t "ON_MOTION SAME: ||~A||~&  IN:~A OUT: ~A~&" same in out)
+   ;; (format t "ON_MOTION SAME: ||~A||~&  IN:~A OUT: ~A~&" same in out)
     (loop for pres in out do (-pres-on-mouse pres nil))
     (loop for pres in in  do (-pres-on-mouse pres t))
     new
@@ -113,3 +113,18 @@ for all newly introduced ones, call entering.  Return new."
   (with-slots (old-mouse) tb
     (setf old-mouse
 	  (presentations-on-motion tb old-mouse (presentations-at tb iter)))))
+
+;;===============================================================================
+;; Mouse click handler
+;;
+;; presentation handlers return T if done, or NIL to propagate click.
+(defgeneric -pres-on-button (pres  button times pressed))
+(defmethod  -pres-on-button ((p t) button times pressed) nil)
+
+(defmethod -on-button ((tb tb) iter event)
+  (print "ONBUG")
+  (let ((presentations (presentations-at tb iter))
+	(times (gdk-event-get-click-count event))
+	(button (gdk-event-button-button event)))
+    (loop for pres in presentations
+       until (-pres-on-button pres button times t))))

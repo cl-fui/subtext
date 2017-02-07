@@ -69,6 +69,9 @@
   ;; The signaling system seems to not work well here!
   (widget-defaults rview); see gtk-ui.lisp
   ;;(gtk-widget-add-events rview (:button2-mask) )
+  ;;----------------------------------------------------------------------
+  ;; Mouse button.  Multiple clicks are stupid, as they all get called...
+  ;;
   (g-signal-connect
    rview "button-press-event" ;TODO: check widget
    (lambda (view event)
@@ -76,10 +79,8 @@
 	   (iter (rview-iter-from-xy view
 				     (gdk-event-button-x event)
 				     (gdk-event-button-y event))))
-       (case (gdk-event-get-click-count event)
-	 (1 (-on-button-press  buffer iter event))
-	 (2 (-on-2button-press buffer iter event))
-	 (3 (-on-3button-press buffer iter event))))))
+       (-on-button buffer iter event)
+)))
   ;;----------------------------------------------------------------------
   ;; Mouse motion.  We are not interested in sub-character motion; 
   ;; simply ignore motion events unless an iterator's offset changes.

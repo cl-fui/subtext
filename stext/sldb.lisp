@@ -89,7 +89,7 @@
   ((id :accessor id :initarg :id :initform 0)
    (info :accessor info :initarg :info :initform nil)))
 
-
+;; 
 (defpresenter ((p prestart))
   (with-slots (id info) p
     (with-tag  "enum"   (format out "~2d: [" id))
@@ -104,6 +104,13 @@
 	  (gtb-apply-tag out "grhigh" iter iter1)
 	  (gtb-remove-tag out "grhigh" iter iter1)))))
 
+(defmethod -pres-on-button ((pres prestart) button times pressed)
+  (with-slots (id out) pres
+    (with-slots (connection level thread) out
+      (swa:emacs-rex
+       connection
+       (format nil "(swank:invoke-nth-restart-for-emacs ~A ~A)" level id)
+       :thread thread))))
 ;;===============================================================================
 ;; frame
 ;;
