@@ -122,7 +122,7 @@ for all newly introduced ones, call entering.  Return new."
 (defmethod  -pres-on-button ((p t) button times pressed) nil)
 
 (defmethod -on-button ((tb tb) iter event)
-  (print "ONBUG")
+ ;; (print "ONBUG")
   (let ((presentations (presentations-at tb iter))
 	(times (gdk-event-get-click-count event))
 	(button (gdk-event-button-button event)))

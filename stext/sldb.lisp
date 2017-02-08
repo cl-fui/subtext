@@ -14,10 +14,12 @@
 (defparameter *q* nil)
 (defmethod initialize-instance :after ((sldb sldb) &key)
   (setf *pbuf* sldb);****
-
+  ;; register presentation types with this buffer and tags
   (pres-tag sldb pcondition (:foreground "plum" :editable nil))
   (pres-tag sldb prestart   (:foreground "yellow" :editable nil))
   (pres-tag sldb pframe     ())
+  (pres-tag sldb pframex    ())
+  
   
   (setf *q* (make-instance 'pcondition)   )
   (pbuf-new-tag sldb :name "grayish"     :foreground "gray"        :editable t)
@@ -50,8 +52,7 @@
     (loop for frame in frames do
 	 (present
 	  (make-instance 'pframe :id (first frame) :desc (second frame)
-			 :restartable (third frame)))
-	 (terpri out)))
+			 :restartable (third frame)))))
   
   
   (finish-output out) )
@@ -105,24 +106,50 @@
 	  (gtb-remove-tag out "grhigh" iter iter1)))))
 
 (defmethod -pres-on-button ((pres prestart) button times pressed)
-  (with-slots (id out) pres
-    (with-slots (connection level thread) out
+  (with-slots (id (sldb out)) pres
+    (with-slots (connection level thread) sldb
       (swa:emacs-rex
        connection
        (format nil "(swank:invoke-nth-restart-for-emacs ~A ~A)" level id)
        :thread thread))))
+
+;;===============================================================================
+;; framex - expanded frame...
+;;
+;; Exceptionally weird: starts out as a CR; when frame is pressed, it toggles.
+;; between cr and a frame description obtained from the server.
+(defpres pframex (pres) ())
+(defpresenter ((p pframex))
+  (terpri (out p))) ;initial presentation is a lone CR!
+
+(defun pframex-toggle (stream pframex expanded)
+  (pres-bounds stream pframex)
+  (if expanded
+      (with-slots (iter iter1) stream
+	(gti-backward-char iter);leave the cr
+	(%gtb-delete stream iter iter1)
+	nil)
+      (progn
+	(print (gti-offset (iter stream)))
+	(file-position stream (gti-offset (iter stream)))
+	(format stream "~&FUCK YOU, MR. PRESIDENT")
+	(finish-output stream)
+	t)))
 ;;===============================================================================
 ;; frame
 ;;
 ;; Protocol: (4 (SWANK-REPL::TRAC...) (RESTARTABLE T))
 (defpres pframe (pres)
-  (id desc restartable pframex expand))
+  (id desc restartable pframex (expanded :accessor expanded :initform nil)))
 
 (defpresenter ((p pframe))
-  (with-slots (id desc restartable pframex expand) p
+  (with-slots (id desc restartable pframex) p
     (with-tag  "enum" (format out "~3d: " id))
     (with-tag  (if restartable "restartable" "normal")
       (format out "~A" desc))))
+;; after the presentation, outside of it, create a hidden presentation 
+(defmethod present :after ((p pframe))
+  (present (setf (pframex p) (make-instance 'pframex))))
 
 (defmethod  -pres-on-mouse ((pres pframe) flag)
   (with-slots (out) pres
@@ -131,3 +158,7 @@
       (if flag
 	  (gtb-apply-tag out "grhigh" iter iter1)
 	  (gtb-remove-tag out "grhigh" iter iter1)))))
+
+(defmethod -pres-on-button ((pres pframe) button times pressed)
+  (with-slots (out expanded pframex) pres
+    (setf expanded (pframex-toggle out pframex expanded))))

@@ -71,14 +71,17 @@
        it)))
 
 ;; bind local symbols: presentation and out
+
 (defmacro with-pres (prestype &body body)
   "Initially create a presentation and perform 'body' in its context"
-  `(let* ((presentation (make-instance ',prestype))
+  `(let* ((presentation (make-instance ',prestype :left-gravity t))
 	  (out (out presentation)))
      (declare (ignorable presentation out))
+     (format t "PRES ~A ~A~&" presentation  (gtk-text-mark-left-gravity presentation))
+
      (with-tag presentation ,@body)))
 
-(defmacro defpresenter ((name type) &body body)
+(defmacro defpresenter (((name type)) &body body)
   "create a present method for a presentation type"
   `(defmethod present ((,name ,type))
     (with-slots(out) ,name
