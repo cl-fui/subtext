@@ -13,17 +13,16 @@
 	       )
   :serial t
   :components (
-	       
                (:file "package")
 	       (:file "stext")
-
-	       (:file "eli/keysyms")
-	       (:file "eli/keystroke")
-	       (:file "eli/keymap")
 
 	       (:file "swank/swank-protocol")
 	       (:file "swank/utf8")
 
+	       (:file "eli/package")
+	       (:file "eli/keystroke")
+	       (:file "eli/keymap")
+	       
                ;;(:file "mtree/package")
                ;;(:file "mtree/mtree")
 

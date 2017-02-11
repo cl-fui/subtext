@@ -45,18 +45,19 @@
 ;;
 ;; SYMBOL - we mean a presentation type!
 ;; 
-(defmethod tag-in (stream (content symbol))
+#||(defmethod tag-in (stream (content symbol))
   (declare (optimize (speed 3) (safety 0) (debug 0))
 	   (type termstream stream))
   (make-promise :start (stream-position stream)
 	        :content (make-instance content)))
-
+||#
 (defun tag-out (stream promise)
   (declare (optimize (speed 3) (safety 0) (debug 0))
 	   (type termstream stream)
 	   (type promise promise))
+  
   (setf (promise-end promise) (stream-position stream))
-;;  (format t "TAG-OUT: promise ~A" promise)
+  ;;(format t "TAG-OUT: promise ~A" promise)
   (push promise (promises stream)))
 
 ;; this macro requires stream to be called out!
@@ -68,16 +69,17 @@
 	    (,promise (tag-in out it)))
        ,@body
        (tag-out out ,promise)
+      ;; (format t "WITH-TAG PROMISE ~A" ,promise)
        it)))
 
 ;; bind local symbols: presentation and out
 
 (defmacro with-pres (prestype &body body)
   "Initially create a presentation and perform 'body' in its context"
-  `(let* ((presentation (make-instance ',prestype :left-gravity t))
+  `(let* ((presentation (make-instance ',prestype :left-gravity nil))
 	  (out (out presentation)))
      (declare (ignorable presentation out))
-     (format t "PRES ~A ~A~&" presentation  (gtk-text-mark-left-gravity presentation))
+     ;;(format t "PRES ~A ~A~&" presentation  (gtk-text-mark-left-gravity presentation))
 
      (with-tag presentation ,@body)))
 
@@ -93,7 +95,9 @@
     (with-slots (iter iter1) stream
       (%gtb-get-iter-at-offset stream iter start)
       (%gtb-get-iter-at-offset stream iter1 end)
-      (%gtb-apply-tag stream tag iter iter1)))
+      (%gtb-apply-tag stream tag iter iter1)
+    ;;  (format t "~%REALTAG ~A~&" promise)
+      ))
 )
 
 (defmethod promise-fulfill ((tag string)  promise stream )
@@ -109,7 +113,7 @@
     (with-slots (iter iter1 presarr) stream
       (%gtb-get-iter-at-offset stream iter start)
       (%gtb-get-iter-at-offset stream iter1 end)
-    ;;  (format t "promise fulfill at ~A ~A pres ~A ~tag ~A ~&" start end pres (tag pres))
+;;      (format t "~%TAG fulfill at ~A ~A pres ~A ~tag ~A ~&" start end pres (tag pres))
       (%gtb-apply-tag stream (tag pres) iter iter1)
       ;(setf (stream pres) stream)
       (pres-mark stream iter pres)
@@ -126,8 +130,8 @@
   (with-slots (promises iter iter1) stream
     ;; reverse is important: ranges must fill left to right
     (loop for promise in (reverse promises) do
-	 ;;(print "-----------------")
-	 ;;(print promise)
+;;	 (print "-----------------")
+;;	 (print promise)
 	 ;;(range:display (root stream))
 	 (promise-fulfill (promise-content promise) promise stream)
 	 ;;(range:display (root stream))

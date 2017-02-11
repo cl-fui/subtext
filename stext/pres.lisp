@@ -68,12 +68,25 @@
    ;for verification
   (:metaclass gobject-class))
 
-(defmethod print-object ((mark pres) out)
-   (print-unreadable-object (mark out :type t)
-     (format out "*PRES ~A"   (tag mark) )))
+(defmethod print-object ((mark pres) out1)
+  (print-unreadable-object (mark out1 :type t)
+    (with-slots (out) mark
+      (format t "OUT: ~A" out)
+      (and out (ready out)
+	   
+#||	   (pres-bounds out mark)
+	   (when (gtk-text-mark-left-gravity mark)
+	     (format out1 "*"))
+	   (format out1 "PRES")
+	   (format t "~A" (gtb-get-text out (iter out) (iter1 out) nil  ))
+||#
+)
+       )
+))
 
 ;;------------------------------------------------------------------------------
-;; This is a mark inserted by a promise with a presentation. 
+;; This is a mark inserted by a promise with a presentation!!!
+;;
 (defun pres-mark (buffer iter pres)
   "mark presentation at iter"
 ;;  (format t "ADDING MARK: ~A ~A~&" pres (type-of pres))
@@ -105,6 +118,7 @@
       (or (gti-ends-tag iter1 ptag)
 	  (gti-forward-to-tag-toggle iter1 ptag)))))
 ;; at the start of ptag
+
 (defun pres-mark-for-ptag (iter ptag)
   (loop for mark in (gti-marks iter)
      when (and (typep mark 'pmark); only care about presentations

@@ -9,6 +9,8 @@
 ;;; ----------------------------------------------------------------------------
 (in-package #:stext)
 
+(defgeneric -on-eli-key (object key event)) ; return nil to keep processing
+
 
 (defparameter *frame* nil)
 (defclass frame (gtk-window)
@@ -30,7 +32,6 @@
 		 :default-height 480
 		 ,@rest))
 
-(defgeneric -on-eli-key (object key event))
 
 (defmethod -on-initial-display ((frame frame))
   (with-slots (minibuf content) frame
@@ -39,6 +40,8 @@
 
 (defmethod initialize-instance :after ((frame frame) &key kill)
   (with-slots (holder minibuf content) frame
+    (setf *frame* frame)
+
     (setf minibuf (make-minibuf frame))
     (gtk-box-pack-end holder minibuf :expand nil)
     (and content (gtk-box-pack-start holder content))
@@ -50,26 +53,29 @@
 	     (if kill (leave-gtk-main))))
 
     ;; process keystrokes in minibuf...
-    (-on-announce-eli content minibuf)
-    (setf *frame* frame)
+   (-on-announce-eli content minibuf)
     
     
-					;(gtk-widget-add-events frame )
     ;; Key processing: gtk stuff is done here, from here on we use
     ;; (-on-eli-key object key)
     ;;
-    (print *package*)
     (g-signal-connect
 	frame "key-press-event"
 	(lambda (frame event)
-;;	  (format t "FRAME:KEY ~A~&" event)
+	;;  (format t "FRAME:KEY ~A~&" event)
+	  
 	  (let ((gtkkey (gdk-event-key-keyval event)))
-	    (unless (modifier-p gtkkey)	; if modifier, let gtk handle it!
-	      (let ((key (make-key gtkkey (gdk-event-key-state event))))
-		(or (-on-eli-key (minibuf frame) key event)
+	    (unless (eli:key-is-modifier gtkkey)	; if modifier, let gtk handle it!
+	      (let ((key (eli:key-make gtkkey (gdk-event-key-state event))))
+		(-on-eli-key (minibuf frame) key event)
+	#||	(or (-on-eli-key (minibuf frame) key event)
 		    (-on-eli-key (content frame) key event)
 					;(format t "~&UNHANDLED KEY: ~A ~A~&" key event)
-		    ))))))))
+		    )
+		||#
+		)))
+
+))))
 
 
 

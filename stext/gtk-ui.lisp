@@ -74,12 +74,12 @@
 	(pres-tag buffer p3 (:foreground "green"))
 	(pres-tag buffer p4 (:foreground "blue"))
 	
-	(format t "SHOWING~&")
+	(format buffer "SHOWING~&")
 	;;	(with-range buffer (range:make)	  (format buffer "hello~&"))
-
+#||
 	(let ((stream buffer))
 	  (time
-	   (loop for i from 1 to 10 do
+	   (loop for i from 1 to 1 do
 	      ;;(with-range buffer)
 	      ;;(stream  (make-instance 'ptest :text1 "hello" :num i :text2 "world" )(present it buffer nil))
 		(with-pres p5
@@ -92,7 +92,8 @@
 		
 		(format buffer "...~&")
 	      ;;	(terpri buffer)
-		)))	
+		)))
+||#	
 	(finish-output buffer))
       
       
@@ -149,3 +150,20 @@
                           (leave-gtk-main)))
       ;; Show the window.
       (gtk-widget-show-all window))))
+
+;; A simple test for debugging eli
+(defun teli( &key (stdout *standard-output*) (package *package*))
+  "final"
+  ;;(format t "AAA STANDARD OUTPUT?~A ~A ~&"*standard-output* *package*)
+  (within-main-loop
+    (setf *standard-output* stdout); Why can't I just bind it?
+    (let* ((*standard-output* stdout)
+	   (*package* package)			;re-enable output
+;;	   (ass  (format t "STANDARD OUTPUT?~A ~A ~&"*standard-output* *package*))
+	   (top (make-frame (make-window (make-rview (make-instance 'rbuffer))) 
+			    :kill t)))
+      (setf *top* top)
+      (eli:keydef (keymap (minibuf top)) (eli:kbd "C-x") (lambda (key) (print "HELLO")))
+      (gtk-widget-show-all top)
+      (-on-initial-display top))))
+

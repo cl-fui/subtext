@@ -27,7 +27,8 @@
       (gtk-box-pack-end window modeline :expand nil))))
 
 (defmethod -on-announce-eli ((window window) eli)
-  (-on-announce-eli (view window)  eli))
+ ;; (-on-announce-eli (view window)  eli)
+  )
 
 (defmethod -on-initial-display ((window window))
   (with-slots (view modeline) window

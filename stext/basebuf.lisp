@@ -30,7 +30,7 @@
 
 
 (defmethod -on-announce-eli  ((pbuf basebuf) eli)
-  (with-slots (keymap) eli
+ #|| (with-slots (keymap) eli
     ;;    (keymap-define-key    keymap #.kb:BS (lambda (gtkkey) (declare ) (pbuf-key-backspace pbuf)) )
     (keymap-define-key
      keymap #.kb:F1
@@ -38,7 +38,9 @@
 	      ;;   (format t "ON_ANPOUNE_ELI BASEBUF~&")
 	     (let ((iter (gtb-get-iter-at-mark pbuf (gtb-get-insert pbuf))))
 	       (bufstat-prim pbuf (gti-get-offset iter)))
-	     t))))
+	     t)))
+||#
+)
 
 (defmethod -on-destroy :before ((buffer basebuf))
   (format t "BASEBUF ON-DESTROY ~A~&" buffer ))

@@ -39,7 +39,7 @@
 ;;
 (defun sldb-activate (out)
   (with-slots (conditio restarts frames continuations) out
-    (format t "~A ~A ~A ~A~&" conditio restarts frames continuations)
+ ;;   (format t "~A ~A ~A ~A~&" conditio restarts frames continuations)
     (with-tag "enum" (format out "~A~&" (first conditio)))
     (with-pres pcondition (format out "~A" (second conditio)))
     (with-tag  "label" (format out "~%Restarts:~&"))   
@@ -52,7 +52,9 @@
     (loop for frame in frames do
 	 (present
 	  (make-instance 'pframe :id (first frame) :desc (second frame)
-			 :restartable (third frame)))))
+			 :restartable (third frame))))
+
+    )
   
   
   (finish-output out) )
@@ -118,22 +120,46 @@
 ;;
 ;; Exceptionally weird: starts out as a CR; when frame is pressed, it toggles.
 ;; between cr and a frame description obtained from the server.
-(defpres pframex (pres) ())
+(defpres pframex (pres) (id))
 (defpresenter ((p pframex))
   (terpri (out p))) ;initial presentation is a lone CR!
-
+;;
+;; Note: it seems that tags have a right-gravity...
+;;
 (defun pframex-toggle (stream pframex expanded)
   (pres-bounds stream pframex)
   (if expanded
       (with-slots (iter iter1) stream
-	(gti-backward-char iter);leave the cr
+	(gti-backward-char iter1);leave the cr
+	(format t "DELETING ~A ~A~&" iter iter1)
 	(%gtb-delete stream iter iter1)
 	nil)
-      (progn
-	(print (gti-offset (iter stream)))
-	(file-position stream (gti-offset (iter stream)))
-	(format stream "~&FUCK YOU, MR. PRESIDENT")
-	(finish-output stream)
+      (let ((out stream))
+	(with-slots (connection thread) stream
+	  (with-slots (id) pframex
+	    (swa:emacs-rex
+	     connection
+	     (format nil "(swank:frame-locals-and-catch-tags ~A)" id)
+	     :thread thread
+	     :proc
+	     (lambda (connection reply id)
+	       (gsafe
+		(pres-bounds stream pframex); it is much later, in lambda!
+		(file-position stream (gti-offset (iter1 stream)))
+		(format t "TAG-FRAMEX ~A~&" (tag pframex))
+		(with-tag (tag pframex)
+		  (with-tag "grayloc:"
+		    (princ "Locals:" stream))
+		  (loop for item in (first (second reply)) do
+		       (terpri stream)
+		       (princ "      " stream)
+		       (with-tag "locleft" (princ (second item) stream))
+		       (with-tag "normal"  (princ " = "  stream))
+		       (with-tag "pres"    (princ (sixth item) stream)))
+		  (terpri stream); make sure pres ends with CR
+		  )
+		(finish-output stream))))))
+	
 	t)))
 ;;===============================================================================
 ;; frame
@@ -147,9 +173,11 @@
     (with-tag  "enum" (format out "~3d: " id))
     (with-tag  (if restartable "restartable" "normal")
       (format out "~A" desc))))
-;; after the presentation, outside of it, create a hidden presentation 
+;; after the presentation, outside of it, create a hidden presentation
+;; give it our id, so it can expand
 (defmethod present :after ((p pframe))
-  (present (setf (pframex p) (make-instance 'pframex))))
+  (with-slots (id pframex ) p
+    (present (setf pframex (make-instance 'pframex :id id)))))
 
 (defmethod  -pres-on-mouse ((pres pframe) flag)
   (with-slots (out) pres

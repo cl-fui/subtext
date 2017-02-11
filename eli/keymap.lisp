@@ -1,58 +1,48 @@
-(in-package :stext)
+(in-package :eli)
 
 ;;; Key bindings are stored in keymaps.
 ;;;
 ;;; We associate stringified keyseq like "<M-C-x><C-k>hello" with bvals,
 ;;; which may be symbols or functions.
 ;;;
-;;; (key . data) (key . data
-;;;
-;;; 
+;;; A basic binding is ( key . data )
+;;; A keymap binding is (key . ALIST)
+;;; A context is a cons like that above, used to preserve a
+;;; position in a search...The cdr is either a final value or
+;;; another context...
+
+(defun keymap-make ()
+  "create a new, empty keymap"
+  (list 0))
+;;----------------------------------------------------------------
+;; To define a new keysequence, recursively follow context,
+;; creating nodes as needed.  If bindings exist, reuse keys
+;; destructively replacing them.
+(defun keydef (context keyseq data)
+  (let* ((key (car keyseq))
+	 ;;match is a binding with our key
+	 (match (or (assoc key (cdr context) :test #'equal)
+		    (let ((new (cons key nil)))
+		      (push new (cdr context))
+		      new))))
+    (let ((remaining (cdr keyseq)))
+      (if remaining; more contexts, otherwise, store data.
+	  (keydef match remaining data)
+	  (setf (cdr match) data))))) 
 
 
-(defun keymap-make () (cons 0 nil))
+;; Note: should assoc not find the next context, we wind up recursing with a
+;; nil context for the rest of the search, resulting in a nil... Not finding
+;; a key is not a rush job, so who cares...
+(defun key-find (context keyseq)
+  (if keyseq
+      (key-find (assoc (car keyseq) (cdr context)) (cdr keyseq))
+      context) )
 
-(defun keymap-dump (keymap)
-  (format t "(~A " (key->string (car keymap)))
-  (if (consp (cdr keymap))
-      (loop for i in (cdr keymap) do
-	   (keymap-dump i))
-      (format t "~A" (cdr keymap)))
-  (format t ") "))
-
-(defun keymap-lookup (binding key)
-  (when binding
-    (let ((list (cdr binding))) 
-      (if (eql key (car (first list)))
-	  (first list)
-	  (keymap-lookup list key)))))
-(defun keymap-find (binding key)
-  (cdr (keymap-lookup binding key)))
-
-(defun keymap-define-key (binding gtkkey data)
-  "append keymap with a key"
-  (let ((val (cons gtkkey data)))
-    (push val (cdr binding) )
-    val))
-
-(defun keymap-bind (binding keylist data)
-  (if keylist; more keys to come?
-      (keymap-bind
-       (or (keymap-lookup binding (car keylist)) ;try to find this key
-	   (keymap-define-key binding (car keylist) nil))
-       (cdr keylist) data)
-      (setf (cdr binding) data)))
-
-
-
-
-
-
-
-
-
-
-
+(defun key-lookup (context key)
+  "lookup a single key in a binding"
+  (assoc key (cdr context))
+  )
 
 
 

@@ -116,6 +116,10 @@
 ;; immediately upon connection, a thread is started to process responses.
 ;; any forms received that are not processed are sent to fallback
 ;; (fallback connection forms).
+;;
+;; Note: waiter thread is started to process responses from the SWANK server.
+;; Remeber so bind *standard-output* and *package*!
+;;
 (defun default-fallback (connection forms)
   (declare (ignore connection))
   (format *standard-output* "~%default connection fallback: ~a~%" forms))
@@ -139,7 +143,6 @@ forms to fallback  processor."
 	       (let ((stream (usocket:socket-stream socket))
 		     (*standard-output* out)
 		     (*package* pack))
-		 (format t "AAAAA: ~A~&" *package*)
 		 (loop named waiter do
 		      (usocket:wait-for-input socket :ready-only t :timeout 0.2)
 		    ;; socket may have been destroyed

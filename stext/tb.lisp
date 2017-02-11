@@ -21,7 +21,8 @@
    (oldw   :accessor oldw   :initform 0   :type fixnum) ;pre-xpand buffer width
 
    (old-mouse :accessor old-mouse :initform nil );old mouse presentation-lists
-  ;; (mtree  :accessor mtree  :initform (make-instance 'mtree:mtree))
+   ;; (mtree  :accessor mtree  :initform (make-instance 'mtree:mtree))
+   (ready :accessor ready   :initform nil );set after realized
    )
   
   (:metaclass gobject-class))
@@ -29,15 +30,16 @@
 ;;------------------------------------------------------------------------------
 (defmethod initialize-instance :after ((buffer tb) &key )
   (print "initialize-instance: tb")
-  (with-slots (iter iter1 root anchor) buffer
+  (with-slots (iter iter1 root anchor ready) buffer
     (setf iter   (gtb-get-start-iter buffer)
 	  iter1  (gtb-get-end-iter   buffer)
+	  ready  t
 	 ; root (make-instance 'pres )
   ))
   (g-signal-connect buffer "insert-text" #'on-insert-text-before :after nil)
   (g-signal-connect buffer "insert-text" #'on-insert-text-after :after t)
   (g-signal-connect buffer "delete-range" #'on-delete-range)
- 
+  (setf)
   )
 ;;==============================================================================
 ;; A major task is maintaining the position table on inserts and deletes!

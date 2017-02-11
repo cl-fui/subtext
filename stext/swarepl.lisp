@@ -38,26 +38,26 @@
     pbuf) )
   (defmethod -on-announce-eli :after((pbuf swarepl) eli)
     (with-slots (keymap) eli
-      (keymap-define-key
-       keymap #.kb:RET ; on <RET>, attempt to process input
-     (lambda (gtkkey)
-       (declare (ignore gtkkey))
+      (keymap-define-key 9999; HELP*** FIXME**** TODO*****
+;;       keymap #.kb:RET ; on <RET>, attempt to process input
+       (lambda (gtkkey)
+	 (declare (ignore gtkkey))
 					;(write-char #\newline pbuf)
-       (gdk-threads-add-idle ; Idly,
-	(lambda ()
-	  (with-slots (swank read-id read-tag) pbuf
-	    (let ((string (simple-input-get-text pbuf)))
-	      (if (zerop read-id)
-		  (let ((line (swarepl-parse-string string)))
-		    (when line
-		      ;; Convert entered text to 'entry presentation
-		      (simple-input-promise pbuf (make-instance 'p-entry ))
-		      ;; and set color
-		      (swa:eval swank line #'prompt-proc)))
-		  (swa:emacs-return-string swank string read-id read-tag  ))))
-	  nil)); run once.
-       (stream-flush pbuf)
-       nil))));TODO: for now, just let gtk process enter...
+	 (gdk-threads-add-idle ; Idly,
+	  (lambda ()
+	    (with-slots (swank read-id read-tag) pbuf
+	      (let ((string (simple-input-get-text pbuf)))
+		(if (zerop read-id)
+		    (let ((line (swarepl-parse-string string)))
+		      (when line
+			;; Convert entered text to 'entry presentation
+			(simple-input-promise pbuf (make-instance 'p-entry ))
+			;; and set color
+			(swa:eval swank line #'prompt-proc)))
+		    (swa:emacs-return-string swank string read-id read-tag  ))))
+	    nil)); run once.
+	 (stream-flush pbuf)
+	 nil))));TODO: for now, just let gtk process enter...
 ;;------------------------------------------------------------------------------
 
 ;; view invokes this on destruction...

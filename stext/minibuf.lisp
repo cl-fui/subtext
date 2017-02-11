@@ -1,16 +1,13 @@
 ;;
 ;; A minibuf is an rview (text-view), which processes keys and
-;; commands.  It has an rbuffer, and displays feedback and
-;; specials instructions...
+;; commands on behalf of another entity, the main window.
 
 (in-package :stext )
-
+;;==============================================================================
 (defclass minibuf (rview)
-  ((keymap  :accessor keymap :initform (keymap-make))
+  ((keymap  :accessor keymap :initform (eli:keymap-make))
    (state   :accessor state) ;state-machine binding pointer
-   (frame   :accessor frame :initarg :frame)
-   )
-  
+   (frame   :accessor frame :initarg :frame))  
   (:metaclass gobject-class))
 
 (defun make-minibuf (frame)
@@ -30,16 +27,16 @@
 (defmethod -on-eli-key ((view minibuf) key event)
   "process a key with modifiers..."
   (declare (ignore event))
-  ;;    (format t "ON_ANPOUNE_ELI MINI~&")
+      (format t "minibuf:-on-eli-key ~A~&" (eli:key-write key nil))
   (with-slots (state keymap lock) view
-    (let ((found (keymap-lookup state key))
-	  (stream (gtv-buffer view )));local eli buffer
+    (let ((found (eli:key-lookup state key))
+	  (stream (gtv-buffer view)));local eli buffer
       (typecase (cdr found)
 	(function (setf state keymap) ;reset search
 		  (stream-wipe stream);local
 		  (funcall (cdr found) (car found)))
 	(cons (setf state found)
-	      (princ (key->string (car found)) stream)
+	      (eli:key-write (car found) stream)
 	      (finish-output stream)
 	      t)
 	(t (setf state keymap)
