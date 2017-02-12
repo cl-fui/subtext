@@ -51,8 +51,9 @@
 		  ;; and set color
 		  (swa:eval swank line #'prompt-proc)))
 	      (swa:emacs-return-string swank string read-id read-tag  ))))
-      t)
-	    )
+      nil))
+  (eli-def eli (kbd "C-x C-y") (lambda () (format t "OK!!!!!~&") nil))
+  
   
     #||
   (with-slots (keymap) eli)

@@ -58,7 +58,7 @@
     (g-signal-connect
 	frame "key-press-event"
 	(lambda (frame event)
-	;;  (format t "FRAME:KEY ~A~&" event)
+	  (format t "FRAME:KEY ~A~&" event)
 	  (let ((gtkkey (gdk-event-key-keyval event)))
 	    (unless (key-is-modifier gtkkey)	; if modifier, let gtk handle it!
 	      (let ((key (key-make gtkkey (gdk-event-key-state event))))
