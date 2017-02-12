@@ -51,21 +51,11 @@
      (lambda (widget) (-on-destroy widget)
 	     (if kill (leave-gtk-main))))
 
-    
-    ;; Key processing: gtk stuff is done here, from here on we use
-    ;; (-on-eli-key object key)
-    ;;
-    (g-signal-connect
-	frame "key-press-event"
-	(lambda (frame event)
-	  (format t "FRAME:KEY ~A~&" event)
-	  (let ((gtkkey (gdk-event-key-keyval event)))
-	    (unless (key-is-modifier gtkkey)	; if modifier, let gtk handle it!
-	      (let ((key (key-make gtkkey (gdk-event-key-state event))))
-		(-on-key (content frame) key event))))))
-
+    (eli-initialize)
     (-pre-initial-display content frame)
-    frame))
+    frame
+    
+    ))
 
 
 

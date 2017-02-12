@@ -28,9 +28,6 @@
 (defmethod -on-destroy ((rview rview)) 
   (-on-destroy (gtv-buffer rview)))
 
-(defmethod -on-key ((view rview) key event)
-   (process-key (eli view) key))
-
 
 
 (defgeneric -on-button-press  (object iter event))
@@ -80,15 +77,17 @@
   ;;
   (-on-announce-eli (gtv-buffer rview) (eli rview) ) ; let the buffer initialize
   ;; Connect eli to frame's minibuf
-  ; 
   (g-signal-connect
-   rview "button-press-event" ;TODO: check widget
-   (lambda (view event)
-     (let ((buffer (gtv-buffer rview))
-	   (iter (rview-iter-from-xy view
-				     (gdk-event-button-x event)
-				     (gdk-event-button-y event))))
-       (-on-button buffer iter event))))
+	rview "key-press-event"
+	(lambda (widget event)
+	 ;; (format t "FRAME:KEY ~A~&" event)
+	  (let ((gtkkey (gdk-event-key-keyval event)))
+	    (unless (key-is-modifier gtkkey)	; if modifier, let gtk handle it!
+	      (let ((key (key-make gtkkey (gdk-event-key-state event))))
+		(mvb (w x y)  (gdk-window-get-pointer  (gtk-widget-window widget))
+		     (process-key (eli rview) key x y event)
+		     ))))))
+ 
   ;;----------------------------------------------------------------------
   ;; Mouse motion.  We are not interested in sub-character motion; 
   ;; simply ignore motion events unless an iterator's offset changes.
@@ -102,7 +101,21 @@
        (with-slots (last-motion-off) view 
 	 (when (/= last-motion-off (gti-offset iter)); interesting?
 	   (setf last-motion-off (gti-offset iter))
-	   (-on-motion buffer iter event)))))))
+	   (-on-motion buffer iter event))))))
+  (g-signal-connect
+     rview "button-press-event" ;TODO: check widget
+     (lambda (view event)
+       ;;(print event)
+       ;; syntesize a key event from button press
+       ;(+ #xFEE9 (gdk-event-button-button event))
+       (mvb (w x y mod) (gdk-window-get-pointer  (gtk-widget-window view))
+	   ;; (format t "~&====~A ~A ~A ~&" x y mod)
+	    (let ((key (+ #xFEE8 (gdk-event-button-button event))))
+	      (process-key (eli view) (gtkmods-subject key mod nil)
+			   (truncate (gdk-event-button-x event))
+			   (truncate (gdk-event-button-y event))
+			   event)))
+       t)))
 ;; Looks like view is the place to handle cursor commands! TODO: improve...
 ;;(defmethod -on-announce-eli ((rview rview) eli))
 #||  (defun bind-move-cursor (gtkkey)

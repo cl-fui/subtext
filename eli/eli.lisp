@@ -29,13 +29,12 @@
     (eli-def eli (kbd "C-g") (lambda () (-reset eli)))
     ))
 
-(defun process-key (eli key)
+(defun process-key (eli key x y event)
   "process a key with modifiers..."
   (with-slots (state keymap minibuf) eli
-    (format t "eli:process-key ~A eli~A~&" (key-write key nil)
-	    eli)
+;;    (format t "eli:process-key ~A eli~A~&" (key-write key nil)   eli)
     (let ((found (key-lookup state key)))
-      (print found)
+      ;(print found)
       (typecase (cdr found)
 	(function (eli-reset eli) ;reset search
 		  (funcall (cdr found)))

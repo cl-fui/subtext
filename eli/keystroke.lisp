@@ -129,6 +129,14 @@
   (loop for key in keyseq do
        (key-write key stream)))
 
+(defun gtkmods-subject (keyval gtkmods unshiftable)
+  "subject keyval to gtkmods"
+  (dolist (modifier gtkmods)
+    (case modifier
+      (:shift-mask (unless unshiftable (incf keyval MOD-SHIFT-MASK)))
+      (:control-mask (incf keyval MOD-CONTROL-MASK))
+      (:mod1-mask    (incf keyval MOD-META-MASK))))
+  keyval)
 
 (defun char->modmask (char)
   "return a modmask for a character.  If not a mask character, error"
@@ -161,13 +169,8 @@
 ;;;
 (defun key-make (val &optional (gtk-modifier-list nil)) 
   "create a key using the gtk modifier list"
-  (let ((unshiftable (graphic-char-p (code-char val))))
-    (dolist (modifier gtk-modifier-list)
-      (case modifier
-	(:shift-mask (unless unshiftable (incf val MOD-SHIFT-MASK)))
-	(:control-mask (incf val MOD-CONTROL-MASK))
-	(:mod1-mask    (incf val MOD-META-MASK)))))
-  val)
+  (gtkmods-subject val gtk-modifier-list ;if printable, unshiftable.
+		   (graphic-char-p (code-char val))))
 
 
 ;;; A key is represented by a string by one of:
@@ -198,7 +201,7 @@
 ;; Global initialization
 ;;
 ;; single-character keys are useful...
-(defun initialize ()
+(defun eli-initialize ()
   (keycache-init-list
    '("!" "exclam"      "@" "at"            "#" "numbersign"  "$" "dollar"
      "%" "percent"     "^" "asciicircum"   "&" "ampersand"   "*" "asterisk"
@@ -207,4 +210,6 @@
      "\"" "quotedbl"   "'" "apostrophe"    "{" "braceleft"   "}" "braceright"
      "[" "bracketleft" "]" "bracketright"  "|" "bar"         "\\" "backslash"
      ";" "semicolon"   ":" "colon"         "~" "asciitilde"  "`"  "grave"
-     )))
+     "Mouse-1" "Pointer_Button1"      "Mouse-2" "Pointer_Button2"
+     "Mouse-3" "Pointer_Button3"      "Mouse-4" "Pointer_Button4"
+     "Mouse-5" "Pointer_Button5")))
