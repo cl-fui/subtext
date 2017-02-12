@@ -40,6 +40,6 @@
   (-on-destroy (view window))
   (-on-destroy (modeline window)))
 
-(defmethod -on-eli-key ((window window) key event)
-   (-on-eli-key (view window) key event))
+(defmethod -on-key ((window window) key event)
+   (-on-key (view window) key event))
 

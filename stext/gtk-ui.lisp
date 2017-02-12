@@ -11,7 +11,7 @@
 (defmethod  -on-key-press ((obj t) event from) nil) ;default: pass key on
 
 (defparameter *pbuf* nil)
-
+(defparameter *rview* nil)
 ;;for debugging ranges
 
 ;------------------------------------------------
@@ -160,10 +160,12 @@
     (let* ((*standard-output* stdout)
 	   (*package* package)			;re-enable output
 ;;	   (ass  (format t "STANDARD OUTPUT?~A ~A ~&"*standard-output* *package*))
-	   (top (make-frame (make-window (make-rview (make-instance 'rbuffer))) 
+	   (top (make-frame (make-window
+			     (print (setf *rview* (make-rview (make-instance 'rbuffer))))) 
 			    :kill t)))
-      (setf *top* top)
-      (eli:keydef (keymap (minibuf top)) (eli:kbd "C-x") (lambda (key) (print "HELLO")))
+           (setf *top* top)
+      (eli:def (eli *rview*) (eli:kbd "C-x C-y") (lambda (key) (print "HELLO")))
+     
       (gtk-widget-show-all top)
       (-on-initial-display top))))
 

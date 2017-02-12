@@ -35,9 +35,39 @@
   
   (with-slots (swank) pbuf
     (setf swank (swa:make-connection "localhost" 5000))
-    pbuf) )
-  (defmethod -on-announce-eli :after((pbuf swarepl) eli)
-    (with-slots (keymap) eli
+    pbuf))
+
+(defun process-ret (eli pbuf)
+  (with-slots (swank read-id read-tag) pbuf
+    (let ((string (simple-input-get-text pbuf)))
+      (if (zerop read-id)
+	  (let ((line (swarepl-parse-string string)))
+	    (when line
+	      ;; Convert entered text to 'entry presentation
+	      (simple-input-promise pbuf (make-instance 'p-entry ))
+	      ;; and set color
+	      (swa:eval swank line #'prompt-proc)))
+	  (swa:emacs-return-string swank string read-id read-tag)))))
+
+(defmethod -on-announce-eli :after ((pbuf swarepl) eli)
+  (print "on-announce-eli")
+  (eli:def eli (eli:kbd "Return")
+    (lambda ()
+      (with-slots (swank read-id read-tag) pbuf
+	(let ((string (simple-input-get-text pbuf)))
+	  (if (zerop read-id)
+	      (let ((line (swarepl-parse-string string)))
+		(when line
+		  ;; Convert entered text to 'entry presentation
+		  (simple-input-promise pbuf (make-instance 'p-entry ))
+		  ;; and set color
+		  (swa:eval swank line #'prompt-proc)))
+	      (swa:emacs-return-string swank string read-id read-tag  ))))
+      t)
+	    )
+  
+    #||
+  (with-slots (keymap) eli)
       (keymap-define-key 9999; HELP*** FIXME**** TODO*****
 ;;       keymap #.kb:RET ; on <RET>, attempt to process input
        (lambda (gtkkey)
@@ -57,7 +87,9 @@
 		    (swa:emacs-return-string swank string read-id read-tag  ))))
 	    nil)); run once.
 	 (stream-flush pbuf)
-	 nil))));TODO: for now, just let gtk process enter...
+	 nil))
+||#
+)
 ;;------------------------------------------------------------------------------
 
 ;; view invokes this on destruction...

@@ -7,10 +7,10 @@
 
 
 (defclass rview (gtk-text-view)
-  
-  (;; Track last offset from mousemove; issue -on-motion only on change.
-   (last-motion-off :accessor last-motion-off :initform 999999) 
-   )
+  ((eli :accessor eli :initform (make-instance 'eli:eli))
+
+   ;; Track last offset from mousemove; issue -on-motion only on change.
+   (last-motion-off :accessor last-motion-off :initform 999999) )
   (:metaclass gobject-class) )
 
 ;; a convenience macro
@@ -23,6 +23,10 @@
 
 (defmethod -on-destroy ((rview rview)) 
   (-on-destroy (gtv-buffer rview)))
+
+(defmethod -on-key ((view rview) key event)
+   (eli:process-key (eli view) key))
+
 
 
 (defgeneric -on-button-press  (object iter event))
@@ -61,9 +65,7 @@
 	view :text (truncate x) (truncate y))
    (gtv-get-iter-at-location view xx yy)))
 
-(defparameter *rview* nil)
 (defmethod initialize-instance :after ((rview rview) &key)
-  (setf *rview* rview)
   ;; Since views know about buffers but not vice versa, we must connect here.
   ;; since we don't know what the view is, we have to use generic functions.
   ;; The signaling system seems to not work well here!
@@ -72,6 +74,7 @@
   ;;----------------------------------------------------------------------
   ;; Mouse button.  Multiple clicks are stupid, as they all get called...
   ;;
+  (-on-announce-eli (gtv-buffer rview) (eli rview) ) ; let the buffer initialize
   (g-signal-connect
    rview "button-press-event" ;TODO: check widget
    (lambda (view event)
@@ -96,7 +99,7 @@
 	   (setf last-motion-off (gti-offset iter))
 	   (-on-motion buffer iter event)))))))
 ;; Looks like view is the place to handle cursor commands! TODO: improve...
-(defmethod -on-announce-eli ((rview rview) eli)
+;;(defmethod -on-announce-eli ((rview rview) eli))
 #||  (defun bind-move-cursor (gtkkey)
     (apply #'g-signal-emit rview  "move-cursor"
 	   (case gtkkey
@@ -110,7 +113,7 @@
 	  '(#.kb:LEFT #.kb:RIGHT #.KB:UP #.kb:DOWN))
     )
 ||#
-  (-on-announce-eli (gtk-text-view-buffer rview) eli))
+
 
 (defun widget-defaults (widget)
   (gtk-widget-modify-font widget  (pango-font-description-from-string "DejaVu Sans Mono 8.6"))
@@ -122,10 +125,6 @@
 			     )
   (gtk-widget-override-color widget :selected (make-gdk-rgba  :alpha 1.d0) ))
 
-(defmethod -on-eli-key ((view rview) key event)
-  "process an eli key"
-;;  (format t "RVIEW on-eli-key ~A~&" key)
-  (-on-eli-key (gtv-buffer view) key event))
 
 
 ;;============================================================================

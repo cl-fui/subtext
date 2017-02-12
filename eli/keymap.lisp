@@ -18,7 +18,7 @@
 ;; To define a new keysequence, recursively follow context,
 ;; creating nodes as needed.  If bindings exist, reuse keys
 ;; destructively replacing them.
-(defun keydef (context keyseq data)
+(defun key-def (context keyseq data)
   (let* ((key (car keyseq))
 	 ;;match is a binding with our key
 	 (match (or (assoc key (cdr context) :test #'equal)
@@ -27,7 +27,7 @@
 		      new))))
     (let ((remaining (cdr keyseq)))
       (if remaining; more contexts, otherwise, store data.
-	  (keydef match remaining data)
+	  (key-def match remaining data)
 	  (setf (cdr match) data))))) 
 
 
@@ -37,7 +37,7 @@
 (defun key-find (context keyseq)
   (if keyseq
       (key-find (assoc (car keyseq) (cdr context)) (cdr keyseq))
-      context) )
+      context))
 
 (defun key-lookup (context key)
   "lookup a single key in a binding"

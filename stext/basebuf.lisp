@@ -19,28 +19,7 @@
   )
 
 (defparameter *self-inserting-keys* " 0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ~!@#$%^&*()_+[]{}\|~`,.<>/?")
-(defmethod -on-eli-key ((pbuf basebuf) key event)
-  "process an eli key"
-  #||
-  (let ((char (key->character key)))
-    (if (find char *self-inserting-keys* :test #'char=)
-	(progn (write-char char pbuf) (finish-output pbuf) t)
-	nil))
-||# nil)
 
-
-(defmethod -on-announce-eli  ((pbuf basebuf) eli)
- #|| (with-slots (keymap) eli
-    ;;    (keymap-define-key    keymap #.kb:BS (lambda (gtkkey) (declare ) (pbuf-key-backspace pbuf)) )
-    (keymap-define-key
-     keymap #.kb:F1
-     (lambda (gtkkey) (declare (ignore gtkkey))
-	      ;;   (format t "ON_ANPOUNE_ELI BASEBUF~&")
-	     (let ((iter (gtb-get-iter-at-mark pbuf (gtb-get-insert pbuf))))
-	       (bufstat-prim pbuf (gti-get-offset iter)))
-	     t)))
-||#
-)
 
 (defmethod -on-destroy :before ((buffer basebuf))
   (format t "BASEBUF ON-DESTROY ~A~&" buffer ))
@@ -79,7 +58,7 @@
 	   
       (format t "~%Tags here")
       (loop for tag in tags-here do (print tag))
-	   ;;(format t "~%Tags here: ~A" tags-here)
+      ;;(format t "~%Tags here: ~A" tags-here)
 
       (format t "~%Marks here: ~A" marks-here )
 

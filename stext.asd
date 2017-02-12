@@ -22,6 +22,7 @@
 	       (:file "eli/package")
 	       (:file "eli/keystroke")
 	       (:file "eli/keymap")
+	       (:file "eli/eli")
 	       
                ;;(:file "mtree/package")
                ;;(:file "mtree/mtree")

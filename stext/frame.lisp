@@ -9,7 +9,7 @@
 ;;; ----------------------------------------------------------------------------
 (in-package #:stext)
 
-(defgeneric -on-eli-key (object key event)) ; return nil to keep processing
+(defgeneric -on-key (object key event)) ; return nil to keep processing
 
 
 (defparameter *frame* nil)
@@ -53,7 +53,7 @@
 	     (if kill (leave-gtk-main))))
 
     ;; process keystrokes in minibuf...
-   (-on-announce-eli content minibuf)
+    (-on-announce-eli content minibuf)
     
     
     ;; Key processing: gtk stuff is done here, from here on we use
@@ -63,20 +63,11 @@
 	frame "key-press-event"
 	(lambda (frame event)
 	;;  (format t "FRAME:KEY ~A~&" event)
-	  
 	  (let ((gtkkey (gdk-event-key-keyval event)))
 	    (unless (eli:key-is-modifier gtkkey)	; if modifier, let gtk handle it!
 	      (let ((key (eli:key-make gtkkey (gdk-event-key-state event))))
-		(-on-eli-key (minibuf frame) key event)
-	#||	(or (-on-eli-key (minibuf frame) key event)
-		    (-on-eli-key (content frame) key event)
-					;(format t "~&UNHANDLED KEY: ~A ~A~&" key event)
-		    )
-		||#
-		)))
-
-))))
-
+		(-on-key (content frame) key event))))))
+    frame))
 
 
 
