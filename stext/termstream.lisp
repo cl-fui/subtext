@@ -158,4 +158,8 @@
 ;;  (mvb (range off) (range:actual (root sldb) (gti-get-offset iter))	(pres-button-press range sldb event))
   
 
-(defmethod -on-announce-eli ((pbuf termstream) eli))
+
+(defmethod -reset ((pbuf termstream))
+  (stream-wipe pbuf)  )
+; should anyone use this class as a concrete class...
+(defmethod -on-announce-eli ((pbuf termstream) eli)  )

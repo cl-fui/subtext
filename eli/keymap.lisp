@@ -1,4 +1,4 @@
-(in-package :eli)
+(in-package :stext)
 
 ;;; Key bindings are stored in keymaps.
 ;;;

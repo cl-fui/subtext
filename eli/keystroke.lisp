@@ -1,4 +1,4 @@
-(in-package :eli)
+(in-package :stext)
 ;;; Keystroke
 ;;;
 ;;;

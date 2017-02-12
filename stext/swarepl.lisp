@@ -37,21 +37,9 @@
     (setf swank (swa:make-connection "localhost" 5000))
     pbuf))
 
-(defun process-ret (eli pbuf)
-  (with-slots (swank read-id read-tag) pbuf
-    (let ((string (simple-input-get-text pbuf)))
-      (if (zerop read-id)
-	  (let ((line (swarepl-parse-string string)))
-	    (when line
-	      ;; Convert entered text to 'entry presentation
-	      (simple-input-promise pbuf (make-instance 'p-entry ))
-	      ;; and set color
-	      (swa:eval swank line #'prompt-proc)))
-	  (swa:emacs-return-string swank string read-id read-tag)))))
-
 (defmethod -on-announce-eli :after ((pbuf swarepl) eli)
   (print "on-announce-eli")
-  (eli:def eli (eli:kbd "Return")
+  (eli-def eli (kbd "Return")
     (lambda ()
       (with-slots (swank read-id read-tag) pbuf
 	(let ((string (simple-input-get-text pbuf)))

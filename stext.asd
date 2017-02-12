@@ -19,7 +19,7 @@
 	       (:file "swank/swank-protocol")
 	       (:file "swank/utf8")
 
-	       (:file "eli/package")
+	    ;;   (:file "eli/package")
 	       (:file "eli/keystroke")
 	       (:file "eli/keymap")
 	       (:file "eli/eli")

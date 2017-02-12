@@ -3,7 +3,7 @@
 	#:cl #:alexandria)
   (:shadow cl:find )
   (:export
-   :eli :make-eli
+   :eli :make-eli :minibuf
    :def
    :find
    ;; keymap-----------------

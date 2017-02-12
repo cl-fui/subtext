@@ -164,7 +164,7 @@
 			     (print (setf *rview* (make-rview (make-instance 'rbuffer))))) 
 			    :kill t)))
            (setf *top* top)
-      (eli:def (eli *rview*) (eli:kbd "C-x C-y") (lambda (key) (print "HELLO")))
+      (eli-def (eli *rview*) (kbd "C-x C-y") (lambda () (print "HELLO")))
      
       (gtk-widget-show-all top)
       (-on-initial-display top))))

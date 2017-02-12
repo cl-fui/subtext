@@ -7,7 +7,7 @@
 
 
 (defclass rview (gtk-text-view)
-  ((eli :accessor eli :initform (make-instance 'eli:eli))
+  ((eli :accessor eli :initform (make-instance 'eli ))
 
    ;; Track last offset from mousemove; issue -on-motion only on change.
    (last-motion-off :accessor last-motion-off :initform 999999) )
@@ -21,11 +21,15 @@
 (defmethod -on-initial-display ((rview rview))
   (-on-initial-display (gtv-buffer rview)))
 
+(defmethod -pre-initial-display ((rview rview) frame)
+  "after everything initialized but prior to display"
+  (setf (minibuf (eli rview)) (gtk-text-view-buffer (minibuf frame )))
+  )
 (defmethod -on-destroy ((rview rview)) 
   (-on-destroy (gtv-buffer rview)))
 
 (defmethod -on-key ((view rview) key event)
-   (eli:process-key (eli view) key))
+   (process-key (eli view) key))
 
 
 
@@ -75,6 +79,8 @@
   ;; Mouse button.  Multiple clicks are stupid, as they all get called...
   ;;
   (-on-announce-eli (gtv-buffer rview) (eli rview) ) ; let the buffer initialize
+  ;; Connect eli to frame's minibuf
+  ; 
   (g-signal-connect
    rview "button-press-event" ;TODO: check widget
    (lambda (view event)
@@ -82,8 +88,7 @@
 	   (iter (rview-iter-from-xy view
 				     (gdk-event-button-x event)
 				     (gdk-event-button-y event))))
-       (-on-button buffer iter event)
-)))
+       (-on-button buffer iter event))))
   ;;----------------------------------------------------------------------
   ;; Mouse motion.  We are not interested in sub-character motion; 
   ;; simply ignore motion events unless an iterator's offset changes.
@@ -92,8 +97,8 @@
    (lambda (view event)
      (let ((buffer (gtv-buffer rview))
 	   (iter (rview-iter-from-xy view
-				      (gdk-event-motion-x event)
-				      (gdk-event-motion-y event))))
+				     (gdk-event-motion-x event)
+				     (gdk-event-motion-y event))))
        (with-slots (last-motion-off) view 
 	 (when (/= last-motion-off (gti-offset iter)); interesting?
 	   (setf last-motion-off (gti-offset iter))
