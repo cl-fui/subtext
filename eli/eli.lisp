@@ -3,15 +3,7 @@
 ;; eli is a keyprocessing entity
 ;;
 
-(defclass eli ()
-  ((state :accessor state
-	  :documentation "first= binding during search, rest are previous bindings")
-   (keymap :accessor keymap :initarg :keymap :initform nil)
-   (x :accessor x :initform 0)
-   (y :accessor y :initform 0)
-   ))
-
-(defmethod eli-reset ((eli eli))
+(defun eli-reset (eli)
   (with-slots (state keymap minibuf) eli
     (setf state (cons keymap nil))
     ;;(-wipe minibuf)
@@ -33,13 +25,6 @@
   (with-slots (keymap state) eli
     (not (eq keymap (car state)))))
 
-(defmethod initialize-instance :after ((eli eli) &key)
-  (with-slots (state keymap ) eli
-    (unless keymap (setf keymap (keymap-make)))
-    (eli-reset eli)
-    ;; built-in bindings
-    (eli-def eli (kbd "C-g") (lambda () (eli-reset eli)))
-    ))
 
 ;;
 ;; active  found

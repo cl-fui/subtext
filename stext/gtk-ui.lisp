@@ -168,7 +168,8 @@
 			     (print (setf *rview* (make-rview (setf *pbuf* (make-instance 'simplestream)))))) 
 			    :kill t)))
            (setf *top* top)
-      (eli-def (eli *rview*) (kbd "C-x C-y") (lambda () (print "HELLO")))
+	   (eli-def *rview*
+		    (kbd "C-x C-y") (lambda () (print "HELLO")))
      
       (gtk-widget-show-all top)
       (-on-initial-display top))))
