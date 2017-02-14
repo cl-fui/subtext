@@ -13,7 +13,7 @@
 
 (defun keymap-make ()
   "create a new, empty keymap"
-  (list 0))
+  (list nil))
 ;;----------------------------------------------------------------
 ;; To define a new keysequence, recursively follow context,
 ;; creating nodes as needed.  If bindings exist, reuse keys

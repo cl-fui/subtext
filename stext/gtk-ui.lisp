@@ -112,7 +112,9 @@
 	   (*package* package)			;re-enable output
 ;;	   (ass  (format t "STANDARD OUTPUT?~A ~A ~&"*standard-output* *package*))
 	   (top (make-frame (make-window (make-rview (make-instance 'swarepl))) 
-			    :kill t))) 
+			    :kill t)))
+     
+
       (gtk-widget-show-all top)
       (-on-initial-display top))))
 
@@ -151,6 +153,8 @@
       ;; Show the window.
       (gtk-widget-show-all window))))
 
+
+
 ;; A simple test for debugging eli
 (defun teli( &key (stdout *standard-output*) (package *package*))
   "final"
@@ -161,7 +165,7 @@
 	   (*package* package)			;re-enable output
 ;;	   (ass  (format t "STANDARD OUTPUT?~A ~A ~&"*standard-output* *package*))
 	   (top (make-frame (make-window
-			     (print (setf *rview* (make-rview (make-instance 'rbuffer))))) 
+			     (print (setf *rview* (make-rview (setf *pbuf* (make-instance 'simplestream)))))) 
 			    :kill t)))
            (setf *top* top)
       (eli-def (eli *rview*) (kbd "C-x C-y") (lambda () (print "HELLO")))

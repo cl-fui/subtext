@@ -23,7 +23,6 @@
 
 (defmethod -pre-initial-display ((rview rview) frame)
   "after everything initialized but prior to display"
-  (setf (minibuf (eli rview)) (gtk-text-view-buffer (minibuf frame )))
   )
 (defmethod -on-destroy ((rview rview)) 
   (-on-destroy (gtv-buffer rview)))
@@ -76,7 +75,6 @@
   ;; Mouse button.  Multiple clicks are stupid, as they all get called...
   ;;
   (-on-announce-eli (gtv-buffer rview) (eli rview) ) ; let the buffer initialize
-  ;; Connect eli to frame's minibuf
   (g-signal-connect
 	rview "key-press-event"
 	(lambda (widget event)

@@ -72,16 +72,10 @@
   (print-unreadable-object (mark out1 :type t)
     (with-slots (out) mark
       (format t "OUT: ~A" out)
-      (and out (ready out)
-	   
-#||	   (pres-bounds out mark)
-	   (when (gtk-text-mark-left-gravity mark)
-	     (format out1 "*"))
-	   (format out1 "PRES")
-	   (format t "~A" (gtb-get-text out (iter out) (iter1 out) nil  ))
-||#
-)
-       )
+					;
+      ;
+      
+      )
 ))
 
 ;;------------------------------------------------------------------------------

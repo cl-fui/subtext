@@ -9,10 +9,11 @@
   (:metaclass gobject-class))
 
 (defun make-minibuf (frame)
-  (make-instance 'minibuf :buffer (make-instance 'termstream)
+  (make-instance 'minibuf :buffer (make-instance 'echostream)
 		 :frame frame :wrap-mode :none ))
 
 (defmethod initialize-instance :after ((minibuf minibuf) &key)
+  (setf *echo* (gtv-buffer minibuf))
   )
 
 ;;

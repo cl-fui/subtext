@@ -11,8 +11,8 @@
 ;; the buffer may not even be long enough to allow some offset, but will be
 ;; in the future, when the promises are fulfilled!
 ;;
-;; Promises are resolved when (finish-output) is issued on the stream, or some
-;; other event causes the stream to flush.
+;; Promises are resolved later, when the buffer actually has the characters.
+
 (defstruct promise start end content)
 
 ;; Out of desperation, I am keeping a pool of promises to avoid consisng...
@@ -38,9 +38,8 @@
 ;;------------------------------------------------------------------------------
 ;; Called by with-tag macro.
 (defmethod tag-in (stream (content t))
-  (declare (optimize (speed 3) (safety 0) (debug 0))
-	   (type termstream stream))
-  (make-promise :start (stream-position stream)
+ ;  (declare (optimize (speed 3) (safety 0) (debug 0))	   )
+  (make-promise :start (file-position stream)
 	        :content content))
 ;;
 ;; SYMBOL - we mean a presentation type!
@@ -48,7 +47,7 @@
 #||(defmethod tag-in (stream (content symbol))
   (declare (optimize (speed 3) (safety 0) (debug 0))
 	   (type termstream stream))
-  (make-promise :start (stream-position stream)
+  (make-promise :start (file-position stream)
 	        :content (make-instance content)))
 ||#
 (defun tag-out (stream promise)
@@ -56,7 +55,7 @@
 	   (type termstream stream)
 	   (type promise promise))
   
-  (setf (promise-end promise) (stream-position stream))
+  (setf (promise-end promise) (file-position stream))
   ;;(format t "TAG-OUT: promise ~A" promise)
   (push promise (promises stream)))
 

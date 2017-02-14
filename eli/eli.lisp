@@ -4,50 +4,70 @@
 ;;
 
 (defclass eli ()
-  ((state :accessor state)
-   (keymap :accessor keymap :initarg :keymap :initform nil)
-   (minibuf :accessor minibuf :initarg :minibuf :initform nil))
-  
-  )
+  ((state :accessor state
+	  :documentation "first= binding during search, rest are previous bindings")
+   (keymap :accessor keymap :initarg :keymap :initform nil)))
 
 (defmethod eli-reset ((eli eli))
   (with-slots (state keymap minibuf) eli
-    (setf state keymap)
-    (-reset minibuf)
+    (setf state (cons keymap nil))
+    ;;(-wipe minibuf)
+    ;(terpri *echo*)
     t))
 
-(defun eli-inactive (eli)
+(defun eli-state-print(eli stream)
+  (labels ((printer (state stream)
+	     (and (cdr state)
+		(printer (cdr state) stream))
+	   (and (car (car state))
+		(progn (key-write (car (car state)) stream)
+		       (write-char #\space stream)))))
+    (terpri stream)
+    (printer (state eli) stream)))
+
+(defun eli-active (eli)
   "Return t if eli is in the middle of a search"
   (with-slots (keymap state) eli
-    (eq keymap state)))
+    (not (eq keymap (car state)))))
 
 (defmethod initialize-instance :after ((eli eli) &key)
-  (with-slots (state keymap minibuf) eli
+  (with-slots (state keymap ) eli
     (unless keymap (setf keymap (keymap-make)))
-    (setf state keymap)
+    (eli-reset eli)
     ;; built-in bindings
-    (eli-def eli (kbd "C-g") (lambda () (-reset eli)))
+    (eli-def eli (kbd "C-g") (lambda () (eli-reset eli)))
     ))
+
+;;
+;; active  found
+;;   0       0      pass on
+;;   0       1      eli
+;;   1       0      cancel
+;;   1       1      eli
 
 (defun process-key (eli key x y event)
   "process a key with modifiers..."
-  (with-slots (state keymap minibuf) eli
-;;    (format t "eli:process-key ~A eli~A~&" (key-write key nil)   eli)
-    (let ((found (key-lookup state key)))
-      ;(print found)
-      (typecase (cdr found)
-	(function (eli-reset eli) ;reset search
-		  (funcall (cdr found)))
-	(cons (setf state found)
-	      (key-write key minibuf)
-	      (finish-output minibuf)
-	      t)
-	;;not found...
-	(t
-	 (if (eli-inactive eli)
-	     nil
-	     (eli-reset eli) ;cancel command and return t
-	     ))))))
+  (with-slots (state keymap ) eli
+;;    (format t "eli:process-key ~A ~&" key)
+    (let ((found (key-lookup (car state) key)))
+     ;; (format t "ELI:PROCESSKEY ~A~& ~A~&" state keymap)
+      (if found
+	  (typecase (cdr found)
+	    (function (eli-reset eli) ;reset search
+		      (funcall (cdr found)))
+	    (cons (push found state)
+		  (eli-state-print eli *echo*)
+		  t))
+	  ;;not found...
+	  
+	  (if (eli-active eli)
+	      (progn
+		(eli-state-print eli *echo*)
+		(key-write key *echo*)
+		(format *echo* " NOT BOUND")
+		(eli-reset eli))
+	      (progn
+		nil))))))
 
 (defun eli-find (eli keyseq)
   "find a keyseq in this eli"

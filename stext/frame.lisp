@@ -13,6 +13,7 @@
 (defgeneric -pre-initial-display (target frame))
 
 (defparameter *frame* nil)
+(defparameter *echo* *standard-output*)
 (defclass frame (gtk-window)
   ((holder   :accessor holder  :initform (make-instance 'gtk-box :orientation :vertical))
    (minibuf  :accessor minibuf )

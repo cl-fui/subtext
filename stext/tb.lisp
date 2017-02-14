@@ -2,10 +2,9 @@
 ;; TB - base textbuffer
 ;;
 ;; We start with a gtk-text-buffer.  We add a position-tracking system for
-;; pmarks.
+;; pmarks. All inserts and deletes into the buffer cause transparent updates
 ;;
-;; All inserts and deletes into the buffer cause transparent updates to
-;; the pmark list.
+;; Anchor is a mark we maintain as well.
 (in-package :stext)
 
 ;;;=============================================================================
@@ -21,8 +20,8 @@
    (oldw   :accessor oldw   :initform 0   :type fixnum) ;pre-xpand buffer width
 
    (old-mouse :accessor old-mouse :initform nil );old mouse presentation-lists
-   ;; (mtree  :accessor mtree  :initform (make-instance 'mtree:mtree))
-   (ready :accessor ready   :initform nil );set after realized
+   ;; promises subsystem... Really requires a stream 
+   (promises     :accessor promises :initform nil)
    )
   
   (:metaclass gobject-class))
@@ -30,10 +29,9 @@
 ;;------------------------------------------------------------------------------
 (defmethod initialize-instance :after ((buffer tb) &key )
   (print "initialize-instance: tb")
-  (with-slots (iter iter1 root anchor ready) buffer
+  (with-slots (iter iter1 root anchor) buffer
     (setf iter   (gtb-get-start-iter buffer)
 	  iter1  (gtb-get-end-iter   buffer)
-	  ready  t
 	 ; root (make-instance 'pres )
   ))
   (g-signal-connect buffer "insert-text" #'on-insert-text-before :after nil)
@@ -105,7 +103,7 @@ for all newly introduced ones, call entering.  Return new."
   (let* ((same (intersection old new)); these have not changed...
 	 (out (set-difference old same)); these are phased out.
 	 (in  (set-difference new same))) ; and these are newly introduced.
-   ;; (format t "ON_MOTION SAME: ||~A||~&  IN:~A OUT: ~A~&" same in out)
+    (format t "ON_MOTION SAME: ||~A||~&  IN:~A OUT: ~A~&" same in out)
     (loop for pres in out do (-pres-on-mouse pres nil))
     (loop for pres in in  do (-pres-on-mouse pres t))
     new
@@ -130,3 +128,6 @@ for all newly introduced ones, call entering.  Return new."
 	(button (gdk-event-button-button event)))
     (loop for pres in presentations
        until (-pres-on-button pres button times t))))
+
+
+(defmethod -on-announce-eli ((pbuf tb) eli)  )

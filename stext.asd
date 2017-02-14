@@ -31,6 +31,7 @@
 	       
 	       (:file "stext/tb")
 	       (:file "stext/basebuf")
+	       (:file "stext/simplestream")
 	       (:file "stext/termstream")
 	       (:file "stext/pres")
 	       (:file "stext/promises")

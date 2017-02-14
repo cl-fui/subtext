@@ -138,6 +138,14 @@
 
 (defun pbuf-find-tag (pbuf tagname)
   (gttt-lookup  (gtb-tag-table pbuf) tagname))
+
+(defmethod -wipe ((pbuf basebuf))
+  (with-slots (index iter iter1 promises anchor) pbuf
+    (pbuf-bounds pbuf)
+    (%gtb-delete pbuf iter iter1)
+    (setf anchor 0
+	  promises nil))
+  )
 #||
 (defun pbuf-range-minimize (buffer range)
   "minimize a range to a single character at the end"

@@ -8,10 +8,9 @@
 		      trivial-gray-streams:fundamental-character-output-stream)
   
   ((markin       :accessor markin :initform nil :type gtk-text-mark)
-
    (lbuf         :accessor lbuf   :initform (make-array 4096 :element-type 'character))
    (index        :accessor index  :initform 0   :type fixnum)
-   (promises     :accessor promises :initform nil)
+  
    ;; for now keep presentations in an array indexed by string in tag
   )
   
@@ -103,15 +102,6 @@
      (the fixnum (+ (the fixnum (anchor stream))
 		    (the fixnum (index stream)))))
 
-(defun stream-wipe (stream)
-  (with-slots (index iter iter1 promises anchor) stream
-    (pbuf-bounds stream)
-    (%gtb-delete stream iter iter1)
-    (setf index 0
-	  anchor 0
-	  promises nil)))
-
-
 
 
 ;;==============================================================================
@@ -159,7 +149,7 @@
   
 
 
-(defmethod -reset ((pbuf termstream))
-  (stream-wipe pbuf)  )
+(defmethod -wipe :after ((pbuf termstream))
+  (setf (index pbuf) 0))
 ; should anyone use this class as a concrete class...
 (defmethod -on-announce-eli ((pbuf termstream) eli)  )
