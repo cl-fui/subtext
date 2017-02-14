@@ -102,10 +102,10 @@ Note: a single underline in label will crate a 'mnemonic'; two __ is _"
 
 ;------------------------------------
 (defgeneric -on-destroy         (object))
-(defmethod -on-destroy ((it t)))
+(defmethod  -on-destroy ((it t)))
 
 (defgeneric -on-initial-display (object))
-(defmethod  -on-initial-display ((it t)))
+(defmethod  -on-initial-display ((it t))) ;default
 
 
 

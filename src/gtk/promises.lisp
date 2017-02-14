@@ -69,14 +69,14 @@
 	    (,promise (tag-in out it)))
        ,@body
        (tag-out out ,promise)
-      ;; (format t "WITH-TAG PROMISE ~A" ,promise)
+     ;;  (format t "WITH-TAG PROMISE ~A" ,promise)
        it)))
 
 ;; bind local symbols: presentation and out
 
-(defmacro with-pres (prestype &body body)
+(defmacro with-pres ((prestype &optional presinit) &body body)
   "Initially create a presentation and perform 'body' in its context"
-  `(let* ((presentation (make-instance ',prestype :left-gravity nil))
+  `(let* ((presentation (make-instance ',prestype :left-gravity nil ,@presinit))
 	  (out (out presentation)))
      (declare (ignorable presentation out))
      ;;(format t "PRES ~A ~A~&" presentation  (gtk-text-mark-left-gravity presentation))
@@ -113,9 +113,9 @@
     (with-slots (iter iter1 presarr) stream
       (%gtb-get-iter-at-offset stream iter start)
       (%gtb-get-iter-at-offset stream iter1 end)
-;;      (format t "~%TAG fulfill at ~A ~A pres ~A ~tag ~A ~&" start end pres (tag pres))
+ ;;      (format t "~%TAG fulfill at ~A ~A pres ~A tag |~A|~A ~&" start end pres (tag pres)	      (gtk-text-tag-name (tag pres)))
       (%gtb-apply-tag stream (tag pres) iter iter1)
-      ;(setf (stream pres) stream)
+					;(setf (stream pres) stream)
       (pres-mark stream iter pres)
       nil)))
 

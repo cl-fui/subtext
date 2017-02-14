@@ -68,7 +68,7 @@
   (with-slots (eli conditio restarts frames continuations) out
  ;;   (format t "~A ~A ~A ~A~&" conditio restarts frames continuations)
     (with-tag ("enum" out) (format out "~A~&" (first conditio)))
-    (with-pres pcondition (format out "~A" (second conditio)))
+    (with-pres (pcondition) (format out "~A" (second conditio)))
     (with-tag  ("label" out) (format out "~%Restarts:~&"))   
     (loop for restart in restarts
        for i from 0 do

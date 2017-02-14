@@ -43,6 +43,9 @@
 	       (:file "demo/repl/sldb")
 	       (:file "demo/repl/swarepl")
 
+	       (:file "demo/news/edition")
+	       (:file "demo/news/group")
+	       (:file "demo/news/news")
 	       (:file "src/gtk/gtk-ui")
 	       ))
 

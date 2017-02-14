@@ -21,7 +21,7 @@
   ((id :accessor id :initarg :id)))
 (defpres p-input (pres) ())
 
-(defmethod initialize-instance :after ((pbuf swarepl) &key)
+(defmethod initialize-instance :after ((pbuf swarepl) &key (port 5000))
   (print "initialize-instance: swarepl")
   (setf *pbuf* pbuf);***
   ;;---------------------------------------------------------------------------
@@ -34,7 +34,7 @@
 
   
   (with-slots (swank) pbuf
-    (setf swank (swa:make-connection "localhost" 5000))
+    (setf swank (swa:make-connection "localhost" port))
     pbuf))
 
 (defmethod -on-announce-eli :after ((pbuf swarepl) eli)
@@ -242,3 +242,18 @@
 
 
 
+;;==============
+(defun repl( &key (stdout *standard-output*) (package *package*))
+  "final"
+  ;;(format t "AAA STANDARD OUTPUT?~A ~A ~&"*standard-output* *package*)
+  (within-main-loop
+    (setf *standard-output* stdout); Why can't I just bind it?
+    (let* ((*standard-output* stdout)
+	   (*package* package)			;re-enable output
+;;	   (ass  (format t "STANDARD OUTPUT?~A ~A ~&"*standard-output* *package*))
+	   (top (make-frame (make-window (make-rview (make-instance 'swarepl))) 
+			    :kill t)))
+     
+      (princ "Take this REPL, brother! ..." *echo*)
+      (gtk-widget-show-all top)
+      (-on-initial-display top))))

@@ -12,7 +12,7 @@
 ;; FAQ:
 ;; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ;; Q: Why do we need a tags to mark presentations?
-;; A: Tag maintain the start and end positions within the buffer, as well as
+;; A: Tags maintain the start and end positions within the buffer, as well as
 ;;    visually marking the presentation.
 ;; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ;; Q: Why can't we use tags as presentations by subclassing?
