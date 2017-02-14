@@ -1,4 +1,4 @@
-(in-package :stext)
+(in-package :subtext)
 ;;------------------------------------------------------------------------------
 ;; gtbstream - streaming io, simple-input, promises
 ;;

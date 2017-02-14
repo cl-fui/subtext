@@ -1,4 +1,4 @@
-(in-package :stext)
+(in-package :subtext)
 
 
 (defclass sldb (rbuffer)
@@ -67,9 +67,9 @@
 (defun sldb-activate (out)
   (with-slots (eli conditio restarts frames continuations) out
  ;;   (format t "~A ~A ~A ~A~&" conditio restarts frames continuations)
-    (with-tag "enum" (format out "~A~&" (first conditio)))
+    (with-tag ("enum" out) (format out "~A~&" (first conditio)))
     (with-pres pcondition (format out "~A" (second conditio)))
-    (with-tag  "label" (format out "~%Restarts:~&"))   
+    (with-tag  ("label" out) (format out "~%Restarts:~&"))   
     (loop for restart in restarts
        for i from 0 do
 	 (when (< i 10) ;bind numeric keys
@@ -77,7 +77,7 @@
 	 (present (make-instance 'prestart :id i :info restart))
 	 (terpri out))
     ;;
-    (with-tag  "label" (format out "~%Backtrace:~&"))
+    (with-tag ("label" out) (format out "~%Backtrace:~&"))
     (loop for frame in frames do
 	 (present
 	  (make-instance 'pframe :id (first frame) :desc (second frame)
@@ -118,9 +118,9 @@
 ;; defpresenter is a convenience method, 
 (defpresenter ((p prestart))
   (with-slots (id info) p
-    (with-tag  "enum"   (format out "~2d: [" id))
-    (with-tag  "cyan"   (format out "~A" (first info)))
-    (with-tag  "normal" (format out "] ~A" (second info)))))
+    (with-tag  ("enum" out)   (format out "~2d: [" id))
+    (with-tag  ("cyan" out)   (format out "~A" (first info)))
+    (with-tag  ("normal" out) (format out "] ~A" (second info)))))
 
 (defmethod  -pres-on-mouse ((pres prestart) flag)
   (with-slots (out) pres
@@ -168,15 +168,15 @@
 		(pres-bounds stream pframex); it is much later, in lambda!
 		(file-position stream (gti-offset (iter1 stream)))
 		(format t "TAG-FRAMEX ~A~&" (tag pframex))
-		(with-tag (tag pframex)
-		  (with-tag "grayloc:"
+		(with-tag ((tag pframex) stream)
+		  (with-tag ("grayloc:" stream)
 		    (princ "Locals:" stream))
 		  (loop for item in (first (second reply)) do
 		       (terpri stream)
 		       (princ "      " stream)
-		       (with-tag "locleft" (princ (second item) stream))
-		       (with-tag "normal"  (princ " = "  stream))
-		       (with-tag "pres"    (princ (sixth item) stream)))
+		       (with-tag ("locleft" stream) (princ (second item) stream))
+		       (with-tag ("normal" stream)  (princ " = "  stream))
+		       (with-tag ("pres" stream)    (princ (sixth item) stream)))
 		  (terpri stream); make sure pres ends with CR
 		  )
 		(finish-output stream))))))
@@ -191,8 +191,8 @@
 
 (defpresenter ((p pframe))
   (with-slots (id desc restartable pframex) p
-    (with-tag  "enum" (format out "~3d: " id))
-    (with-tag  (if restartable "restartable" "normal")
+    (with-tag  ("enum" out) (format out "~3d: " id))
+    (with-tag  ((if restartable "restartable" "normal") out)
       (format out "~A" desc))))
 
 ;; after the presentation, outside of it, create a hidden presentation

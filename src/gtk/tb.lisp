@@ -6,7 +6,7 @@
 ;;
 ;; Anchor is an offset into the buffer for streams, managed.
 ;;
-(in-package :stext)
+(in-package :subtext)
 
 ;;;=============================================================================
 ;;; tb - An augmented gtk text buffer with a position-tracking system.

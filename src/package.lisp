@@ -1,8 +1,7 @@
 ;;;; package.lisp
 
-(defpackage #:stext
+(defpackage #:subtext
   (:use :gtk :gdk :gdk-pixbuf :gobject :glib :gio :pango :cairo :cffi
-	;;:eli
 	:alexandria  :anaphora
 	#:cl
 ))

@@ -2,7 +2,7 @@
 ;; A minibuf is an rview (text-view), which processes keys and
 ;; commands on behalf of another entity, the main window.
 
-(in-package :stext )
+(in-package :subtext )
 ;;==============================================================================
 (defclass minibuf (rview)
   (   (frame   :accessor frame :initarg :frame))  

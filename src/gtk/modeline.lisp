@@ -1,4 +1,4 @@
-(in-package :stext )
+(in-package :subtext )
 
 (defclass modeline (gtk-text-view) ()  (:metaclass gobject-class))
 

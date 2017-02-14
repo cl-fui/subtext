@@ -1,4 +1,4 @@
-(in-package :stext)
+(in-package :subtext)
 
 (defun make-synonym (old newname &key (package (symbol-package old)) (overwrite nil))
   "make a synonym for old symbol using newname, optionally in a different package.

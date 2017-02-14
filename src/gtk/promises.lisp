@@ -1,4 +1,4 @@
-(in-package :stext)
+(in-package :subtext)
 ;;------------------------------------------------------------------------------
 ;;==============================================================================
 ;;------------------------------------------------------------------------------
@@ -62,9 +62,10 @@
 ;; this macro requires stream to be called out!
 ;; Out is provided by with-pres and in-pres...
 ;; injects it for the thing promised...
-(defmacro with-tag (tag &body body)
+(defmacro with-tag ((tag stream) &body body)
   (let ((promise (gensym)))
     `(let* ((it ,tag)		    ;anaphoric it for the presentation
+	    (out ,stream)
 	    (,promise (tag-in out it)))
        ,@body
        (tag-out out ,promise)
@@ -80,13 +81,13 @@
      (declare (ignorable presentation out))
      ;;(format t "PRES ~A ~A~&" presentation  (gtk-text-mark-left-gravity presentation))
 
-     (with-tag presentation ,@body)))
+     (with-tag (presentation out) ,@body)))
 
 (defmacro defpresenter (((name type)) &body body)
   "create a present method for a presentation type"
   `(defmethod present ((,name ,type))
     (with-slots(out) ,name
-      (with-tag ,name ,@body))))
+      (with-tag (,name out) ,@body))))
 
 
 (defmethod promise-fulfill ((tag gtk-text-tag) promise stream)

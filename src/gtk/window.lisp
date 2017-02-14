@@ -5,7 +5,7 @@
 ;;
 ;; 
 ;;; ----------------------------------------------------------------------------
-(in-package #:stext)
+(in-package #:subtext)
 (defclass window (gtk-box)
   ((view     :accessor view     :initform nil   :initarg :view)
    (modeline :accessor modeline :initform (make-modeline)))

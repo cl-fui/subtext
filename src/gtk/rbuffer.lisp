@@ -1,4 +1,4 @@
-(in-package :stext)
+(in-package :subtext)
 ;;;=============================================================================
 ;;; rbuffer - a gtk-text-buffer 
 ;;;

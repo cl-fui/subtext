@@ -1,4 +1,4 @@
-(in-package :stext)
+(in-package :subtext)
 ;;;=============================================================================
 ;;; rview - a text widget containin a buffer-derived class..
 ;;;

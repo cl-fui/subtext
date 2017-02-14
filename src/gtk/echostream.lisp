@@ -1,4 +1,4 @@
-(in-package :stext)
+(in-package :subtext)
 ;;------------------------------------------------------------------------------
 ;; echostream - unbuffered gtk stream that erases itself on terpri.
 ;;

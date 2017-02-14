@@ -1,4 +1,4 @@
-(in-package :stext)
+(in-package :subtext)
 
 
 
@@ -83,10 +83,10 @@
 	(with-slots (read-id read-tag) pbuf
 	  (setf read-id 0
 	      read-tag 0))
-	(let ((out pbuf))
-	  (with-tag "prompt"
-	    (fresh-line pbuf)
-	    (format pbuf "~A> " (swa:prompt swank))))
+	
+	(with-tag ("prompt" pbuf)
+	  (fresh-line pbuf)
+	  (format pbuf "~A> " (swa:prompt swank)))
 	(simple-input-mark pbuf))
       ;;----------------------------------------------
       ;; Callback for any eval issued, called on reply

@@ -180,7 +180,7 @@ forms to fallback  processor."
     (replace final prefix); insert 6 bytes of length
     (replace final payload :start1 6)
     (write-sequence final stream)
-;;    (format t "~&>>>[~A]~&" string)
+ (format t "~&>>>[~A]~&" string)
 ;    (log? "~%-->: [~A][~A]~&" paylen string)
     string))
 

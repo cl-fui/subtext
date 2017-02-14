@@ -1,4 +1,4 @@
-(in-package :stext)
+(in-package :subtext)
 ;;------------------------------------------------------------------------------
 ;; simplestream - an unbuffered output stream
 ;;

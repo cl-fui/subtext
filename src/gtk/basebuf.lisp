@@ -1,4 +1,4 @@
-(in-package :stext)
+(in-package :subtext)
 ;;;=============================================================================
 ;;; basebuf - some default tags...
 ;;;

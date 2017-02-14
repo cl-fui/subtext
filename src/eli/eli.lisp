@@ -1,4 +1,4 @@
-(in-package :stext)
+(in-package :subtext)
 ;;
 ;; eli is a keyprocessing entity
 ;;
@@ -51,7 +51,8 @@
 	      (progn
 		(eli-state-print eli *echo*)
 		(key-write key *echo*)
-		(format *echo* " NOT BOUND")
+		(with-tag "error" eli
+		  (format *echo* " NOT BOUND"))
 		(eli-reset eli))
 	      (progn
 		nil))))))

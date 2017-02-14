@@ -3,7 +3,7 @@
 ;; (progn (push  (authors-view *g*) *view*) nil)
 ;; (progn (push  (groups-view *g*) *view*) nil)
 ;;; ----------------------------------------------------------------------------
-(in-package #:stext)
+(in-package #:subtext)
 
 (defgeneric -on-destroy (obj))
 (defmethod  -on-destroy ((obj t) ))

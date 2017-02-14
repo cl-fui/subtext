@@ -7,7 +7,7 @@
 ;;
 ;; All keys are sent to minibuf (which may send them back up)
 ;;; ----------------------------------------------------------------------------
-(in-package #:stext)
+(in-package #:subtext)
 
 (defgeneric -on-key (object key event)) ; return nil to keep processing
 (defgeneric -pre-initial-display (target frame))
