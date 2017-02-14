@@ -74,7 +74,9 @@
   ;;----------------------------------------------------------------------
   ;; Mouse button.  Multiple clicks are stupid, as they all get called...
   ;;
+  (eli-initialize)
   (-on-announce-eli (gtv-buffer rview) (eli rview) ) ; let the buffer initialize
+  
   (g-signal-connect
 	rview "key-press-event"
 	(lambda (widget event)
@@ -107,7 +109,9 @@
        ;; syntesize a key event from button press
        ;(+ #xFEE9 (gdk-event-button-button event))
        (mvb (w x y mod) (gdk-window-get-pointer  (gtk-widget-window view))
-	   ;; (format t "~&====~A ~A ~A ~&" x y mod)
+	    (format t "~&====~A ~A ~A ~&" x y mod)
+	    (mvb (xx yy) (gtv-window-to-buffer-coords view :text x y)
+		 (format t "~&--- ~A ~A&"xx yy))
 	    (let ((key (+ #xFEE8 (gdk-event-button-button event))))
 	      (process-key (eli view) (gtkmods-subject key mod nil)
 			   (truncate (gdk-event-button-x event))

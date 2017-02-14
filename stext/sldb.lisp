@@ -34,6 +34,13 @@
   (pbuf-new-tag sldb :name "grayloc:"    :background "Gray20"      :foreground "Gray70"      :editable nil )
   (pbuf-new-tag sldb :name "locleft"     :foreground "yellow"                                :editable nil))
 
+(defmethod -on-announce-eli ((sldb sldb) eli)
+  (eli-def eli (kbd "Mouse-1")
+	   (lambda () (format t "~A ~A~&" (x eli) (y eli))))
+
+  )
+
+
 ;;===============================================================================
 ;; Initial display
 ;;

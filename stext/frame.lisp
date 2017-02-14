@@ -51,8 +51,6 @@
      frame "destroy"
      (lambda (widget) (-on-destroy widget)
 	     (if kill (leave-gtk-main))))
-
-    (eli-initialize)
     (-pre-initial-display content frame)
     frame
     

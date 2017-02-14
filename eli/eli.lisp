@@ -6,7 +6,10 @@
 (defclass eli ()
   ((state :accessor state
 	  :documentation "first= binding during search, rest are previous bindings")
-   (keymap :accessor keymap :initarg :keymap :initform nil)))
+   (keymap :accessor keymap :initarg :keymap :initform nil)
+   (x :accessor x :initform 0)
+   (y :accessor y :initform 0)
+   ))
 
 (defmethod eli-reset ((eli eli))
   (with-slots (state keymap minibuf) eli
@@ -45,16 +48,18 @@
 ;;   1       0      cancel
 ;;   1       1      eli
 
-(defun process-key (eli key x y event)
+(defun process-key (eli key mx my event)
   "process a key with modifiers..."
-  (with-slots (state keymap ) eli
-;;    (format t "eli:process-key ~A ~&" key)
+  (with-slots (state keymap x y) eli
+    (setf x mx
+	  y my)
+    (format t "eli:process-key ~A ~A ~A~&" key x y)
     (let ((found (key-lookup (car state) key)))
      ;; (format t "ELI:PROCESSKEY ~A~& ~A~&" state keymap)
       (if found
 	  (typecase (cdr found)
 	    (function (eli-reset eli) ;reset search
-		      (funcall (cdr found)))
+		      (funcall (cdr found) ))
 	    (cons (push found state)
 		  (eli-state-print eli *echo*)
 		  t))
