@@ -8,7 +8,8 @@
    (conditio      :accessor conditio      :initarg :conditio      :initform nil )
    (restarts      :accessor restarts      :initarg :restarts      :initform nil )
    (frames        :accessor frames        :initarg :frames        :initform nil )
-   (continuations :accessor continuations :initarg :continuations :initform nil ))
+   (continuations :accessor continuations :initarg :continuations :initform nil )
+   (eli           :accessor eli))
   (:metaclass gobject-class))
 
 (defmethod initialize-instance :after ((sldb sldb) &key)
@@ -34,6 +35,7 @@
 
 (defmethod -on-announce-eli ((sldb sldb) eli)
   (with-slots (connection thread level) sldb
+    (setf (eli sldb) eli)
     (eli-def eli (kbd "Mouse-1")
 	     (lambda ();; (format t "~A ~A~&" (x eli) (y eli))
 	       (with-slots (x y) eli
@@ -44,22 +46,34 @@
     (eli-def eli (kbd "q")
 	     (lambda ()
 	       (swa:emacs-rex connection  "(swank:throw-to-toplevel)"
+			      :thread thread)))
+    (eli-def eli (kbd "a")
+	     (lambda ()
+	       (swa:emacs-rex connection  "(swank:sldb-abort)"
 			      :thread thread))))
   
   )
 
+(defun sldb-invoke-restart (sldb id)
+  (with-slots (connection level thread) sldb
+    (swa:emacs-rex
+     connection
+     (format nil "(swank:invoke-nth-restart-for-emacs ~A ~A)" level id)
+     :thread thread)))
 
 ;;===============================================================================
 ;; Initial display
 ;;
 (defun sldb-activate (out)
-  (with-slots (conditio restarts frames continuations) out
+  (with-slots (eli conditio restarts frames continuations) out
  ;;   (format t "~A ~A ~A ~A~&" conditio restarts frames continuations)
     (with-tag "enum" (format out "~A~&" (first conditio)))
     (with-pres pcondition (format out "~A" (second conditio)))
     (with-tag  "label" (format out "~%Restarts:~&"))   
     (loop for restart in restarts
        for i from 0 do
+	 (when (< i 10) ;bind numeric keys
+	   (eli-def eli (cons (+ i #x30) nil) (lambda () (sldb-invoke-restart out i))))
 	 (present (make-instance 'prestart :id i :info restart))
 	 (terpri out))
     ;;
@@ -67,11 +81,7 @@
     (loop for frame in frames do
 	 (present
 	  (make-instance 'pframe :id (first frame) :desc (second frame)
-			 :restartable (third frame))))
-
-    )
-  
-  
+			 :restartable (third frame)))))
   (finish-output out) )
 ;;===============================================================================
 ;; Here is the view
@@ -107,7 +117,7 @@
   ((id :accessor id :initarg :id :initform 0)
    (info :accessor info :initarg :info :initform nil)))
 
-;; 
+;; defpresenter is a convenience method, 
 (defpresenter ((p prestart))
   (with-slots (id info) p
     (with-tag  "enum"   (format out "~2d: [" id))
@@ -122,13 +132,11 @@
 	  (gtb-apply-tag out "grhigh" iter iter1)
 	  (gtb-remove-tag out "grhigh" iter iter1)))))
 
+
+
 (defmethod -pres-on-button ((pres prestart) button )
   (with-slots (id (sldb out)) pres
-    (with-slots (connection level thread) sldb
-      (swa:emacs-rex
-       connection
-       (format nil "(swank:invoke-nth-restart-for-emacs ~A ~A)" level id)
-       :thread thread))))
+    (sldb-invoke-restart sldb id)))
 
 ;;===============================================================================
 ;; framex - expanded frame...
@@ -188,12 +196,16 @@
     (with-tag  "enum" (format out "~3d: " id))
     (with-tag  (if restartable "restartable" "normal")
       (format out "~A" desc))))
+
 ;; after the presentation, outside of it, create a hidden presentation
 ;; give it our id, so it can expand
 (defmethod present :after ((p pframe))
   (with-slots (id pframex ) p
     (present (setf pframex (make-instance 'pframex :id id)))))
 
+
+;;------------------------------------------------------------------------------
+;; mouse
 (defmethod  -pres-on-mouse ((pres pframe) flag)
   (with-slots (out) pres
     (with-slots (iter iter1) out
@@ -201,7 +213,8 @@
       (if flag
 	  (gtb-apply-tag out "grhigh" iter iter1)
 	  (gtb-remove-tag out "grhigh" iter iter1)))))
-
+;;------------------------------------------------------------------------------
 (defmethod -pres-on-button ((pres pframe) button)
   (with-slots (out expanded pframex) pres
-    (setf expanded (pframex-toggle out pframex expanded))))
+    (setf expanded (pframex-toggle out pframex expanded)))
+  t)
