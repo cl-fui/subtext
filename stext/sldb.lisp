@@ -102,8 +102,6 @@
 (defun vsldb-activate (vsldb)
   (sldb-activate (gtk-text-view-buffer vsldb)))
 
-(defun vsldb-destroy (vsldb)
-  (rview-destroy-top vsldb ))
 ;;===============================================================================
 ;;
 (defpres pcondition (pres) () )

@@ -194,7 +194,7 @@ forms to fallback  processor."
       (read-sequence arr stream)
 ;      (log? "~%<--: [~A][~A]~&" paylen (utf8-decode arr))
       (let ((val (utf8-decode arr)))
-;;    (format t "~&<<<[~A]~&" val)
+ (format t "~&<<<[~A]~&" val)
 	val))))
 
 ;;==============================================================================

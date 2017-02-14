@@ -71,7 +71,7 @@
 (defmethod print-object ((mark pres) out1)
   (print-unreadable-object (mark out1 :type t)
     (with-slots (out) mark
-      (format t "OUT: ~A" out)
+ ;     (format t "OUT: ~A" out)
 					;
       ;
       
@@ -144,8 +144,10 @@
   (do-pres-at stream (gtb-get-iter-at-offset stream off) fun))
 
 ;;------------------------------------------------------------------------------
+;; Presentations at iterator
+;;
 (defun presentations-at (stream xiter)
-  "for every presentation at xiter, call (fun pres).  If it returns t, stop"
+  "Return a list of every presentation that is bisected by iter"
   (with-slots (iter iter1) stream
     (loop for tag in (reverse (gti-tags xiter));TODO: is reverse good enough?
        when (subtypep (type-of tag) 'ptag-base) ;only care about ptags!

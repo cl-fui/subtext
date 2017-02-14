@@ -4,7 +4,8 @@
 ;; We start with a gtk-text-buffer.  We add a position-tracking system for
 ;; pmarks. All inserts and deletes into the buffer cause transparent updates
 ;;
-;; Anchor is a mark we maintain as well.
+;; Anchor is an offset into the buffer for streams, managed.
+;;
 (in-package :stext)
 
 ;;;=============================================================================
@@ -15,9 +16,8 @@
    (iter1  :accessor iter1  :initform nil :type gtk-text-iter)
    ;(root   :accessor root   :initform nil)
    (anchor :accessor anchor :initform 0 :type fixnum)
-
+   ;; on-insert-text-before keeps insert start position prior to expansion
    (oldx   :accessor oldx   :initform 0   :type fixnum) ;insert-text position
-   (oldw   :accessor oldw   :initform 0   :type fixnum) ;pre-xpand buffer width
 
    (old-mouse :accessor old-mouse :initform nil );old mouse presentation-lists
    ;; promises subsystem... Really requires a stream 
@@ -127,7 +127,7 @@ for all newly introduced ones, call entering.  Return new."
 	(times (gdk-event-get-click-count event))
 	(button (gdk-event-button-button event)))
     (loop for pres in presentations
-       until (-pres-on-button pres button times t))))
+       until (-pres-on-button pres button))))
 
 
 (defmethod -on-announce-eli ((pbuf tb) eli)  )

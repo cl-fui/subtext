@@ -4,6 +4,8 @@
 ;;;
 ;;; passes button and keypress events to the rbuffer. 
 ;;;
+(defgeneric -on-motion (object iter event))
+(defmethod -on-motion ((o t) view event))
 
 
 (defclass rview (gtk-text-view)
@@ -41,7 +43,11 @@
     )
 
   (-on-announce-eli (gtv-buffer rview) rview) ; let the buffer initialize
-  
+
+  ;;----------------------------------------------------------------------
+  ;; Key press.
+  ;; Handle via eli.  Eli may just return nil which we shall pass to GTK
+  ;; to use default processing in the buffer.
   (g-signal-connect
 	rview "key-press-event"
 	(lambda (widget event)
@@ -50,10 +56,10 @@
 	    (unless (key-is-modifier gtkkey)	; if modifier, let gtk handle it!
 	      (let ((key (key-make gtkkey (gdk-event-key-state event))))
 		(process-key rview key event) )))))
- 
   ;;----------------------------------------------------------------------
-  ;; Mouse motion.  We are not interested in sub-character motion; 
-  ;; simply ignore motion events unless an iterator's offset changes.
+  ;; Mouse motion.  We get pixel motion, but we are interested in much
+  ;; coarser notification.  For now, ignore sub-character motions
+  ;; and notify buffer of changes
   (g-signal-connect
    rview "motion-notify-event" ;TODO: check widget
    (lambda (view event)
@@ -65,6 +71,9 @@
 	 (when (/= last-motion-off (gti-offset iter)); interesting?
 	   (setf last-motion-off (gti-offset iter))
 	   (-on-motion buffer iter event))))))
+  ;;----------------------------------------------------------------------
+  ;; Button press.
+  ;; Treated as a key; convert to "Mouse-1" etc.. and report via eli
   (g-signal-connect
      rview "button-press-event" ;TODO: check widget
      (lambda (view event)
@@ -74,8 +83,6 @@
        (mvb (w x y mod) (gdk-window-get-pointer  (gtk-widget-window view))
 	    (setf (x view) x
 		  (y view) y)
-	    ;;(format t "~&====~A ~A ~A ~&" x y mod)
-	    (mvb (xx yy) (gtv-window-to-buffer-coords view :text x y)(format t "~&--- ~A ~A&"xx yy))
 	    (let ((key (+ #xFEE8 (gdk-event-button-button event))))
 	      (process-key view (gtkmods-subject key mod nil) event)))
        t)))
@@ -88,32 +95,13 @@
 (defmethod -pre-initial-display ((rview rview) frame)
   "after everything initialized but prior to display"
   )
-(defmethod -on-destroy ((rview rview)) 
+(defmethod -on-destroy ((rview rview))
   (-on-destroy (gtv-buffer rview)))
-
-
-
-(defgeneric -on-button-press  (object iter event))
-(defgeneric -on-2button-press (object iter event))
-(defgeneric -on-3button-press (object iter event))
 ;;==============================================================================
 ;;
-(defgeneric -on-motion        (object iter event))
-(defmethod -on-motion ((o t) view event)
-  (declare (ignore o view event)))
 
 ;;==============================================================================
-;;
-;;
-(defmethod -on-button-press ((o t) view event)
-  (declare (ignore o iter event)))
-(defmethod -on-2button-press ((o t) view event)
-  (declare (ignore o iter event)))
-(defmethod -on-3button-press ((o t) view event)
-  (declare (ignore o iter event)))
-
-;;==============================================================================
-;;
+;; Some convenience functions
 ;;
 (defun rview-buffer-coordinates (view x y)
   (gtv-window-to-buffer-coords
@@ -127,24 +115,8 @@
   (mvb (xx yy)
        (gtv-window-to-buffer-coords
 	view :text (truncate x) (truncate y))
-   (gtv-get-iter-at-location view xx yy)))
+       (gtv-get-iter-at-location view xx yy)))
 
-
-;; Looks like view is the place to handle cursor commands! TODO: improve...
-;;(defmethod -on-announce-eli ((rview rview) eli))
-#||  (defun bind-move-cursor (gtkkey)
-    (apply #'g-signal-emit rview  "move-cursor"
-	   (case gtkkey
-	     (#.kb:LEFT  '(:visual-positions -1))
-	     (#.kb:RIGHT '(:visual-positions  1))
-	     (#.kb:UP    '(:display-lines    -1))
-	     (#.kb:DOWN  '(:display-lines     1))
-	     (t (print "FUCK YOU~&")nil))))
-  (with-slots (keymap) eli
-    (mapc (lambda (key) (keymap-define-key keymap key  #'bind-move-cursor) )
-	  '(#.kb:LEFT #.kb:RIGHT #.KB:UP #.kb:DOWN))
-    )
-||#
 
 
 (defun widget-defaults (widget)
@@ -160,6 +132,7 @@
 
 
 ;;============================================================================
+;; used by swarepl to build sldb
 (defmacro make-framed-view (view &rest frame-stuff)
   `(let ((frame (make-frame (make-window ,view)
 			    ,@frame-stuff)))

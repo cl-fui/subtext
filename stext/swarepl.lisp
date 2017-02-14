@@ -39,46 +39,23 @@
 
 (defmethod -on-announce-eli :after ((pbuf swarepl) eli)
   (print "on-announce-eli")
-  (eli-def eli (kbd "Return")
-    (lambda ()
-      (with-slots (swank read-id read-tag) pbuf
-	(let ((string (simple-input-get-text pbuf)))
-	  (if (zerop read-id)
-	      (let ((line (swarepl-parse-string string)))
-		(when line
-		  ;; Convert entered text to 'entry presentation
-		  (simple-input-promise pbuf (make-instance 'p-entry ))
-		  ;; and set color
-		  (swa:eval swank line #'prompt-proc)))
-	      (swa:emacs-return-string swank string read-id read-tag  ))))
-      nil))
-  (eli-def eli (kbd "C-x C-y") (lambda () (format t "OK!!!!!~&") nil))
-  
-  
-    #||
-  (with-slots (keymap) eli)
-      (keymap-define-key 9999; HELP*** FIXME**** TODO*****
-;;       keymap #.kb:RET ; on <RET>, attempt to process input
-       (lambda (gtkkey)
-	 (declare (ignore gtkkey))
-					;(write-char #\newline pbuf)
-	 (gdk-threads-add-idle ; Idly,
-	  (lambda ()
-	    (with-slots (swank read-id read-tag) pbuf
-	      (let ((string (simple-input-get-text pbuf)))
-		(if (zerop read-id)
-		    (let ((line (swarepl-parse-string string)))
-		      (when line
-			;; Convert entered text to 'entry presentation
-			(simple-input-promise pbuf (make-instance 'p-entry ))
-			;; and set color
-			(swa:eval swank line #'prompt-proc)))
-		    (swa:emacs-return-string swank string read-id read-tag  ))))
-	    nil)); run once.
-	 (stream-flush pbuf)
-	 nil))
-||#
-)
+  (eli-def
+   eli (kbd "Return")
+   (lambda ()
+     (with-slots (swank read-id read-tag) pbuf
+       (let ((string (simple-input-get-text pbuf)))
+	 (if (zerop read-id)
+	     (let ((line (swarepl-parse-string string)))
+	       (when line
+		 ;; Convert entered text to 'entry presentation
+		 (simple-input-promise pbuf (make-instance 'p-entry ))
+		 (swa:eval swank line #'prompt-proc)))
+	     (progn; swank needs a newline!  A little ugly, but...
+	       (swa:emacs-return-string
+		swank (concatenate 'string string '(#\newline))
+		read-id read-tag  )))))
+     nil))
+  (eli-def eli (kbd "C-x C-y") (lambda () (format t "OK!!!!!~&") nil)))
 ;;------------------------------------------------------------------------------
 
 ;; view invokes this on destruction...
@@ -102,80 +79,80 @@
     
     ;;---------------------------------------------
     ;; This can be called explicitly
-    (defun prompt (swank)
-      (with-slots (read-id read-tag) pbuf
-	(setf read-id 0
+      (defun prompt (swank)
+	(with-slots (read-id read-tag) pbuf
+	  (setf read-id 0
 	      read-tag 0))
-      (let ((out pbuf))
-	(with-tag "prompt"
-	  (fresh-line pbuf)
-	  (format pbuf "~A> " (swa:prompt swank))))
-      (simple-input-mark pbuf))
-    ;;----------------------------------------------
-    ;; Callback for any eval issued, called on reply
-    ;; careful! callbacks are from another thread!
-    ;;
-    (defun prompt-proc (swank reply id);REX-CALLBACK
-      (declare (ignore id))
-      ;;(format t "~%PROMPT-PROC: ~A~&" reply)
-      (if (eq :abort (first reply))
-	  (gsafe (format pbuf (second reply))))
-      (gsafe (prompt swank)))
-    ;;---------------------------------------------------------------------
-    ;; TODO: thread-safety?
-    (defun sw-write-string (connection string &optional stream)
-      (princ string pbuf))
-
-    (let (ob pr)
-      (defun sw-presentation-start (connection id stream)
-	(setf pr (tag-in pbuf (make-instance 'p-pres :id id))))
+	(let ((out pbuf))
+	  (with-tag "prompt"
+	    (fresh-line pbuf)
+	    (format pbuf "~A> " (swa:prompt swank))))
+	(simple-input-mark pbuf))
+      ;;----------------------------------------------
+      ;; Callback for any eval issued, called on reply
+      ;; careful! callbacks are from another thread!
+      ;;
+      (defun prompt-proc (swank reply id);REX-CALLBACK
+	(declare (ignore id))
+	;;(format t "~%PROMPT-PROC: ~A~&" reply)
+	(if (eq :abort (first reply))
+	    (gsafe (format pbuf (second reply))))
+	(gsafe (prompt swank)))
+      ;;---------------------------------------------------------------------
+      ;; TODO: thread-safety?
+      (defun sw-write-string (connection string &optional stream)
+	(princ string pbuf))
       
-      (defun sw-presentation-end (connection id stream)
-	(tag-out pbuf pr)))
-    
-    (defun sw-new-package (connection name nickname)
-      (setf (swa:pkg connection) name
+      (let (pr)
+	(defun sw-presentation-start (connection id stream)
+	  (setf pr (tag-in pbuf (make-instance 'p-pres :id id))))
+	
+	(defun sw-presentation-end (connection id stream)
+	  (tag-out pbuf pr)))
+      
+      (defun sw-new-package (connection name nickname)
+	(setf (swa:pkg connection) name
 	    (swa:prompt connection) nickname))
-    
-    ;;-----------------------------------------------------------------------
-    ;; Input requested (read-line?).  Keep the id and tag in a range to return
-    ;; later, when <enter> is processed.
-    (defun sw-read-string (connection id tag)
-      (with-slots (read-id read-tag) pbuf
-	(setf read-id id
-	      read-tag tag))
-      (simple-input-mark pbuf))
-
-    
-    ;; We shall keep the debuggers around in a hashtable, keyed by both thread
-    ;; and debug level (TODO: is this really necessary?).
-    ;;
-    ;; First, debug is invoked with all kinds of useful data.  We will use this
-    ;; occasion to prepare an sldb (buffer) and a view stored right in sldb.
-    (defun sw-debug (connection thread level condition restarts frames conts)
-      ;;(format t "SW-DEBUG: conn ~A thread ~A level ~A&" connection thread level)
-      (setf (gethash (+ level (* 1000 thread)) (sldbs pbuf))
-	    (make-vsldb connection thread level condition restarts frames conts)))
-    ;; Then, this guy comes to activate the debugger.  We will create a window
-    ;; and a frame for it, and display it.
-    (defun sw-debug-activate (connection thread level &optional selectl)
-      (let ((vsldb (gethash (+ level (* 1000 thread)) (sldbs pbuf))))
-	(when vsldb
-	  (make-framed-view vsldb
-			    :title (format nil "SLDB ~A ~A" thread level)
-			    :kill nil ) 
-	  (vsldb-activate vsldb))))
-    ;; Now when this returns, we destroy the widget and remove SLDB from the
-    ;; hashtable.  TODO: are all sub-widgets destroyes?
-    (defun sw-debug-return (connection thread level stepping)
-      ;;(format t "sw-dbug-return: ~A ~A ~A~&" thread level stepping)
-      (let ((vsldb (gethash (+ level (* 1000 thread)) (sldbs pbuf))))
-	(when vsldb
-	  (vsldb-destroy vsldb)
-	  (remhash (+ level (* 1000 thread)) (sldbs pbuf)))))
-
-    ;; Start ball-roll
-    (gsafe (prompt swank))))
+      
+      ;;-----------------------------------------------------------------------
+      ;; Input requested (read-line?).  Keep the id and tag in a range to return
+      ;; later, when <enter> is processed.
+      (defun sw-read-string (connection id tag)
+	(with-slots (read-id read-tag) pbuf
+	  (setf read-id id
+		read-tag tag))
+	(simple-input-mark pbuf))
+      
+      
+      ;; We shall keep the debuggers around in a hashtable, keyed by both thread
+      ;; and debug level (TODO: is this really necessary?).
+      ;;
+      ;; First, debug is invoked with all kinds of useful data.  We will use this
+      ;; occasion to prepare an sldb (buffer) and a view stored right in sldb.
+      (defun sw-debug (connection thread level condition restarts frames conts)
+	;;(format t "SW-DEBUG: conn ~A thread ~A level ~A&" connection thread level)
+	(setf (gethash (+ level (* 1000 thread)) (sldbs pbuf))
+	      (make-vsldb connection thread level condition restarts frames conts)))
+      ;; Then, this guy comes to activate the debugger.  We will create a window
+      ;; and a frame for it, and display it.
+      (defun sw-debug-activate (connection thread level &optional selectl)
+	(let ((vsldb (gethash (+ level (* 1000 thread)) (sldbs pbuf))))
+	  (when vsldb
+	    (make-framed-view vsldb
+			      :title (format nil "SLDB ~A ~A" thread level)
+			      :kill nil ) 
+	    (vsldb-activate vsldb))))
+      ;; Now when this returns, we destroy the widget and remove SLDB from the
+      ;; hashtable.  TODO: are all sub-widgets destroyes?
+      (defun sw-debug-return (connection thread level stepping)
+	;;(format t "sw-dbug-return: ~A ~A ~A~&" thread level stepping)
+	(let ((vsldb (gethash (+ level (* 1000 thread)) (sldbs pbuf))))
+	  (when vsldb
+	    (rview-destroy-top vsldb)
+	    (remhash (+ level (* 1000 thread)) (sldbs pbuf)))))
+      
+      ;; Start ball-roll
+      (gsafe (prompt swank))))
 
  
 ;;------------------------------------------------------------------------------

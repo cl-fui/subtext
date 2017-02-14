@@ -57,7 +57,8 @@ starting with 'old-prefix' in :package.  Remember to capitalize "
 	 (setf ,place ,temp)
 	 ,@rest))))
 ;;==============================================================================
-
+;; careful with print methods; they will break everything!
+;;
 (defmethod print-object ((mark gtk-text-mark) out)
    (print-unreadable-object (mark out :type t)
     (format out "~s" (gtk:gtk-text-mark-name mark))))
@@ -69,6 +70,9 @@ starting with 'old-prefix' in :package.  Remember to capitalize "
 (defmethod print-object ((iter gtk-text-iter) out)
   (print-unreadable-object (iter out :type t)
     (format out "~s" (gtk:gtk-text-iter-get-offset iter))))
+
+(defmacro idly (&rest rest)
+  `(gdk-threads-add-idle (lambda () ,@rest)))
 
 
 
