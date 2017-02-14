@@ -33,12 +33,9 @@
 ;;   1       0      cancel
 ;;   1       1      eli
 
-(defun process-key (eli key mx my event)
+(defun process-key (eli key event)
   "process a key with modifiers..."
-  (with-slots (state keymap x y) eli
-    (setf x mx
-	  y my)
-    (format t "eli:process-key ~A ~A ~A~&" key x y)
+  (with-slots (state keymap) eli
     (let ((found (key-lookup (car state) key)))
      ;; (format t "ELI:PROCESSKEY ~A~& ~A~&" state keymap)
       (if found

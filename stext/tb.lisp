@@ -118,8 +118,8 @@ for all newly introduced ones, call entering.  Return new."
 ;; Mouse click handler
 ;;
 ;; presentation handlers return T if done, or NIL to propagate click.
-(defgeneric -pres-on-button (pres  button times pressed))
-(defmethod  -pres-on-button ((p t) button times pressed) nil)
+(defgeneric -pres-on-button (pres  button))
+(defmethod  -pres-on-button ((p t) button) nil)
 
 (defmethod -on-button ((tb tb) iter event)
  ;; (print "ONBUG")

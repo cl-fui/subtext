@@ -21,6 +21,7 @@
 ;; a convenience macro
 (defmacro make-rview (buffer &rest rest)
   `(make-instance 'rview :buffer ,buffer ,@rest))
+
 (defmethod initialize-instance :after ((rview rview) &key)
   ;; Since views know about buffers but not vice versa, we must connect here.
   ;; since we don't know what the view is, we have to use generic functions.
@@ -31,12 +32,14 @@
   ;; Mouse button.  Multiple clicks are stupid, as they all get called...
   ;;
   (eli-initialize)
+
   (with-slots (state keymap ) rview
     (unless keymap (setf keymap (keymap-make)))
     (eli-reset rview)
     ;; built-in bindings
     (eli-def rview (kbd "C-g") (lambda () (eli-reset rview)))
     )
+
   (-on-announce-eli (gtv-buffer rview) rview) ; let the buffer initialize
   
   (g-signal-connect
@@ -46,9 +49,7 @@
 	  (let ((gtkkey (gdk-event-key-keyval event)))
 	    (unless (key-is-modifier gtkkey)	; if modifier, let gtk handle it!
 	      (let ((key (key-make gtkkey (gdk-event-key-state event))))
-		(mvb (w x y)  (gdk-window-get-pointer  (gtk-widget-window widget))
-		     (process-key rview key x y event)
-		     ))))))
+		(process-key rview key event) )))))
  
   ;;----------------------------------------------------------------------
   ;; Mouse motion.  We are not interested in sub-character motion; 
@@ -71,14 +72,12 @@
        ;; syntesize a key event from button press
        ;(+ #xFEE9 (gdk-event-button-button event))
        (mvb (w x y mod) (gdk-window-get-pointer  (gtk-widget-window view))
-	    (format t "~&====~A ~A ~A ~&" x y mod)
-	    (mvb (xx yy) (gtv-window-to-buffer-coords view :text x y)
-		 (format t "~&--- ~A ~A&"xx yy))
+	    (setf (x view) x
+		  (y view) y)
+	    ;;(format t "~&====~A ~A ~A ~&" x y mod)
+	    (mvb (xx yy) (gtv-window-to-buffer-coords view :text x y)(format t "~&--- ~A ~A&"xx yy))
 	    (let ((key (+ #xFEE8 (gdk-event-button-button event))))
-	      (process-key view (gtkmods-subject key mod nil)
-			   (truncate (gdk-event-button-x event))
-			   (truncate (gdk-event-button-y event))
-			   event)))
+	      (process-key view (gtkmods-subject key mod nil) event)))
        t)))
 
 

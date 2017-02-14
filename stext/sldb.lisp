@@ -11,7 +11,6 @@
    (continuations :accessor continuations :initarg :continuations :initform nil ))
   (:metaclass gobject-class))
 
-(defparameter *q* nil)
 (defmethod initialize-instance :after ((sldb sldb) &key)
   (setf *pbuf* sldb);****
   ;; register presentation types with this buffer and tags
@@ -21,7 +20,6 @@
   (pres-tag sldb pframex    ())
   
   
-  (setf *q* (make-instance 'pcondition)   )
   (pbuf-new-tag sldb :name "grayish"     :foreground "gray"        :editable t)
   (pbuf-new-tag sldb :name "beige"       :foreground "beige"       :editable t)
   (pbuf-new-tag sldb :name "restartable" :foreground "LimeGreen"   :editable t)
@@ -35,9 +33,19 @@
   (pbuf-new-tag sldb :name "locleft"     :foreground "yellow"                                :editable nil))
 
 (defmethod -on-announce-eli ((sldb sldb) eli)
-  (eli-def eli (kbd "Mouse-1")
-	   (lambda () (format t "~A ~A~&" (x eli) (y eli))))
-
+  (with-slots (connection thread level) sldb
+    (eli-def eli (kbd "Mouse-1")
+	     (lambda ();; (format t "~A ~A~&" (x eli) (y eli))
+	       (with-slots (x y) eli
+		 (let* ((iter (rview-iter-from-xy eli x y))
+			(presentations (presentations-at sldb iter)))
+		   (loop for pres in presentations
+		      until (-pres-on-button pres 1))))))
+    (eli-def eli (kbd "q")
+	     (lambda ()
+	       (swa:emacs-rex connection  "(swank:throw-to-toplevel)"
+			      :thread thread))))
+  
   )
 
 
@@ -114,7 +122,7 @@
 	  (gtb-apply-tag out "grhigh" iter iter1)
 	  (gtb-remove-tag out "grhigh" iter iter1)))))
 
-(defmethod -pres-on-button ((pres prestart) button times pressed)
+(defmethod -pres-on-button ((pres prestart) button )
   (with-slots (id (sldb out)) pres
     (with-slots (connection level thread) sldb
       (swa:emacs-rex
@@ -194,6 +202,6 @@
 	  (gtb-apply-tag out "grhigh" iter iter1)
 	  (gtb-remove-tag out "grhigh" iter iter1)))))
 
-(defmethod -pres-on-button ((pres pframe) button times pressed)
+(defmethod -pres-on-button ((pres pframe) button)
   (with-slots (out expanded pframex) pres
     (setf expanded (pframex-toggle out pframex expanded))))
