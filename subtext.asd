@@ -16,10 +16,9 @@
                (:file "src/package")
 	       (:file "src/utils")
 
+
 	       (:file "src/eli/keystroke")
 	       (:file "src/eli/keymap")
-	       (:file "src/eli/eli")
-	       
 	       
 	       (:file "src/gtk/tb")
 	       (:file "src/gtk/basebuf")
@@ -30,6 +29,11 @@
 	       (:file "src/gtk/promises")
 	       (:file "src/gtk/rbuffer")
 
+
+	       (:file "src/eli/eli")
+	       
+
+	       
 	       (:file "src/gtk/rview")
 	       (:file "src/gtk/window")
 	       (:file "src/gtk/frame")

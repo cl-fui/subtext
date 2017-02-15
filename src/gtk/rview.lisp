@@ -24,12 +24,12 @@
 (defmacro make-rview (buffer &rest rest)
   `(make-instance 'rview :buffer ,buffer ,@rest))
 
-(defmethod initialize-instance :after ((rview rview) &key)
+(defmethod initialize-instance :after ((rview rview) &key (widget-defaults t))
   (let ((pkg *package*))
     ;; Since views know about buffers but not vice versa, we must connect here.
     ;; since we don't know what the view is, we have to use generic functions.
     ;; The signaling system seems to not work well here!
-    (widget-defaults rview); see gtk-ui.lisp
+    (and widget-defaults (widget-defaults rview))		; see gtk-ui.lisp
     ;;(gtk-widget-add-events rview (:button2-mask) )
     ;;----------------------------------------------------------------------
     ;; Mouse button.  Multiple clicks are stupid, as they all get called...
@@ -39,7 +39,7 @@
     (with-slots (state keymap ) rview
       (unless keymap (setf keymap (keymap-make)))
       (eli-reset rview)
-      ;; built-in bindings
+      ;; built-in bindings TODO: move to immediate local keymap
       (eli-def rview (kbd "C-g") (lambda () (eli-reset rview)))
       )
 

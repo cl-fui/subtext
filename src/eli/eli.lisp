@@ -33,6 +33,8 @@
 ;;   1       0      cancel
 ;;   1       1      eli
 
+;;todo: immediate keys
+
 (defun process-key (eli key event)
   "process a key with modifiers..."
   (with-slots (state keymap) eli
@@ -51,7 +53,7 @@
 	      (progn
 		(eli-state-print eli *echo*)
 		(key-write key *echo*)
-		(with-tag "error" eli
+		(with-tag ("error" *echo*)
 		  (format *echo* " NOT BOUND"))
 		(eli-reset eli))
 	      (progn

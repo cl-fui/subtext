@@ -8,16 +8,18 @@
 (in-package #:subtext)
 (defclass window (gtk-box)
   ((view     :accessor view     :initform nil   :initarg :view)
-   (modeline :accessor modeline :initform (make-modeline)))
+   (modeline :accessor modeline :initform nil))
   (:metaclass gobject-class))
 
-(defun make-window (content)
-  (make-instance 'window
-		 :view content
-		 :orientation :vertical))
+(defmacro make-window (content &rest rest)
+  `(make-instance 'window
+		 :view ,content
+		 :orientation :vertical
+		 ,@rest))
 
-(defmethod initialize-instance :after ((window window) &key)
+(defmethod initialize-instance :after ((window window) &key (ml nil))
   (with-slots (view modeline) window
+    (setf modeline (make-modeline :ml ml))
     (let ((scrolled (make-instance 'gtk-scrolled-window
 				   :border-width 0
 				   :hscrollbar-policy :automatic

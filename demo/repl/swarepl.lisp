@@ -251,7 +251,9 @@
     (let* ((*standard-output* stdout)
 	   (*package* package)			;re-enable output
 ;;	   (ass  (format t "STANDARD OUTPUT?~A ~A ~&"*standard-output* *package*))
-	   (top (make-frame (make-window (make-rview (make-instance 'swarepl))) 
+	   (top (make-frame (make-window (make-rview (make-instance 'swarepl))
+					 :ml  "-:**- *slime repl*") 
+			    :title "Subtext REPL"
 			    :kill t)))
      
       (princ "Take this REPL, brother! ..." *echo*)
