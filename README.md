@@ -8,6 +8,9 @@ SubText is an attempt to create a Lispy, mostly-text-based user interface.
 
 Presentation-based interfaces may well be the future of computing.  Fluid, loosey-goosey editable text combined with 'live' text makes for very efficient use of space and does not lock the developer into a 'look-and-feel' dictated by the OS vendor. 
 
+# Demo and Screenshot
+
+To experience the (very early) demo, clone the repo; (ql:quickload :subtext)(subtext::demo)
 
 ![screenshot](Screenshot.png?raw=true) 
 
