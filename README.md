@@ -12,7 +12,7 @@ To experience the (very early) demo, clone the repo and (ql:quickload :subtext)(
 
 ## Why?
 
-Presentation-based interfaces may well be the future of computing.  Fluid, loosey-goosey editable text combined with 'live' text makes for very efficient use of space and does not lock the developer into a 'look-and-feel' dictated by the OS vendor.  See [Background and Motivation](wiki/Background-and-Motivation)
+Presentation-based interfaces may well be the future of computing.  Fluid, loosey-goosey editable text combined with 'live' text makes for very efficient use of space and does not lock the developer into a 'look-and-feel' dictated by the OS vendor.  See [Background and Motivation](https://github.com/stacksmith/subtext/wiki/Background-and-Motivation)
 
 
 ## How does it work?
