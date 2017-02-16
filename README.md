@@ -19,15 +19,15 @@ Presentation-based interfaces may well be the future of computing.  Fluid, loose
 
 SubText is built on top of GTK.  GTK text buffers feature MARKS (locations in text that are preserved across edits) and TAGS (ranges of text with certain attributes).  SubText adds the concept of a presentation (not to be confused with McCLIM presentations).  A presentation is a piece of tagged text bound to a Common Lisp object.  Interacting with a presentation invokes CLOS methods on the bound Lisp object; conversely, the Lisp object may change the look or content of its text as seen by the user.
 
-Work is being done on representing tags and presentations easily in Lisp.  Right now, output functions are a bit verbose, but there is much room for improving the syntax as we are dealing with Lisp.
+A special function `prin` outputs text, tags and presentations into the stream.
 
 ```lisp
-(with-tag ("bg-greenish" stream) (princ "SubText" stream))
+(prin out "Hello " (blue "Cruel ") "world")
 
-(with-pres (textbutton (:code (lambda () (exec "SHOW DEVICES DAD40"))))
-  (princ "NEWS DEMO" stream))
+(prin out "Press " ((make-instance 'button :code (lambda () (...))) "HERE") " now!")
 
 ```
+
 ## And visually?
 
 Since SubText is GTK, anything you can do with GTK you can do with SubText.

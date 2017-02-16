@@ -81,10 +81,10 @@
   (with-slots (ptags) pbuf
     (setf
      ptags (make-array 10)
-     (aref ptags 5) (pbuf-new-tag pbuf :name "error"  :foreground "blue" :editable nil)
-     (aref ptags 0) (pbuf-new-tag pbuf :name "prompt" :foreground "cyan" :editable nil)
      (aref ptags 4) (pbuf-new-tag pbuf :name "pres"   :foreground "red" :editable nil)
-     (aref ptags 1) (pbuf-new-tag pbuf :name "input"  :foreground "AntiqueWhite1" :editable t)
+    (aref ptags 5) (pbuf-new-tag pbuf :name "error"  :foreground "blue" :editable nil)
+     (aref ptags 0) (pbuf-new-tag pbuf :name "prompt" :foreground "cyan" :editable nil)
+      (aref ptags 1) (pbuf-new-tag pbuf :name "input"  :foreground "AntiqueWhite1" :editable t)
      (aref ptags 2) (pbuf-new-tag pbuf :name "output" :foreground "NavajoWhite2":editable nil)
      (aref ptags 3) (pbuf-new-tag pbuf :name "return" :foreground "chartreuse1" :editable nil)
   

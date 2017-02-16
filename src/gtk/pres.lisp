@@ -68,6 +68,7 @@
    ;for verification
   (:metaclass gobject-class))
 
+
 (defmethod print-object ((mark pres) out1)
   (print-unreadable-object (mark out1 :type t)
     (with-slots (out) mark

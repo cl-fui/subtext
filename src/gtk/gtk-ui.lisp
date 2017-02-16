@@ -170,7 +170,14 @@
            (setf *top* top)
 	   (eli-def *rview*
 		    (kbd "C-x C-y") (lambda () (print "HELLO")))
-     
+;;	   (with-tag ("error" *pbuf*) (print "SHIT" *pbuf*) )
+	   (prin-walk *pbuf* '("error" "hello" ("pres" " cruel") "world"))
+	   (terpri *pbuf*)
+	   (with-tag ("pres" *pbuf*) (princ "hello" *pbuf*)
+		     (with-tag ("error" *pbuf*) (princ " cruel" *pbuf*))
+		     (princ "world" *pbuf*))
+	   (finish-output *pbuf*)
+	   (promises-fulfill *pbuf*)
       (gtk-widget-show-all top)
       (-on-initial-display top))))
 

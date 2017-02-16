@@ -27,6 +27,7 @@
 	       (:file "src/gtk/termstream")
 	       (:file "src/gtk/pres")
 	       (:file "src/gtk/promises")
+	       (:file "src/gtk/prin")
 	       (:file "src/gtk/rbuffer")
 
 
