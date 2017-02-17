@@ -130,4 +130,8 @@ for all newly introduced ones, call entering.  Return new."
        until (-pres-on-button pres button))))
 
 
-(defmethod -on-announce-eli ((pbuf tb) eli)  )
+(defmethod -wipe  ((pbuf tb))
+    (with-slots (anchor promises) pbuf
+      (setf anchor   0
+	    promises nil)))
+

@@ -150,6 +150,7 @@
 
 
 (defmethod -wipe :after ((pbuf termstream))
+ 
   (setf (index pbuf) 0))
 ; should anyone use this class as a concrete class...
 (defmethod -on-announce-eli ((pbuf termstream) eli)  )

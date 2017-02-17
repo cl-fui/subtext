@@ -18,25 +18,14 @@
   ;;(print "initialize-instance: basebuf DONE")
   )
 
-(defparameter *self-inserting-keys* " 0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ~!@#$%^&*()_+[]{}\|~`,.<>/?")
-
 
 (defmethod -on-destroy :before ((buffer basebuf))
   (format t "BASEBUF ON-DESTROY ~A~&" buffer ))
 
 
-(defmethod clear ((pbuf basebuf))
-  "clear pbuf of all presentations, and all content!"
-  (pbuf-bounds pbuf)
-  (with-slots (iter iter1) pbuf
-    (gtb-remove-all-tags pbuf iter iter1)
-    (gtk::%gtk-text-buffer-delete pbuf iter iter1))
-  ;;TODO: remove all marks!
-  )
-
 
 (defun pres-here (pbuf off)
-  )
+)
 
 ;;==============================================================================
 ;; Debugging tools
@@ -142,17 +131,5 @@
 (defmethod -wipe ((pbuf basebuf))
   (with-slots (index iter iter1 promises anchor) pbuf
     (pbuf-bounds pbuf)
-    (%gtb-delete pbuf iter iter1)
-    (setf anchor 0
-	  promises nil))
-  )
-#||
-(defun pbuf-range-minimize (buffer range)
-  "minimize a range to a single character at the end"
-  (with-slots (iter iter1) buffer
-    (pbuf-range-iters buffer range)
-    (setf (range:child range) nil) ;eliminate children
-    (gtb-remove-all-tags buffer iter iter1)
-    (gti-backward-char iter1)
-    (%gtb-delete buffer iter iter1)))
-||#
+    (gtb-remove-all-tags pbuf iter iter1)
+    (%gtb-delete pbuf iter iter1)))
