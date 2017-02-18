@@ -2,18 +2,15 @@
 ;;;=============================================================================
 ;;; rview - a text widget containin a buffer-derived class..
 ;;;
-;;; passes button and keypress events to the rbuffer. 
+;;; 
 ;;;
 (defgeneric -on-motion (object iter event))
 (defmethod -on-motion ((o t) view event))
 
 
-(defclass rview (gtk-text-view)
+(defclass rview (gtk-text-view eli)
   (
    ;; eli
-   (state :accessor state
-	  :documentation "first= binding during search, rest are previous bindings")
-   (keymap :accessor keymap :initarg :keymap :initform nil)
    (x :accessor x :initform 0)
    (y :accessor y :initform 0)
    ;; Track last offset from mousemove; issue -on-motion only on change.

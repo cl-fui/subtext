@@ -1,8 +1,13 @@
 (in-package :subtext)
 ;;
-;; eli is a keyprocessing entity
-;; requires that eli object has state and keymap.
+;; eli is a state machine for processing keys.  Every character that comes in
+;; may push a new state (which is a pointer into the keymap)
 ;;
+
+(defclass eli ()
+  ((state  :accessor state
+	   :documentation "first= binding during search, rest are previous bindings")
+   (keymap :accessor keymap :initarg :keymap :initform nil)))
 
 (defun eli-reset (eli)
   (with-slots (state keymap) eli
