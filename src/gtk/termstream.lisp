@@ -4,7 +4,7 @@
 ;;
 ;; output at the end only!
 
-(defclass termstream (basebuf
+(defclass termstream (tb
 		      trivial-gray-streams:fundamental-character-output-stream)
   
   ((markin       :accessor markin :initform nil :type gtk-text-mark)
@@ -153,4 +153,4 @@
  
   (setf (index pbuf) 0))
 ; should anyone use this class as a concrete class...
-(defmethod -on-announce-eli ((pbuf termstream) eli)  )
+

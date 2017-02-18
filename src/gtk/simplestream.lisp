@@ -3,7 +3,7 @@
 ;; simplestream - an unbuffered output stream
 ;;
 
-(defclass simplestream (basebuf
+(defclass simplestream (tb
 			trivial-gray-streams:fundamental-character-output-stream)
   ()
   (:metaclass gobject-class))
