@@ -35,10 +35,7 @@
 
     (with-slots (state keymap ) rview
       (unless keymap (setf keymap (keymap-make)))
-      (eli-reset rview)
-      ;; built-in bindings TODO: move to immediate local keymap
-      (eli-def rview (kbd "C-g") (lambda () (eli-reset rview)))
-      )
+      (eli-reset rview))
 
     (-on-announce-eli (gtv-buffer rview) rview) ; let the buffer initialize
 

@@ -7,12 +7,13 @@
 (defclass eli ()
   ((state  :accessor state
 	   :documentation "first= binding during search, rest are previous bindings")
-   (keymap :accessor keymap :initarg :keymap :initform nil)))
+   (keymap :accessor keymap :initarg :keymap :initform nil)
+   (kmapi  :accessor kmapi  :initarg :kmapi  :initform nil
+    )))
 
 (defun eli-reset (eli)
   (with-slots (state keymap) eli
     (setf state (cons keymap nil))
-    ;;(-wipe minibuf)
     ;(terpri *echo*)
     t))
 
@@ -43,32 +44,36 @@
 
 (defun process-key (eli key event)
   "process a key with modifiers..."
+  (format t "ELI:PROCESSKEY  ~A~&" key )
   (with-slots (state keymap) eli
-    (let ((found (key-lookup (car state) key)))
-     ;; (format t "ELI:PROCESSKEY ~A~& ~A~&" state keymap)
-      (if found
-	  (typecase (cdr found)
-	    (function (eli-reset eli) ;reset search
-		      (funcall (cdr found) ))
-	    (cons (push found state)
-		  (eli-state-print eli *echo*)
-		  t))
-	  ;;not found...
-	  
-	  (if (eli-active eli)
-	      (progn
-		(eli-state-print eli *echo*)
-		(key-write key *echo*)
-		(with-tag ("error" *echo*)
-		  (format *echo* " NOT BOUND"))
-		(eli-reset eli))
-	      (progn
-		nil))))))
+    (if (= key #x1000067); first, proces C-g
+	(progn (eli-reset eli) (format *echo* "~%Quit" ) t)
+	(let ((found (key-lookup (car state) key)))
+	  (if found
+	      (typecase (cdr found)
+		(function (eli-reset eli) ;reset search#
+			  (funcall (cdr found) ))
+		(cons (push found state)
+		      (eli-state-print eli *echo*)
+		      t))
+	      ;;not found...
+	      (if (eli-active eli)
+		  (progn
+		    (eli-state-print eli *echo*)
+		    (key-write key *echo*)
+		    (with-tag ("error" *echo*)
+		      (format *echo* " NOT BOUND"))
+		    (eli-reset eli))
+		  (progn
+		    nil)))))))
 
 (defun eli-find (eli keyseq)
   "find a keyseq in this eli"
   (key-find (keymap eli) keyseq))
 
 (defun eli-def (eli keyseq data)
+  "bind a keyseq in eli"
   (key-def (keymap eli) keyseq data))
+
+
 
