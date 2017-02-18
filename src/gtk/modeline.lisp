@@ -3,7 +3,7 @@
 (defclass modeline (gtk-text-view) ((ml :accessor ml :initform nil :initarg :ml))  (:metaclass gobject-class))
 
 (defun make-modeline ( &key (ml nil))
-  (make-instance 'modeline :buffer (make-instance 'rbuffer)
+  (make-instance 'modeline :buffer (make-instance 'termstream)
 		 :wrap-mode :none
 		 :editable nil
 		 :ml ml))

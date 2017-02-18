@@ -64,7 +64,7 @@
     (setf *package* package)
     (let ((*standard-output* stdout)
 	  (*package* package)
-	  (buffer (make-instance 'rbuffer)))
+	  (buffer (make-instance 'termstream)))
       (setf *pbuf* buffer)
       (let ((top (make-frame (make-window (setf *top* (make-rview buffer)))
 			     :kill t))

@@ -27,10 +27,9 @@
 	       (:file "src/gtk/pres")
 	       (:file "src/gtk/promises")
 	       (:file "src/gtk/prin")
-	       (:file "src/gtk/rbuffer")
 
 
-	       (:file "src/eli/eli")
+	       (:file "src/eli/eli"); here because elie is now buffer...
 	       
 
 	       

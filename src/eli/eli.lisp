@@ -1,10 +1,11 @@
 (in-package :subtext)
 ;;
 ;; eli is a keyprocessing entity
+;; requires that eli object has state and keymap.
 ;;
 
 (defun eli-reset (eli)
-  (with-slots (state keymap minibuf) eli
+  (with-slots (state keymap) eli
     (setf state (cons keymap nil))
     ;;(-wipe minibuf)
     ;(terpri *echo*)
