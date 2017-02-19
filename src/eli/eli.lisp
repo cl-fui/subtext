@@ -7,10 +7,13 @@
 (defclass eli ()
   ((state  :accessor state
 	   :documentation "first= binding during search, rest are previous bindings")
-   (keymap :accessor keymap :initarg :keymap :initform nil)
-   (kmapi  :accessor kmapi  :initarg :kmapi  :initform nil
-    )))
+   (keymap :accessor keymap :initarg :keymap :initform (list nil))))
 
+(defmethod initialize-instance :after ((eli eli) &key)
+  (eli-init-keynames);; global - keynames
+  (with-slots (state keymap) eli
+    (setf state (cons keymap nil)))
+  )
 (defun eli-reset (eli)
   (with-slots (state keymap) eli
     (setf state (cons keymap nil))
@@ -66,6 +69,13 @@
 		    (eli-reset eli))
 		  (progn
 		    nil)))))))
+
+(defun eli-gtk-key-press-event (eli event)
+  "Process a gtk event; passed to GTK as a callback"
+  (let ((gtkkey (gdk-event-key-keyval event)))
+    (unless (key-is-modifier gtkkey)	; if modifier, let gtk handle it!
+      (let ((key (key-make gtkkey (gdk-event-key-state event))))
+	(process-key eli key event) ))) )
 
 (defun eli-find (eli keyseq)
   "find a keyseq in this eli"

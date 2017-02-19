@@ -23,35 +23,14 @@
 
 (defmethod initialize-instance :after ((rview rview) &key (widget-defaults t))
   (let ((pkg *package*))
-    ;; Since views know about buffers but not vice versa, we must connect here.
-    ;; since we don't know what the view is, we have to use generic functions.
-    ;; The signaling system seems to not work well here!
     (and widget-defaults (widget-defaults rview))		; see gtk-ui.lisp
-    ;;(gtk-widget-add-events rview (:button2-mask) )
     ;;----------------------------------------------------------------------
-    ;; Mouse button.  Multiple clicks are stupid, as they all get called...
-    ;;
-    (eli-initialize)
-
-    (with-slots (state keymap ) rview
-      (unless keymap (setf keymap (keymap-make)))
-      (eli-reset rview))
-
     (-on-announce-eli (gtv-buffer rview) rview) ; let the buffer initialize
-
     ;;----------------------------------------------------------------------
     ;; Key press.
     ;; Handle via eli.  Eli may just return nil which we shall pass to GTK
     ;; to use default processing in the buffer.
-    (g-signal-connect
-     rview "key-press-event"
-     (lambda (widget event)
-       ;; (format t "FRAME:KEY ~A~&" event)
-       (let ((*package* pkg)
-	     (gtkkey (gdk-event-key-keyval event)))
-	 (unless (key-is-modifier gtkkey)	; if modifier, let gtk handle it!
-	   (let ((key (key-make gtkkey (gdk-event-key-state event))))
-	     (process-key rview key event) )))))
+    (g-signal-connect rview "key-press-event" #'eli-gtk-key-press-event)
     ;;----------------------------------------------------------------------
     ;; Mouse motion.  We get pixel motion, but we are interested in much
     ;; coarser notification.  For now, ignore sub-character motions

@@ -201,7 +201,7 @@
 ;; Global initialization
 ;;
 ;; single-character keys are useful...
-(defun eli-initialize ()
+(defun eli-init-keynames ()
   (keycache-init-list
    '("!" "exclam"      "@" "at"            "#" "numbersign"  "$" "dollar"
      "%" "percent"     "^" "asciicircum"   "&" "ampersand"   "*" "asterisk"
