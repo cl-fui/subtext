@@ -79,7 +79,8 @@
    ;; (range:narrow (range:at (root  buffer) o1) (- o2 o1))
 ))
 
-(defmethod -on-announce-eli ((pbuf tb) eli)  )
+(defmethod -on-announce-eli ((pbuf tb) eli)
+  (eli-def eli (kbd "F1") (lambda () (bufstat pbuf))))
 ;;===============================================================================
 ;; Motion handler
 ;;
@@ -192,7 +193,7 @@ for all newly introduced ones, call entering.  Return new."
       )))
 
 ;; 
-(defun bufstat (buffer) ;;see gtk-ui for keybinding
+(defun bufstat (buffer)
  
   (bufstat-prim buffer (gtb-cursor-position buffer)) )
 

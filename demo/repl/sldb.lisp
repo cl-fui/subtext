@@ -1,7 +1,7 @@
 (in-package :subtext)
 
 
-(defclass sldb (rbuffer)
+(defclass sldb (termstream)
   ((connection    :accessor connection    :initarg :connection    :initform nil )
    (thread        :accessor thread        :initarg :thread        :initform nil )
    (level         :accessor level         :initarg :level         :initform nil )
