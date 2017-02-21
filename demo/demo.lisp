@@ -64,7 +64,7 @@ Click on "
 
 Start a SWANK server on port 5000 and try our "
 	      (pr 'button (:code (lambda () (repl))) "REPL")
-	      " without any Emacs."
+	      " without any Emacs!"
 	      " Evaluate some Lisp code or some nonsense to invoke the SubText debugger...
 
 

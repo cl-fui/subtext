@@ -142,3 +142,26 @@
     (setf (promises stream) nil))
 ;;------------------------------------------------------------------------------
 ;;
+(defparameter *subtext-active* nil)
+(defmacro pr-print (&rest rest)
+  `(loop for item in ,@rest do
+       (format t "ITEM ~A TYPE ~A~&" item (type-of item))
+       (and item (princ item out))))
+(defmacro with-subtext (stream &body body)
+  `(let ((out ,stream))
+     (declare (ignorable out))
+     (pr-print ,@body)
+     (finish-output out)))
+
+(defmacro tg- (tagid &body body)
+  (let ((promise (gensym)))
+    `(let* ((,promise (tag-in out ,tagid)))
+       (pr-print ,@body)
+       (tag-out out ,promise)
+       nil)))
+
+(defmacro pr- ((prestype &optional presinit) &body body)
+  `(let* ((it (make-instance ',prestype :left-gravity nil ,@presinit)))
+     ;;(format t "PRES ~A ~A~&" presentation  (gtk-text-mark-left-gravity presentation))
+     (tg- it ,@body)))
+

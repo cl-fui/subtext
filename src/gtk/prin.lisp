@@ -22,20 +22,23 @@
 ;; (prin out (tg "blue "hello" (tg tag2 " cruel") " world")); nested tags
 ;; (prin out (tag1 "hello" (+ 1 2)))); generate output
 ;; (prin stream 1 2 (tg "blue" "hello") (pr button (:code ...) "whatever"))
+;; (prin out ok null you) ; null does not print. (progn ... nil) works too.
 
 (defun pr-output (stream list)
-;;  (format t "~A~&" list)
-  (let ((promise (make-promise
+  ;;  (format t "~A~&" list)
+  (labels ((prim (stream list)
+	     (let ((promise (make-promise
 		  :start (file-position stream)
 		  :content (first list))))
-    (loop for item in (cdr list) do
-	 (typecase item
-	   (cons (pr-output stream item))
-	   (t (princ item stream))))
-    (setf (promise-end promise) (file-position stream))
-    (push promise (promises stream))))
-
-
+	       (loop for item in (cdr list) do
+		    (typecase item
+		      (cons (prim stream item))
+		      (null)
+		      (t (princ item stream))))
+	       (setf (promise-end promise) (file-position stream))
+	       (push promise (promises stream)))))
+    (prim stream list)
+    (finish-output stream)))
 
 (defun tg (tag &rest rest)
   `(,tag ,@rest))
