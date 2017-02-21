@@ -37,7 +37,7 @@
   (g-signal-connect buffer "insert-text" #'on-insert-text-before :after nil)
   (g-signal-connect buffer "insert-text" #'on-insert-text-after :after t)
   (g-signal-connect buffer "delete-range" #'on-delete-range)
-  (setf)
+  (pbuf-create-tags buffer)
   )
 ;;==============================================================================
 ;; A major task is maintaining the position table on inserts and deletes!
@@ -75,7 +75,8 @@
 
     (when (<= o1 (the fixnum (anchor buffer)))
       (decf (the fixnum (anchor buffer)) (- o2 o1))
-      (format t "~%deleting range: [~D ~D)~&" o1 o2))
+   ;;   (format t "~%deleting range: [~D ~D)~&" o1 o2)
+      )
    ;; (range:narrow (range:at (root  buffer) o1) (- o2 o1))
 ))
 
@@ -97,7 +98,7 @@ for all newly introduced ones, call entering.  Return new."
   (let* ((same (intersection old new)); these have not changed...
 	 (out (set-difference old same)); these are phased out.
 	 (in  (set-difference new same))) ; and these are newly introduced.
-    (format t "ON_MOTION SAME: ||~A||~&  IN:~A OUT: ~A~&" same in out)
+;;    (format t "ON_MOTION SAME: ||~A||~&  IN:~A OUT: ~A~&" same in out)
     (loop for pres in out do (-pres-on-mouse pres nil))
     (loop for pres in in  do (-pres-on-mouse pres t))
     new

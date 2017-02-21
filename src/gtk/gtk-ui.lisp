@@ -154,6 +154,7 @@
       (gtk-widget-show-all window))))
 
 
+(defpres button (pres) (code))
 
 ;; A simple test for debugging eli
 (defun teli( &key (stdout *standard-output*) (package *package*))
@@ -168,16 +169,25 @@
 			     (print (setf *rview* (make-rview (setf *pbuf* (make-instance 'simplestream)))))) 
 			    :kill t)))
            (setf *top* top)
-	   (eli-def *rview*
-		    (kbd "C-x C-y") (lambda () (print "HELLO")))
-;;	   (with-tag ("error" *pbuf*) (print "SHIT" *pbuf*) )
-	   (prin-walk *pbuf* '("error" "hello" ("pres" " cruel") "world"))
+	   (eli-def *rview*  (kbd "C-x C-y") (lambda () (print "HELLO")))
+	   (pres-tag *pbuf* button (:foreground "DarkGoldenrod" :background "aquamarine" :editable nil)  )
+	   (prin *pbuf* "hello " (tg "error" "cruel") " world")
+	   (prin *pbuf* (pr button (:code (lambda () (format t "shid"))) "HOdamn"))
 	   (terpri *pbuf*)
-	   (with-tag ("pres" *pbuf*) (princ "hello" *pbuf*)
-		     (with-tag ("error" *pbuf*) (princ " cruel" *pbuf*))
-		     (princ "world" *pbuf*))
+	   (let ((tag "pres"))
+	     (prin *pbuf* (tg tag "yo") " man"))
+;;	   (pr *pbuf* 1 #\space  (tg *pbuf* "error" "fuck") 3)
+;;	   (with-tag ("error" *pbuf*) (print "SHIT" *pbuf*) )
+;;	   (prin-walk *pbuf* '("error" "hello" ("pres" " cruel") "world"))
+	   (terpri *pbuf*)
+;;	   (with-tag ("pres" *pbuf*) (princ "hello" *pbuf*)    (with-tag ("error" *pbuf*) (princ " cruel" *pbuf*))    (princ "world" *pbuf*))
 	   (finish-output *pbuf*)
+	   ;(print (promises *pbuf*))
 	   (promises-fulfill *pbuf*)
       (gtk-widget-show-all top)
       (-on-initial-display top))))
 
+
+(defun crap ()
+  (declare (optimize (speed 3) (safety 0) (debug 0)))
+  (pr *pbuf* "hello " (tg "error" "cruel") " world"))

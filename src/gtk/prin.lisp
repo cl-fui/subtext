@@ -9,54 +9,40 @@
 ;;
 ;; stream--- a stream
 ;; texts--   one or more of
-;; * atom, which is simply printed;
-;; (tag &rest texts) --- texts are tagged
-;; ((pres) &rest texts) -- texts are printed inside presentation
+;; * expr evaluated and printed
+;; * (tg tagdesc &rest texts) --- texts are tagged
+;; * (pr type init &rest texts) -- texts are printed inside presentation
 ;;
-;; Tag = "tagname" or gtk-text-tag
+;; Tagdesc = "tagname" or gtk-text-tag
 ;;
 ;; pres = form evaluated to create a presentation
 ;;
 ;; Examples:
-;; (prin out "ok," (tag1 " Mr. Wise Guy") "!")
-;; (prin out (tag1 "hello" (tag2 " cruel") " world")); nested tags
+;; (prin out "ok," (tg tag1 " Mr. Wise Guy") "!")
+;; (prin out (tg "blue "hello" (tg tag2 " cruel") " world")); nested tags
 ;; (prin out (tag1 "hello" (+ 1 2)))); generate output
-;; (prin out (tag1 "hello" (pres (init) " whatever"); create a presentation
+;; (prin stream 1 2 (tg "blue" "hello") (pr button (:code ...) "whatever"))
 
-
-(defun prin-texts (stream forms)
-  "print the forms to the stream, using tags and presentations"
-  (loop for form in forms do
-       (if (consp form) 
-	   (if (consp (car form)) ;double is ((pres ..) ..)
-	       (if (consp (caar form)) ;(((..))) just evaluate
-		   (princ (eval (caar form)))
-		   ;; presentation ((pres ..) ..)
-		   (prin-pres stream  form))
-	       ;; tag (tag ..)
-	       (prin-tag stream form))
-	   ;;atom
-	   (princ form stream))) )
-
-(defun prin-tag (stream tagform)
+(defun pr-output (stream list)
+;;  (format t "~A~&" list)
   (let ((promise (make-promise
 		  :start (file-position stream)
-		  :content (car tagform))))
-    (prin-texts stream (cdr tagform))
+		  :content (first list))))
+    (loop for item in (cdr list) do
+	 (typecase item
+	   (cons (pr-output stream item))
+	   (t (princ item stream))))
     (setf (promise-end promise) (file-position stream))
     (push promise (promises stream))))
 
-;; ((pres ..) ..)
-(defun prin-pres (stream presform)
- ;; (format t "APPLY #'MAKE-INSTANCE ~A~&" (car presform))
-  (let ((promise (make-promise
-		  :start (file-position stream)
-		  :content (eval (car presform)))))
-    (prin-texts stream (cdr presform))
-    (setf (promise-end promise) (file-position stream))
-    (push promise (promises stream)))  )
 
 
-(defmacro prin (stream &rest texts )
-  "print the texts to the gtk stream, using tags and presentations"
-  `(prin-texts ,stream ',texts ))
+(defun tg (tag &rest rest)
+  `(,tag ,@rest))
+(defmacro pr (class init &rest rest)
+  `(list (make-instance ',class ,@init) ,@rest) )
+(defmacro prin (stream &rest rest)
+  (let ((params `(tg "normal" ,@rest)))
+    `(pr-output ,stream ,params))
+  )
+
