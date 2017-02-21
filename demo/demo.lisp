@@ -63,12 +63,9 @@ Click on "
 	      " to display a view of a newsgroup with more than half a million posts; scroll around to see what's there.
 
 Start a SWANK server on port 5000 and try our "
-	      (pr 'button (:code (lambda () (repl))) "REPL")
-	      " without any Emacs!"
-	      " Evaluate some Lisp code or some nonsense to invoke the SubText debugger...
-
-
-"
+	      (pr 'button (:code (lambda () (repl))) "REPL") " "
+	      (tg (pbuf-new-tag stream :underline :single) "without any Emacs") 
+	      "! Evaluate some Lisp code (or some nonsense to invoke the SubText debugger)..." #\newline #\newline
 	      (tg "small" "¹ Feel free to use C-x C-c to quit..." ))
 	(finish-output stream))
       )))
