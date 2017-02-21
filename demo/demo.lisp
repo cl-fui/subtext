@@ -59,12 +59,13 @@
 SubText is in its infancy, and at this stage is changing rapidly.  The demos below are a work in progress and are not fully functional... Tested with SBCL.
 
 Click on "
-	      (pr button (:code (lambda () (news))) "NEWS  DEMO")
+	      (pr 'button (:code (lambda () (news))) "NEWS  DEMO")
 	      " to display a view of a newsgroup with more than half a million posts; scroll around to see what's there.
 
-Start a SWANK server on port 5000 and try our non-Emacs "
-	      (pr button (:code (lambda () (repl))) "REPL Lisp Envronment")
-	      " - type some Lisp commands or some nonsense to invoke the SubText debugger..
+Start a SWANK server on port 5000 and try our "
+	      (pr 'button (:code (lambda () (repl))) "REPL")
+	      " without any Emacs."
+	      " Evaluate some Lisp code or some nonsense to invoke the SubText debugger...
 
 
 "

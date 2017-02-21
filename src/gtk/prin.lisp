@@ -14,8 +14,8 @@
 ;; * (pr type init &rest texts) -- texts are printed inside presentation
 ;;
 ;; Tagdesc = "tagname" or gtk-text-tag
-;;
-;; pres = form evaluated to create a presentation
+;; type = evaluates to symbol for make-instance
+;; init = form evaluated to create a presentation
 ;;
 ;; Examples:
 ;; (prin out "ok," (tg tag1 " Mr. Wise Guy") "!")
@@ -40,7 +40,8 @@
 (defun tg (tag &rest rest)
   `(,tag ,@rest))
 (defmacro pr (class init &rest rest)
-  `(list (make-instance ',class ,@init) ,@rest) )
+  (let ((cl class))
+    `(list (make-instance ,cl ,@init) ,@rest)) )
 (defmacro prin (stream &rest rest)
   (let ((params `(tg "normal" ,@rest)))
     `(pr-output ,stream ,params))

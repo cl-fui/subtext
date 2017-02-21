@@ -171,8 +171,10 @@
            (setf *top* top)
 	   (eli-def *rview*  (kbd "C-x C-y") (lambda () (print "HELLO")))
 	   (pres-tag *pbuf* button (:foreground "DarkGoldenrod" :background "aquamarine" :editable nil)  )
-	   (prin *pbuf* "hello " (tg "error" "cruel") " world")
-	   (prin *pbuf* (pr button (:code (lambda () (format t "shid"))) "HOdamn"))
+	   (prin *pbuf* "hello " (tg "error" "cruel") " world "
+		 (tg (pbuf-new-tag *pbuf* :foreground "blue") "fuck"))
+	   (let ((p button))
+	     (prin *pbuf* (pr p (:code (lambda () (format t "shid"))) "HOdamn")))
 	   (terpri *pbuf*)
 	   (let ((tag "pres"))
 	     (prin *pbuf* (tg tag "yo") " man"))
