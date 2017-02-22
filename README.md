@@ -16,7 +16,7 @@ Fluid, loosey-goosey editable text augmented with code makes for very flexible a
 
 ## How does it work?
 
-SubText is built on top of GTK.  GTK text buffers already feature MARKS (locations in text that are preserved across edits) and TAGS (ranges of text with certain attributes).  SubText adds the concept of a presentation (not to be confused with McCLIM presentations), a piece of tagged text bound to a Common Lisp object.  Interacting with a presentation invokes CLOS methods on the bound Lisp object; conversely, the Lisp object may change the look or content of its text as seen by the user.
+SubText is built on top of GTK.  GTK text buffers already feature MARKS (locations in text that are preserved across edits) and TAGS (ranges of text with certain attributes).  SubText adds the concept of a presentation (not to be confused with CLIM presentations), a piece of tagged text bound to a Common Lisp object.  Interacting with a presentation invokes CLOS methods on the bound Lisp object.  Conversely, the Lisp object may change the look or content of its text as seen by the user.
 
 The buffer looks like a stream, so printing mostly works like it always does.  A [utility function `prin`](https://github.com/stacksmith/subtext/wiki/PRIN) is provided for bulk output of tagged text:
 
