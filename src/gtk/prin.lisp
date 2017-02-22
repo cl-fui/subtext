@@ -47,6 +47,7 @@
     `(list (make-instance ,cl ,@init) ,@rest)) )
 (defmacro prin (stream &rest rest)
   (let ((params `(tg "normal" ,@rest)))
-    `(pr-output ,stream ,params))
-  )
+    `(pr-output ,stream ,params)))
 
+(defmacro prog0 (&body body)
+  `(progn ,@body nil))

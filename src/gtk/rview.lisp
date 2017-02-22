@@ -31,6 +31,13 @@
     ;; Handle via eli.  Eli may just return nil which we shall pass to GTK
     ;; to use default processing in the buffer.
     (g-signal-connect rview "key-press-event" #'eli-gtk-key-press-event)
+
+ #||   (g-signal-connect
+     rview "drag-motion"
+     (lambda (widget context x y time)
+       (format t "DRAG_MOTION ~A ~A ~A ~A ~A" widget context x y time)
+       nil))
+||#
     ;;----------------------------------------------------------------------
     ;; Mouse motion.  We get pixel motion, but we are interested in much
     ;; coarser notification.  For now, ignore sub-character motions
