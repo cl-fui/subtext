@@ -75,7 +75,15 @@ starting with 'old-prefix' in :package.  Remember to capitalize "
   `(gdk-threads-add-idle (lambda () ,@rest)))
 
 
-
+(defun function-lambda-list (fn)
+  "Return an argument list for the supplied function."
+  (let ((arglist))
+    (handler-case
+      #+:clisp (setf arglist (sys::arglist fn))
+      #+:sbcl (setf arglist (sb-introspect:function-lambda-list fn))
+      #+:ccl (setf arglist (ccl:arglist fn))
+      (error (ex) (declare (ignore ex)) (setf arglist nil)))
+    arglist))
 
 (defun popup-menu (menu-descriptor-list
 			     &key (button 0)

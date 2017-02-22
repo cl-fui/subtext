@@ -2,7 +2,7 @@
 
 SubText is an attempt to create a Lispy, mostly-text-based user interface.
 
-'Entangling' arbitrary pieces of text with CL code makes text interactive.  Layered above GTK, SubText enables the creation of simple, flexible, and familiar ad-hoc user interfaces (especially when combined with an Emacs-like key processing interface).
+Subtext 'entangles' CL code with arbitrary pieces of text, enabling simple, flexible, and familiar ad-hoc user interfaces (especially when combined with an Emacs-like key processing interface).
 
 ## Demo and Screenshot
 

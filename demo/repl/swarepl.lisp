@@ -30,9 +30,12 @@
   (pres-tag pbuf p-pres  (:foreground "red" :editable nil));
   (pres-tag pbuf p-input (:foreground "blue" :editable t))
 
+  (g-signal-connect
+     pbuf "notify::cursor-position"
+     (lambda (gobject gparamspec)
+       (format t "NOTIFY:CURPOS ~A ~A~&"gobject gparamspec)
+))
   ;;---------------------------------------------------------------------------
-
-  
   (with-slots (swank) pbuf
     (setf swank (swa:make-connection "localhost" port))
     pbuf))
