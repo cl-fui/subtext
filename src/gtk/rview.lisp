@@ -67,8 +67,7 @@
 	      (setf (x view) x
 		    (y view) y)
 	      (let ((key (+ #xFEE8 (gdk-event-button-button event))))
-		(process-key view (gtkmods-subject key mod nil) event))))
-       t))))
+		(process-key view (gtkmods-subject key mod nil) event))))))))
 
 
 ;; pass some messages to buffer

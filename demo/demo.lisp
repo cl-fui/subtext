@@ -22,7 +22,8 @@
 					  (setf stream (make-instance 'termstream))
 					  :widget-defaults nil
 					  :wrap-mode :word
-					  :left-margin 30 :right-margin 20 
+					  :left-margin 30 :right-margin 20
+					  :pixels-above-lines 24
 					  ))
 			      ;; :ml ""
 			       )
@@ -30,7 +31,7 @@
 			      :title "Welcome to SubText."
 			      :kill t)))
 	(pbuf-new-tag stream :name "small" :font "DejaVu Sans 10")
-	
+	(pbuf-new-tag stream :name "normal" :pixels-inside-wrap 8)
 	(gtk-widget-modify-font eli  (pango-font-description-from-string "DejaVu Serif 12"))
 	(gtk-widget-show-all top)
 	(-on-initial-display top)
@@ -50,22 +51,17 @@
 	
 	(pres-tag stream button (:foreground "DarkGoldenrod" :background "aquamarine" :editable nil)  )
 
-	(terpri stream)
-	(prin stream "Welcome to " (tg "bg-greenish" "SubText™") #\. #\newline #\newline
-	      "SubText is an initiative to create a Lispy, mostly-text-based user interface.
-
-'Entangling' runs of text with CL code makes text interactive.  Combined with an Emacs-like command processing system¹, SubText enables the creation of simple, flexible and familiar ad-hoc user interfaces, with decent antialiased fonts.
-
-SubText is in its infancy, and at this stage is changing rapidly.  The demos below are a work in progress and are not fully functional... Tested with SBCL.
-
+	(prin stream "Welcome to " (tg "bg-greenish" "SubText™") #\. #\newline
+	      "SubText is a Lispy, mostly-text-based user interface.
+SubText 'entangles' CL code with runs of text, enabling simple, flexible and familiar¹ ad-hoc user interfaces.  With decent antialiased fonts.
+SubText is in its infancy; the demos below are a work in progress.
 Click on "
 	      (pr 'button (:code (lambda () (news))) "NEWS  DEMO")
 	      " to display a view of a newsgroup with more than half a million posts; scroll around to see what's there.
-
 Start a SWANK server on port 5000 and try our "
 	      (pr 'button (:code (lambda () (repl))) "REPL") " "
 	      (tg (pbuf-new-tag stream :underline :single) "without any Emacs") 
-	      "! Evaluate some Lisp code (or some nonsense to invoke the SubText debugger)..." #\newline #\newline
+	      "! Evaluate some Lisp code (or some nonsense to invoke the SubText debugger)..." #\newline 
 	      (tg "small" "¹ Feel free to use C-x C-c to quit..." ))
 	(finish-output stream))
       )))
