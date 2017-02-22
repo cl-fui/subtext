@@ -2,7 +2,7 @@
 
 SubText is a Lispy, mostly-text-based user interface.
 
-Subtext 'entangles' CL code with arbitrary pieces of text, enabling simple, flexible, and familiar ad-hoc user interfaces (especially when combined with an Emacs-like key processing interface).
+SubText 'entangles' CL code with arbitrary pieces of text, enabling simple, flexible, and familiar ad-hoc user interfaces (especially when combined with an Emacs-like key processing interface).
 
 ## Demo and Screenshot
 
