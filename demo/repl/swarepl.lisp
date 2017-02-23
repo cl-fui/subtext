@@ -11,6 +11,7 @@
    (sldbs :accessor sldbs :initform (make-hash-table)) ; track debuggers by '
    (read-id :accessor read-id :initform 0) ;0=commandline, otherwise read-line
    (read-tag :accessor read-tag :initform 0) ;TODO: terminology?
+   (si :accessor si :initform nil) ;simple input
    )
   (:metaclass gobject-class))
 
@@ -23,6 +24,7 @@
 
 (defmethod initialize-instance :after ((pbuf swarepl) &key (port 5000))
   (print "initialize-instance: swarepl")
+  (setf (si pbuf) (make-instance 'simple-input :buffer pbuf))
   (setf *pbuf* pbuf);***
   ;;---------------------------------------------------------------------------
   ;; Associate presentations to this buffer
@@ -45,13 +47,13 @@
   (eli-def
    eli (kbd "Return")
    (lambda ()
-     (with-slots (swank read-id read-tag) pbuf
-       (let ((string (simple-input-get-text pbuf)))
+     (with-slots (swank read-id read-tag si) pbuf
+       (let ((string (simple-input-get-text si)))
 	 (if (zerop read-id)
 	     (let ((line (swarepl-parse-string string)))
 	       (when line
 		 ;; Convert entered text to 'entry presentation
-		 (simple-input-promise pbuf (make-instance 'p-entry ))
+		 (simple-input-promise si (make-instance 'p-entry ))
 		 (swa:eval swank line #'prompt-proc)))
 	     (progn; swank needs a newline!  A little ugly, but...
 	       (swa:emacs-return-string
@@ -83,14 +85,14 @@
     ;;---------------------------------------------
     ;; This can be called explicitly
       (defun prompt (swank)
-	(with-slots (read-id read-tag) pbuf
+	(with-slots (read-id read-tag si) pbuf
 	  (setf read-id 0
-	      read-tag 0))
-	
-	(with-tag ("prompt" pbuf)
-	  (fresh-line pbuf)
-	  (format pbuf "~A> " (swa:prompt swank)))
-	(simple-input-mark pbuf))
+		read-tag 0)
+	  
+	  (with-tag ("prompt" pbuf)
+	    (fresh-line pbuf)
+	    (format pbuf "~A> " (swa:prompt swank)))
+	  (simple-input-mark si)))
       ;;----------------------------------------------
       ;; Callback for any eval issued, called on reply
       ;; careful! callbacks are from another thread!
@@ -121,10 +123,10 @@
       ;; Input requested (read-line?).  Keep the id and tag in a range to return
       ;; later, when <enter> is processed.
       (defun sw-read-string (connection id tag)
-	(with-slots (read-id read-tag) pbuf
+	(with-slots (read-id read-tag si) pbuf
 	  (setf read-id id
 		read-tag tag))
-	(simple-input-mark pbuf))
+	(simple-input-mark si))
       
       
       ;; We shall keep the debuggers around in a hashtable, keyed by both thread

@@ -21,6 +21,7 @@
 	       (:file "src/eli/keymap")
 	       
 	       (:file "src/gtk/tb")
+	       (:file "src/gtk/simple-input")
 	       (:file "src/gtk/simplestream")
 	       (:file "src/gtk/echostream")
 	       (:file "src/gtk/termstream")

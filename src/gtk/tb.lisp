@@ -20,9 +20,10 @@
    (oldx   :accessor oldx   :initform 0   :type fixnum) ;insert-text position
 
    (old-mouse :accessor old-mouse :initform nil );old mouse presentation-lists
-   ;; promises subsystem... Really requires a stream 
+   ;; promises subsystem... 
    (promises     :accessor promises :initform nil)
-   )
+   (lbuf         :accessor lbuf   :initform (make-array 4096 :element-type 'character))
+   (index        :accessor index  :initform 0   :type fixnum))
   
   (:metaclass gobject-class))
 
@@ -128,9 +129,11 @@ for all newly introduced ones, call entering.  Return new."
 (defmethod -wipe  ((pbuf tb))
   (with-slots (anchor promises) pbuf
     (setf anchor   0
+	  index    0
 	  promises nil)))
 
 
+; should anyone use this class as a concrete class...
  
 (defun pbuf-tag-at-offsets (stream tag start end)
   (with-slots (iter iter1) stream
@@ -232,3 +235,37 @@ for all newly introduced ones, call entering.  Return new."
     (pbuf-new-tag pbuf :name "bg-bluish" :editable t;ni
 		  :background-rgba  (make-gdk-rgba :blue 1.0d0 :alpha 0.2d0) )))
 
+
+;;==============================================================================
+;; Stream support - cached write
+;;
+(defun pbuf-emit (pbuf char)
+  "Emit a character into the cache"
+  (declare (optimize (speed 3) (safety 0) (debug 0)))
+  (declare (type character char))
+  (with-slots (index lbuf) pbuf
+;;    (format t "~%Emitting ~C into ~A at ~A" char stream index)
+;;    (print (range:childest active-range))
+    (setf (schar lbuf index) char)
+    (incf (the fixnum index))
+    ;; In order to build detached range structures, widen the 'active range'
+    (when (> (the fixnum index) 4090);
+      (pbuf-flush pbuf))
+    char))
+;;--------------------------------------------------------------------------
+;;--------------------------------------------------------------------------
+(defun pbuf-flush (pbuf)
+  "Flush the cache if needed"
+  ;(declare (optimize (speed 3) (safety 0) (debug 3)))
+  (with-slots (iter index lbuf promises anchor) pbuf
+    (unless (zerop (the fixnum index))
+      (setf (schar lbuf (the fixnum index)) #\Nul ;terminate UTF8 lbuf
+	    index 0)
+      (%gtb-get-iter-at-offset pbuf iter anchor)
+      (%gtb-insert pbuf iter lbuf -1)
+      (when promises (promises-fulfill pbuf)))))
+
+(defun pbuf-position (pbuf)
+  (declare (optimize (speed 3) (safety 0) (debug 3)))
+  (the fixnum (+ (the fixnum (anchor pbuf))
+		 (the fixnum (index pbuf)))))
