@@ -75,7 +75,7 @@
     (eli-def
      eli (kbd "(")
      (lambda ()
-       (format t ">..~A ~A~&" parens pindex)
+      ; (format t ">..~A ~A~&" parens pindex)
        (prin pbuf (pr (aref parens pindex) ()  "()"))
        (incf pindex)
 

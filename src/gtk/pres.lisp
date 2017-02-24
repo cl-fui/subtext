@@ -130,7 +130,8 @@
        when (subtypep (type-of tag) 'ptag-base) do ;only care about ptags!
        ;; set iter to start of tag
 	 (%gtb-get-iter-at-offset stream iter (gti-offset xiter));iter at ptag
-	 (or (gti-begins-tag iter tag); either we start a tag
+	 ;(format t "~&BEGINS-TAG ~A: ~A~&" tag (gti-begins-tag iter tag))
+	 (or ;(gti-begins-tag iter tag); either we start a tag
 	     (gti-backward-to-tag-toggle iter tag)); or move back to start
 	 (let ((pres (find (mark-type tag) (gti-marks iter); find matching mark
 			   :test (lambda (key item)  (eq key (type-of item))))))
@@ -193,7 +194,9 @@
 	     (tag    ,pres) ,tag)
        (gttt-add (gtb-tag-table ,buffer) ,tag))))
 
-
+;;------------------------------------------------------------------------------
+;; Defining presentation classes
+;;
 ;; slots can be either slotnames, in which case we make an accessor and an
 ;; initform, or whatever you want inside ()...
 (defmacro defpres (classname direct-superclass slots )
