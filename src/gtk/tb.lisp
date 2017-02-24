@@ -4,7 +4,12 @@
 ;; We start with a gtk-text-buffer.  We add a position-tracking system for
 ;; pmarks. All inserts and deletes into the buffer cause transparent updates
 ;;
-;; Anchor is an offset into the buffer for streams, managed.
+;; Buffered streaming support is provided 
+;;
+;; Promise support provided as well (see promises.lisp)
+;;
+;; Since promises are offset-based, we are limited to a single stream (or
+;; cleanly serialized multiple streams) to keep the offsets from being mangled.
 ;;
 (in-package :subtext)
 
@@ -15,22 +20,19 @@
   ((iter   :accessor iter   :initform nil :type gtk-text-iter)
    (iter1  :accessor iter1  :initform nil :type gtk-text-iter)
    ;(root   :accessor root   :initform nil)
-   (anchor :accessor anchor :initform 0 :type fixnum)
+;;   (anchor :accessor anchor :initform 0 :type fixnum)
    ;; on-insert-text-before keeps insert start position prior to expansion
    (oldx   :accessor oldx   :initform 0   :type fixnum) ;insert-text position
 
    (old-mouse :accessor old-mouse :initform nil );old mouse presentation-lists
-   ;; promises subsystem... 
-   (promises     :accessor promises :initform nil)
-   (lbuf         :accessor lbuf   :initform (make-array 4096 :element-type 'character))
-   (index        :accessor index  :initform 0   :type fixnum))
+   )
   
   (:metaclass gobject-class))
 
 ;;------------------------------------------------------------------------------
 (defmethod initialize-instance :after ((buffer tb) &key )
   (print "initialize-instance: tb")
-  (with-slots (iter iter1 root anchor) buffer
+  (with-slots (iter iter1) buffer
     (setf iter   (gtb-get-start-iter buffer)
 	  iter1  (gtb-get-end-iter   buffer)
 	 ; root (make-instance 'pres )
@@ -61,12 +63,9 @@
   (let* ((offset (oldx buffer))
 	 (chars (- (the fixnum (gti-offset iter)) offset)))
     (declare (type fixnum offset chars))
-    (format t "on-insert-text-at (anchor ~A) ~A characters at ~A~&"
-	    (anchor buffer) chars offset )
+;;    (format t "on-insert-text-at (anchor ~A) ~A characters at ~A~&"   (anchor buffer) chars offset )
     ;; maintain a right-gravity anchor
-
-    (when (<= offset (the fixnum (anchor buffer)))
-      (incf (the fixnum (anchor buffer))  chars))
+;;    (when (<= offset (the fixnum (anchor buffer)))     (incf (the fixnum (anchor buffer))  chars))
 ;;    (mtree:widen  (mtree:at (mtree buffer) (oldx buffer))     chars)
 ))
 
@@ -76,12 +75,11 @@
   (let ((o1 (gti-get-offset  istart))
 	(o2 (gti-get-offset  iend)))
 
-    (when (<= o1 (the fixnum (anchor buffer)))
-      (decf (the fixnum (anchor buffer)) (- o2 o1))
-   ;;   (format t "~%deleting range: [~D ~D)~&" o1 o2)
-      )
-   ;; (range:narrow (range:at (root  buffer) o1) (- o2 o1))
-))
+;;  (when (<= o1 (the fixnum (anchor buffer)))   (decf (the fixnum (anchor buffer)) (- o2 o1)))
+	  ;;   (format t "~%deleting range: [~D ~D)~&" o1 o2)
+	  
+    ;; (range:narrow (range:at (root  buffer) o1) (- o2 o1))
+    ))
 
 (defmethod -on-announce-eli ((pbuf tb) eli)
   (eli-def eli (kbd "F1") (lambda () (bufstat pbuf))))
@@ -129,9 +127,8 @@ for all newly introduced ones, call entering.  Return new."
 
 
 (defmethod -wipe  ((pbuf tb))
-  (with-slots (anchor promises) pbuf
-    (setf anchor   0
-	  index    0
+  (with-slots (index promises) pbuf
+    (setf index    0
 	  promises nil)))
 
 
@@ -151,6 +148,9 @@ for all newly introduced ones, call entering.  Return new."
     (%gtb-get-iter-at-offset buffer iter  off )
     (%gtb-get-iter-at-offset buffer iter1 off1 )))
 
+(defun pbuf-iter-to-mark (pbuf mark)
+  (%gtb-get-iter-at-mark pbuf (iter pbuf) mark))
+
 (defun pbuf-bounds (buffer)
   (with-slots (iter iter1) buffer
     (%gtb-get-start-iter buffer iter )
@@ -160,7 +160,7 @@ for all newly introduced ones, call entering.  Return new."
   (gttt-lookup  (gtb-tag-table pbuf) tagname))
 
 (defmethod -wipe ((pbuf tb))
-  (with-slots (index iter iter1 promises anchor) pbuf
+  (with-slots (index iter iter1 promises) pbuf
     (pbuf-bounds pbuf)
     (gtb-remove-all-tags pbuf iter iter1)
     (%gtb-delete pbuf iter iter1)))
@@ -238,36 +238,3 @@ for all newly introduced ones, call entering.  Return new."
 		  :background-rgba  (make-gdk-rgba :blue 1.0d0 :alpha 0.2d0) )))
 
 
-;;==============================================================================
-;; Stream support - cached write
-;;
-(defun pbuf-emit (pbuf char)
-  "Emit a character into the cache"
-  (declare (optimize (speed 3) (safety 0) (debug 0)))
-  (declare (type character char))
-  (with-slots (index lbuf) pbuf
-;;    (format t "~%Emitting ~C into ~A at ~A" char stream index)
-;;    (print (range:childest active-range))
-    (setf (schar lbuf index) char)
-    (incf (the fixnum index))
-    ;; In order to build detached range structures, widen the 'active range'
-    (when (> (the fixnum index) 4090);
-      (pbuf-flush pbuf))
-    char))
-;;--------------------------------------------------------------------------
-;;--------------------------------------------------------------------------
-(defun pbuf-flush (pbuf)
-  "Flush the cache if needed"
-  ;(declare (optimize (speed 3) (safety 0) (debug 3)))
-  (with-slots (iter index lbuf promises anchor) pbuf
-    (unless (zerop (the fixnum index))
-      (setf (schar lbuf (the fixnum index)) #\Nul ;terminate UTF8 lbuf
-	    index 0)
-      (%gtb-get-iter-at-offset pbuf iter anchor)
-      (%gtb-insert pbuf iter lbuf -1)
-      (when promises (promises-fulfill pbuf)))))
-
-(defun pbuf-position (pbuf)
-  (declare (optimize (speed 3) (safety 0) (debug 3)))
-  (the fixnum (+ (the fixnum (anchor pbuf))
-		 (the fixnum (index pbuf)))))

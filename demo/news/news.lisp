@@ -29,7 +29,7 @@
 			  (length (edition-parts edition))))
 	      (format *echo* " posted by ")
 	      (with-tag ("prompt" *echo*) (princ (edition-poster edition) *echo*))
-	      (promises-fulfill *echo*)
+	      (promises-fulfill *echo*);todo: clean up
 	      ))
 	  (gtb-remove-tag out "grhigh" iter iter1))))
   t)
@@ -46,7 +46,7 @@
 	     (stream)
 	     ;;	   (ass  (format t "STANDARD OUTPUT?~A ~A ~&"*standard-output* *package*))
 	     (top (make-frame (make-window (make-rview
-					    (setf stream (make-instance 'termstream))))
+					    (setf stream (make-instance 'mark-out-stream))))
 			      :title "NNTP News Demo"
 			      :kill t)))
 	(pres-tag stream pedition (:foreground "LightBlue" :editable nil)  )

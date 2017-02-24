@@ -6,7 +6,7 @@
 ;;;=============================================================================
 ;;; Swank REPL buffer
 ;;;
-(defclass swarepl (termstream)
+(defclass swarepl (mark-out-stream)
   ((swank :initform nil :accessor swank) ;swank communication channel
    (sldbs :accessor sldbs :initform (make-hash-table)) ; track debuggers by '
    (read-id :accessor read-id :initform 0) ;0=commandline, otherwise read-line
@@ -92,6 +92,7 @@
 	  (with-tag ("prompt" pbuf)
 	    (fresh-line pbuf)
 	    (format pbuf "~A> " (swa:prompt swank)))
+	  (finish-output pbuf)
 	  (simple-input-mark si)))
       ;;----------------------------------------------
       ;; Callback for any eval issued, called on reply

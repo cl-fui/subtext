@@ -178,9 +178,9 @@
 ;;	   (prin-walk *pbuf* '("error" "hello" ("pres" " cruel") "world"))
 ;;	   (with-tag ("pres" *pbuf*) (princ "hello" *pbuf*)    (with-tag ("error" *pbuf*) (princ " cruel" *pbuf*))    (princ "world" *pbuf*))
 	   ;(print (promises *pbuf*))
-	   (promises-fulfill *pbuf*)
-      (gtk-widget-show-all top)
-      (-on-initial-display top))))
+	   (promises-fulfill *pbuf* *pbuf*)
+	   (gtk-widget-show-all top)
+	   (-on-initial-display top))))
 
 
 (defun crap ()

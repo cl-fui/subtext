@@ -24,7 +24,6 @@
 (defun simple-input-iters (stream)
   "set iters to start and end"
   (with-slots (buffer iter iter1 mark) stream
-    (pbuf-flush buffer)
     (%gtb-get-iter-at-mark buffer iter mark)
     (%gtb-get-end-iter buffer iter1))
   )
@@ -32,7 +31,6 @@
   ;; Keep a marker as start of input.
   "Set input mark to end of buffer after flushing."
   (with-slots (buffer iter mark) stream
-    (pbuf-flush buffer)
     (%gtb-get-end-iter buffer iter) ;in this case, really want an end iter!
     (%gtb-move-mark buffer mark iter)))
 

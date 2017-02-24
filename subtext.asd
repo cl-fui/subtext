@@ -22,6 +22,7 @@
 	       
 	       (:file "src/gtk/tb")
 	       (:file "src/gtk/simple-input")
+	       (:file "src/gtk/mark-out-stream")
 	       (:file "src/gtk/simplestream")
 	       (:file "src/gtk/echostream")
 	       (:file "src/gtk/termstream")

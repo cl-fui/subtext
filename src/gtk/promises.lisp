@@ -127,7 +127,7 @@
 ;; (print "---------------")
 ;;  ;; for each promise, fullfil it
 ;;  (print (root stream))
-  (with-slots (promises iter iter1) stream
+  (with-slots (promises) stream
     ;; reverse is important: ranges must fill left to right
     (loop for promise in (reverse promises) do
 ;;	 (print "-----------------")
