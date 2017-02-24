@@ -7,7 +7,7 @@
 ;;;=============================================================================
 ;;; Swank REPL buffer
 ;;;
-(defclass buflisp (termstream)
+(defclass buflisp (mark-out-stream)
   ((payload :accessor payload :initarg :payload)
    (parens  :accessor parens  :initform nil)
    (pindex  :accessor pindex  :initform 0))
@@ -58,8 +58,11 @@
      pbuf "notify::cursor-position"
      (lambda (gobject gparamspec)
        (format t "NOTIFY:CURPOS Setting pos at ~A~&" (gtb-cursor-position pbuf))
-       (setf (anchor pbuf)
-	     (gtb-cursor-position pbuf))
+       (with-slots (mark iter) pbuf
+	 (%gtb-get-iter-at-offset pbuf iter (gtb-cursor-position pbuf))
+	 (gtb-move-mark pbuf mark iter)
+
+	 )
 ) )
   
   (prin pbuf (pr 'p-unk () "  "))
