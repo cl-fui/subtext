@@ -5,35 +5,33 @@
 ;;
 
 (defclass eli ()
-  ((state  :accessor state
+  ((state  :accessor state :initform (make-array 20 :adjustable t :fill-pointer 0)
 	   :documentation "first= binding during search, rest are previous bindings")
-   (keymap :accessor keymap :initarg :keymap :initform (list nil))))
+   (keymap :accessor keymap :initarg :keymap :initform (make-instance 'keymap))))
 
 (defmethod initialize-instance :after ((eli eli) &key)
-  (eli-init-keynames);; global - keynames
-  (with-slots (state keymap) eli
-    (setf state (cons keymap nil)))
-  )
+  (eli-init-keynames))
+
 (defun eli-reset (eli)
-  (with-slots (state keymap) eli
-    (setf state (cons keymap nil))
-    ;(terpri *echo*)
+  (with-slots (state) eli
+    (setf (fill-pointer state) 0)
     t))
 
+(defun eli-error (eli &key (msg nil) (newline nil))
+  (eli-state-print eli *echo*)
+  (and newline (terpri *echo*))
+  (and msg (with-tag ("error" *echo*)  (princ msg *echo*)))
+  (eli-reset eli))
+
+
 (defun eli-state-print(eli stream)
-  (labels ((printer (state stream)
-	     (and (cdr state)
-		(printer (cdr state) stream))
-	   (and (car (car state))
-		(progn (key-write (car (car state)) stream)
-		       (write-char #\space stream)))))
-    (terpri stream)
-    (printer (state eli) stream)))
+  (terpri stream)
+  (keyseq-write (state eli) stream))
 
 (defun eli-active (eli)
   "Return t if eli is in the middle of a search"
-  (with-slots (keymap state) eli
-    (not (eq keymap (car state)))))
+  (format t "ELI-ACTIVE: ~A~&" (fill-pointer (state eli)))
+  (not (= 1 (fill-pointer (state eli)))))
 
 
 ;;
@@ -47,28 +45,26 @@
 
 (defun process-key (eli key event)
   "process a key with modifiers..."
-  (format t "ELI:PROCESSKEY  ~A~&" key )
   (with-slots (state keymap) eli
     (if (= key #x1000067); first, proces C-g
-	(progn (eli-reset eli) (format *echo* "~%Quit" ) t)
-	(let ((found (key-lookup (car state) key)))
-	  (if found
-	      (typecase (cdr found)
-		(function (eli-reset eli) ;reset search#
-			  (funcall (cdr found) ))
-		(cons (push found state)
-		      (eli-state-print eli *echo*)
-		      t))
-	      ;;not found...
-	      (if (eli-active eli)
-		  (progn
-		    (eli-state-print eli *echo*)
-		    (key-write key *echo*)
-		    (with-tag ("error" *echo*)
-		      (format *echo* " NOT BOUND"))
-		    (eli-reset eli))
-		  (progn
-		    nil)))))))
+	(eli-error eli :msg "Quit" :newline t)
+	;; First, append key and try to find the keyseq.
+	(progn
+	  (vector-push key state)
+	  (mvb (found partials) (keymap-find keymap state)
+	       (keymap-dump keymap)	  
+	       (if found
+		   (prog1 (funcall (cdr found))
+		     (eli-reset eli))
+		   ;;not found...
+		   (if (zerop partials); no chance of finding?
+		       (if (eli-active eli) ;if active, cancel
+			   (eli-error eli :msg " NOT BOUND")	;t
+			   (progn (eli-reset eli) nil));if inactive, pass it on
+		       ;; partials...
+		       (progn
+			 (eli-state-print eli *echo*)
+			 t))))))))
 
 (defun eli-gtk-key-press-event (eli event)
   "Process a gtk event; passed to GTK as a callback"
@@ -83,7 +79,7 @@
 
 (defun eli-def (eli keyseq data)
   "bind a keyseq in eli"
-  (key-def (keymap eli) keyseq data))
+  (keymap-def (keymap eli) keyseq data))
 
 
 

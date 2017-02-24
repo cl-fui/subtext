@@ -126,8 +126,11 @@
   (format stream "~{~A-~}~A" (key-mod-chars key) (key->keyname key)))
 
 (defun keyseq-write (keyseq stream)
-  (loop for key in keyseq do
-       (key-write key stream)))
+  (if (arrayp keyseq)
+      (loop for key across keyseq do
+	   (key-write key stream) (princ #\space stream))
+      (loop for key in keyseq do
+	   (key-write key stream) (princ #\space stream))))
 
 (defun gtkmods-subject (keyval gtkmods unshiftable)
   "subject keyval to gtkmods"
