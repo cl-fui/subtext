@@ -61,8 +61,10 @@
   (let* ((offset (oldx buffer))
 	 (chars (- (the fixnum (gti-offset iter)) offset)))
     (declare (type fixnum offset chars))
-;;      (format t "on-insert-text-at ~A characters at ~A~&" chars offset )
-    ;; maintain a right-gravity anchor 
+    (format t "on-insert-text-at (anchor ~A) ~A characters at ~A~&"
+	    (anchor buffer) chars offset )
+    ;; maintain a right-gravity anchor
+
     (when (<= offset (the fixnum (anchor buffer)))
       (incf (the fixnum (anchor buffer))  chars))
 ;;    (mtree:widen  (mtree:at (mtree buffer) (oldx buffer))     chars)

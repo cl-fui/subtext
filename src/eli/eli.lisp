@@ -30,7 +30,7 @@
 
 (defun eli-active (eli)
   "Return t if eli is in the middle of a search"
-  (format t "ELI-ACTIVE: ~A~&" (fill-pointer (state eli)))
+ ; (format t "ELI-ACTIVE: ~A~&" (fill-pointer (state eli)))
   (not (= 1 (fill-pointer (state eli)))))
 
 
@@ -52,7 +52,7 @@
 	(progn
 	  (vector-push key state)
 	  (mvb (found partials) (keymap-find keymap state)
-	       (keymap-dump keymap)	  
+	      ;; (keymap-dump keymap)	  
 	       (if found
 		   (prog1 (funcall (cdr found))
 		     (eli-reset eli))

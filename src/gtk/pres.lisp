@@ -179,23 +179,15 @@
 ;;
 ;; 
 ;;
-(defmacro defpres (classname direct-superclass slots )
-  "Create a presentation class and a tag class."
-  `(defclass ,classname ,direct-superclass
-     (,@slots
-      (out :accessor out :initform nil :allocation :class)
-      (tag :accessor tag :initform nil :allocation :class))
-     (:metaclass gobject-class))
-  )
-
 
 ;; Call this during buffer initialization, to create a matching tag
-(defmacro pres-tag (buffer class tag-options)
+(defmacro pres-tag (buffer class tag-options &optional (pres-options nil))
+  "in this buffer, associate a presentation with a realized tag."
   (let ((buf (gensym))
 	(pres (gensym))
 	(tag (gensym)))
     `(let ((,buf ,buffer)
-	   (,pres (make-instance ',class))
+	   (,pres (make-instance ',class ,@pres-options))
 	   (,tag  (make-instance 'ptag-base ,@tag-options :mark-type ',class)))
        (setf (out ,pres) ,buf
 	     (tag    ,pres) ,tag)
@@ -205,7 +197,7 @@
 ;; slots can be either slotnames, in which case we make an accessor and an
 ;; initform, or whatever you want inside ()...
 (defmacro defpres (classname direct-superclass slots )
-  "Create a presentation class and a tag class."
+  "Define a presentation class."
   (let ((newslots
 	 (loop for slot in slots
 	    collect

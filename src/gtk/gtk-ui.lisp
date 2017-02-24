@@ -64,17 +64,15 @@
     (setf *package* package)
     (let ((*standard-output* stdout)
 	  (*package* package)
-	  (buffer (make-instance 'termstream)))
+	  (buffer (make-instance 'buflisp))) ;in test.lisp
       (setf *pbuf* buffer)
       (let ((top (make-frame (make-window (setf *top* (make-rview buffer)))
 			     :kill t))
 	    r)
 	(gtk-widget-show-all top)
-	(pres-tag buffer p5 (:foreground "yellow"))
-	(pres-tag buffer p3 (:foreground "green"))
-	(pres-tag buffer p4 (:foreground "blue"))
-	
 	(format buffer "SHOWING~&")
+	(prin buffer "hello " (pr 'ps00 () "p0..." (pr 'ps01 () "p1...") "p0 again"
+				  (pr 'ps02 () ".2.." (pr 'ps03 () "3/")) "and 0") "---")
 	;;	(with-range buffer (range:make)	  (format buffer "hello~&"))
 #||
 	(let ((stream buffer))
