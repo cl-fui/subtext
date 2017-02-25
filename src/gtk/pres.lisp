@@ -30,22 +30,13 @@
 ;; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ;; Q: Why is there a 'tag' slot in the presentation classes?
 ;; A: To clarify, the slot is in the _class_, not instances.  Each presentation
-;;    class holds the single tag that establishes bounds for instances. The
-;;    other slots in the class, are buffer and tagdesc.
+;;    class holds the single tag that establishes bounds for instances. 
 ;; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-;; Q: What's the deal with tagdesc?  How is it different from tag?
-;; A: The presentation is defined before the buffer is instantiated.  However
-;;    it relies on tags which need to be connected to a live buffer.  So we
-;;    keep track of what kind of a tag the presentation needs by storing the
-;;    tag instantiation parameters (the keyword list sent to make-instance
-;;    'ptag...) in tagdesc, in the presentation _class_.  Later, after the
-;;    buffer is established, the tag is actually created using tagdesc, and
-;;    attached to the presentation _class_ .  When we work with presentations
-;;    they will have access to the tag in the buffer.
 ;;
+;; Order of tags is important: older tags will visually disappear under newer
+;; tags in some cases!
 ;;
-;; create presentation classes after the buffer exists
-;;
+;; 
 
 ;;------------------------------------------------------------------------------
 ;; Create a tag-derived class that will be a base class for all presentation
