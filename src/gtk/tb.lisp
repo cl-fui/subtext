@@ -149,8 +149,14 @@ for all newly introduced ones, call entering.  Return new."
     (%gtb-get-iter-at-offset buffer iter1 off1 )))
 
 (defun pbuf-iter-to-mark (pbuf mark)
-  (%gtb-get-iter-at-mark pbuf (iter pbuf) mark))
+  (with-slots (iter) pbuf
+    (%gtb-get-iter-at-mark pbuf iter mark)
+    iter))
 
+(defun pbuf-iter-to-cursor (pbuf)
+  (with-slots (iter) pbuf
+    (%gtb-get-iter-at-offset pbuf iter (gtb-cursor-position pbuf))
+    iter))
 (defun pbuf-bounds (buffer)
   (with-slots (iter iter1) buffer
     (%gtb-get-start-iter buffer iter )
@@ -238,3 +244,23 @@ for all newly introduced ones, call entering.  Return new."
 		  :background-rgba  (make-gdk-rgba :blue 1.0d0 :alpha 0.2d0) )))
 
 
+
+
+;; TODO: wrong place, but...
+  ;;---------------------------------------------------------------------------
+;; key processing...  Search every presentation's keymap.
+;; specific to most generic.  Return what we find.
+(defmethod -on-keyseq ((pbuf tb) keyseq)
+  "return (values found partials)"
+  (with-slots (iter) pbuf
+    (pbuf-iter-to-cursor pbuf)
+    (format t "test:on-keyseq~%~A " keyseq)
+    (let ((partials 0))
+      (values
+       (do-pres-at ;search every presentation, keeping track of partials
+	   pbuf iter
+	   (lambda (pres)			; (format t "ON_KEYSEQ in tst: ~A ~A" pres keyseq)
+	     (mvb (f p) (keymap-find (keymap pres) keyseq partials)
+		  (setf partials p)
+		  f)))
+       partials))))

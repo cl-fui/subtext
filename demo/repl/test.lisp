@@ -1,15 +1,21 @@
 (in-package :subtext)
 
-;; parent of all sexp
-(defpres psexp (pres) (payload))
+(defpres kpres (pres)
+  ((keymap :accessor keymap :initform nil :allocation :class))
+  )
+
+
+
+;; parent 
+(defpres pnormal (pres) ())
+(defpres psexp (kpres) (payload))
 
 ;;OK (ql:quickload :stext)(in-package :stext)
 ;;;=============================================================================
 ;;; Swank REPL buffer
 ;;;
 (defclass buflisp (mark-out-stream)
-  ((payload :accessor payload :initarg :payload)
-   (parens  :accessor parens  :initform nil)
+  ((parens  :accessor parens  :initform nil)
    (pindex  :accessor pindex  :initform 0))
   
   (:metaclass gobject-class))
@@ -54,20 +60,25 @@
   
   (pres-tag pbuf p-unk   (:foreground "yellow" :editable t) (:left-gravity t))
   (pres-tag pbuf p-atom  (:foreground "green" :editable t) )
+
+  ;;TODO: fix this clumsy shit.  Should set class slot directly; how?
+  (let ((temp (make-instance 'kpres)))
+    (keymap-def (keymap temp) (kbd "C-x C-c") (lambda () (format t "YESSSSSS!!!!~&")) )
+    (format t "FUCK ~A" (keymap temp)))
+  
   (g-signal-connect
      pbuf "notify::cursor-position"
      (lambda (gobject gparamspec)
-       (format t "NOTIFY:CURPOS Setting pos at ~A~&" (gtb-cursor-position pbuf))
+       (terpri *standard-output*)
+     ;  (format t "NOTIFY:CURPOS Setting pos at ~A~&" (gtb-cursor-position pbuf))
        (with-slots (mark iter) pbuf
-	 (%gtb-get-iter-at-offset pbuf iter (gtb-cursor-position pbuf))
+	 (pbuf-iter-to-cursor pbuf)
 	 (gtb-move-mark pbuf mark iter)
-
-	 )
-) )
-  
+	;; (bufstat pbuf)
+))) 
   (prin pbuf (pr 'p-unk () "  "))
 )
-  ;;---------------------------------------------------------------------------
+
 
 (defmethod -on-announce-eli :after ((pbuf buflisp) eli)
   (print "on-announce-eli")
@@ -75,7 +86,8 @@
     (eli-def
      eli (kbd "(")
      (lambda ()
-      ; (format t ">..~A ~A~&" parens pindex)
+					; (format t ">..~A ~A~&" parens pindex)
+   
        (prin pbuf (pr (aref parens pindex) ()  "()"))
        (incf pindex)
 
@@ -100,10 +112,16 @@
     (setf *standard-output* stdout); Why can't I just bind it?
     (let* ((*standard-output* stdout)
 	   (*package* package)			;re-enable output
-	   (top (make-frame (make-window (make-rview (make-instance 'buflisp))) 
+	   (buffer(make-instance 'buflisp))
+	   (top (make-frame (make-window (make-rview buffer)) 
 			    :kill t)))
      
-
       (gtk-widget-show-all top)
-      (-on-initial-display top))))
+      (-on-initial-display top)
+      
+      (format buffer "SHOWING~&")
+      (prin buffer "hello " (pr 'ps00 () "p0..." (pr 'ps01 () "p1...") "p0 again"
+				(pr 'ps02 () ".2.." (pr 'ps03 () "3/")) "and 0") "---")
+))
+  )
 ()

@@ -43,7 +43,7 @@
     pbuf))
 
 (defmethod -on-announce-eli :after ((pbuf swarepl) eli)
-  (print "on-announce-eli")
+  (print "!!!!!!on-announce-eli")
   (eli-def
    eli (kbd "Return")
    (lambda ()
@@ -126,8 +126,8 @@
       (defun sw-read-string (connection id tag)
 	(with-slots (read-id read-tag si) pbuf
 	  (setf read-id id
-		read-tag tag))
-	(simple-input-mark si))
+		read-tag tag)
+	  (simple-input-mark si)))
       
       
       ;; We shall keep the debuggers around in a hashtable, keyed by both thread

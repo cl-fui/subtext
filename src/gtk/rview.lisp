@@ -21,6 +21,13 @@
 (defmacro make-rview (buffer &rest rest)
   `(make-instance 'rview :buffer ,buffer ,@rest))
 
+(defun rview-key (rview key)
+  "process a key..."
+  (unless (eli-key-initial rview key)
+    ;; (format t "RVIEW: FOUND ~A ~A~&" found partials)
+    (mvb (found partials) (-on-keyseq (gtv-buffer rview) (state rview))
+	 (eli-process rview found partials)))  )
+
 (defmethod initialize-instance :after ((rview rview) &key (widget-defaults t))
   (let ((pkg *package*))
     (and widget-defaults (widget-defaults rview))		; see gtk-ui.lisp
@@ -30,8 +37,27 @@
     ;; Key press.
     ;; Handle via eli.  Eli may just return nil which we shall pass to GTK
     ;; to use default processing in the buffer.
-    (g-signal-connect rview "key-press-event" #'eli-gtk-key-press-event)
-
+    (g-signal-connect
+     rview "key-press-event" ;#'eli-gtk-key-press-event
+     (lambda (view event)
+       (let ((gtkkey (gdk-event-key-keyval event)))
+	  (unless (key-is-modifier gtkkey) ; if modifier, let gtk handle it!
+	    (rview-key rview (key-make
+			gtkkey (gdk-event-key-state event)))))))
+    ;;----------------------------------------------------------------------
+    ;; Button press.
+    ;; Treated as a key; convert to "Mouse-1" etc.. and report via eli
+    (g-signal-connect
+     rview "button-press-event" ;TODO: check widget
+     (lambda (view event)
+       (let ((*package* pkg) )
+	 ;;(print event)
+	 ;; syntesize a key event from button press
+	 (mvb (w x y mod) (gdk-window-get-pointer  (gtk-widget-window view))
+	      (setf (x view) x
+		    (y view) y)
+	      (let ((key (+ #xFEE8 (gdk-event-button-button event))))
+		(rview-key rview key))))))
  #||   (g-signal-connect
      rview "drag-motion"
      (lambda (widget context x y time)
@@ -54,20 +80,7 @@
 	   (when (/= last-motion-off (gti-offset iter)); interesting?
 	     (setf last-motion-off (gti-offset iter))
 	     (-on-motion buffer iter event))))))
-    ;;----------------------------------------------------------------------
-    ;; Button press.
-    ;; Treated as a key; convert to "Mouse-1" etc.. and report via eli
-    (g-signal-connect
-     rview "button-press-event" ;TODO: check widget
-     (lambda (view event)
-       (let ((*package* pkg) )
-	 ;;(print event)
-	 ;; syntesize a key event from button press
-	 (mvb (w x y mod) (gdk-window-get-pointer  (gtk-widget-window view))
-	      (setf (x view) x
-		    (y view) y)
-	      (let ((key (+ #xFEE8 (gdk-event-button-button event))))
-		(process-key view (gtkmods-subject key mod nil) event))))))))
+   ))
 
 
 ;; pass some messages to buffer

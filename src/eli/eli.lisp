@@ -1,27 +1,28 @@
 (in-package :subtext)
 ;;
-;; eli is a state machine for processing keys.  Every character that comes in
-;; may push a new state (which is a pointer into the keymap)
-;;
+
+
+
 
 (defclass eli ()
-  ((state  :accessor state :initform (make-array 20 :adjustable t :fill-pointer 0)
+  ((keymap :accessor keymap :initform nil)
+   (state  :accessor state :initform (make-array 20 :adjustable t :fill-pointer 0)
 	   :documentation "first= binding during search, rest are previous bindings")
-   (keymap :accessor keymap :initarg :keymap :initform (make-instance 'keymap))))
+  ))
 
 (defmethod initialize-instance :after ((eli eli) &key)
   (eli-init-keynames))
 
-(defun eli-reset (eli)
+(defun eli-reset (eli ret)
   (with-slots (state) eli
     (setf (fill-pointer state) 0)
-    t))
+    ret))
 
 (defun eli-error (eli &key (msg nil) (newline nil))
   (eli-state-print eli *echo*)
   (and newline (terpri *echo*))
   (and msg (with-tag ("error" *echo*)  (princ msg *echo*)))
-  (eli-reset eli))
+  (eli-reset eli t))
 
 
 (defun eli-state-print(eli stream)
@@ -33,49 +34,33 @@
  ; (format t "ELI-ACTIVE: ~A~&" (fill-pointer (state eli)))
   (not (= 1 (fill-pointer (state eli)))))
 
-
-;;
-;; active  found
-;;   0       0      pass on
-;;   0       1      eli
-;;   1       0      cancel
-;;   1       1      eli
-
-;;todo: immediate keys
-
-(defun process-key (eli key event)
-  "process a key with modifiers..."
-  (with-slots (state keymap) eli
+(defun eli-key-initial (eli key)
+  "Initial processing of a key.  Return T if processed, or nil to continue"
+  (with-slots (state) eli
     (if (= key #x1000067); first, proces C-g
 	(eli-error eli :msg "Quit" :newline t)
-	;; First, append key and try to find the keyseq.
-	(progn
-	  (vector-push key state)
-	  (mvb (found partials) (keymap-find keymap state)
-	      ;; (keymap-dump keymap)	  
-	       (if found
-		   (prog1 (funcall (cdr found))
-		     (eli-reset eli))
-		   ;;not found...
-		   (if (zerop partials); no chance of finding?
-		       (if (eli-active eli) ;if active, cancel
-			   (eli-error eli :msg " NOT BOUND")	;t
-			   (progn (eli-reset eli) nil));if inactive, pass it on
-		       ;; partials...
-		       (progn
-			 (eli-state-print eli *echo*)
-			 t))))))))
+	(prog0 (vector-push key state)))))
 
-(defun eli-gtk-key-press-event (eli event)
-  "Process a gtk event; passed to GTK as a callback"
-  (let ((gtkkey (gdk-event-key-keyval event)))
-    (unless (key-is-modifier gtkkey)	; if modifier, let gtk handle it!
-      (let ((key (key-make gtkkey (gdk-event-key-state event))))
-	(process-key eli key event) ))) )
+(defun eli-process (eli found partials)
+  "process a found binding"
+  ;; make a last, desperate attempt to find a binding here in eli's
+  ;; last resort keymap...
+  (unless found
+    (multiple-value-setq (found partials)
+      (keymap-find (keymap eli) (state eli) partials)))
 
-(defun eli-find (eli keyseq)
-  "find a keyseq in this eli"
-  (key-find (keymap eli) keyseq))
+  (format t "ELI-PROCESS: found ~A ~A~&" found partials)
+  (if found
+      (eli-reset eli (funcall (cdr found)))
+      (if (zerop partials)
+	  (if (eli-active eli)
+	      (eli-error eli :msg " NOT BOUND")
+	      (eli-reset eli nil))
+	  (progn
+	    (eli-state-print eli *echo*) t); some partials.  Eat key and continue
+	  )))
+
+
 
 (defun eli-def (eli keyseq data)
   "bind a keyseq in eli"
