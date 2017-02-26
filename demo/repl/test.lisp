@@ -1,10 +1,10 @@
 (in-package :subtext)
 
+;; Key-binding presentations - contain a class slot with
+;; bindings.
 (defpres kpres (pres)
-  ((keymap :accessor keymap :initform nil :allocation :class))
+  ((keymap :accessor keymap :initform nil))
   )
-
-
 
 ;; parent 
 (defpres pnormal (pres) ())
@@ -19,6 +19,8 @@
    (pindex  :accessor pindex  :initform 0))
   
   (:metaclass gobject-class))
+
+(print (find-class 'buflisp))
 
 ;;==============================================================================
 ;; Define presentation types.  ps are for parenthesized sexps
@@ -60,9 +62,13 @@
   
   (pres-tag pbuf p-unk   (:foreground "yellow" :editable t) (:left-gravity t))
   (pres-tag pbuf p-atom  (:foreground "green" :editable t) )
-
-  ;;TODO: fix this clumsy shit.  Should set class slot directly; how?
+  ;;----------------------------------------------------------------------------
+  ;; I must apologize for the clumsiness, but presentations are derived from
+  ;; a gobject class, and closer-mp:class-prototype fails here (is it portable?)
+  ;; Anyway, yes, create an instance for the sole purpose of filling its class
+  ;; keymap slot.
   (let ((temp (make-instance 'kpres)))
+    (clrf (keymap temp))
     (keymap-def (keymap temp) (kbd "C-x C-c") (lambda () (format t "YESSSSSS!!!!~&")) )
     (format t "FUCK ~A" (keymap temp)))
   

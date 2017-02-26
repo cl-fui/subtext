@@ -195,6 +195,7 @@
 ;;
 ;; slots can be either slotnames, in which case we make an accessor and an
 ;; initform, or whatever you want inside ()...
+;;
 (defmacro defpres (classname direct-superclass slots )
   "Define a presentation class."
   (let ((newslots
@@ -210,3 +211,39 @@
 	(tag :accessor tag :initform nil :allocation :class))
        (:metaclass gobject-class)))
   )
+
+;;------------------------------------------------------------------------------
+;; Keymapping subtexts
+;; A little more complicated, since we want a keymap for a class of subtexts.
+;; Unfortunately, :allocation :class does not work, since derived classes wind
+;; up sharing the same slot!
+;;
+;; So we have to create a unique keymap, and an accessor specialized on the
+;; subtext type.
+;;
+(defmacro defst (classname direct-superclass slots )
+  "Define a presentation class."
+  (let ((newslots
+	 (loop for slot in slots
+	    collect
+	      (typecase slot
+		(symbol (let ((keyname (intern (string-upcase slot) :keyword)))
+			  `(,slot :accessor ,slot :initarg ,keyname )) )
+		(t slot)))))
+    `(defclass ,classname ,direct-superclass
+       (,@newslots
+	(out :accessor out :initform nil :allocation :class)
+	(tag :accessor tag :initform nil :allocation :class))
+       (:metaclass gobject-class)))
+  )
+(defmacro defstk(classname direct-superclass slots)
+  (let ((keymap-sym ;classname is 'name, which comes in as (quote name)
+	 (intern (concatenate 'string "KEYMAP-" (symbol-name classname)))))
+    `(progn (defst ,classname ,direct-superclass ,slots)
+	    (defparameter ,keymap-sym nil)
+	    (defmethod keymap ((subtext ,classname)) ,keymap-sym)
+	    ))
+  )
+
+
+

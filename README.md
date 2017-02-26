@@ -2,7 +2,7 @@
 
 SubText is a Lispy, mostly-text-based user interface. 
 
-SubText 'entangles' CL code with arbitrary pieces of text, enabling simple, flexible, and familiar ad-hoc user interfaces (combined with an Emacs-inspired keyboard interface).  The entangled text/code entities (referred to as 'presentations') can bind keys, modify text, or run arbitrary code.
+SubText 'entangles' CL code with arbitrary pieces of text, enabling simple, flexible, and familiar ad-hoc user interfaces (combined with an Emacs-inspired keyboard interface).  The entangled text/code entities (referred to as 'subtexts') can bind keys, modify text, or run arbitrary code.
 
 
 ## Demo and Screenshot
@@ -17,13 +17,13 @@ Fluid, loosey-goosey editable text augmented with code makes for very flexible a
 
 ## What's it like to work with it?
 
-SubText is built on top of GTK.  GTK text buffers already feature MARKS (locations in text that are preserved across edits) and TAGS (ranges of text with certain attributes).  SubText adds the concept of a presentation (not to be confused with CLIM presentations), a piece of tagged text bound to a Common Lisp object.
+SubText is built on top of GTK.  GTK text buffers already feature MARKS (locations in text that are preserved across edits) and TAGS (ranges of text with certain attributes).  Now we add the idea of a subtext, a piece of tagged text bound to a CLOS object.
 
-Presentations can be placed inside other presentations, bind keys, respond to mouse interaction and other user input at an incredibly fine level.  Alternatively, the class hierarchy of presentations - as well as physical position of instances inside other instances on the screen - can provide useful defaults. 
+Subtexts can be output to a stream, placed inside other subtexts, bind keys, and respond to user input at an incredibly fine level.  Alternatively, the class hierarchy of presentations - as well as physical position of instances inside other instances on the screen - can provide useful defaults. 
 
-Presentations may also programmatically alter the look or the content of the text they control, providing feedback, displaying up-to-date information.
+Subtexts may also programmatically alter the look or the content of the text they control, providing feedback, displaying up-to-date information.
 
-The buffer looks like a stream, so printing mostly works like it always does.  A [utility function `prin`](https://github.com/stacksmith/subtext/wiki/PRIN) is provided for bulk output of tagged text:
+The GTK buffer looks like a stream, so printing mostly works like it always does.  A [utility function `prin`](https://github.com/stacksmith/subtext/wiki/PRIN) is provided for bulk output of tagged text:
 
 ```lisp
 (prin out "Hello " (tg blue "Cruel ") "world")

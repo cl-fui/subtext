@@ -1,5 +1,11 @@
 (in-package :subtext)
 
+(defmacro clrf (&rest rest)
+  (let ((list
+	 (loop for item in rest
+	    collect item collect nil)))
+    `(setf ,@list)))
+
 (defun make-synonym (old newname &key (package (symbol-package old)) (overwrite nil))
   "make a synonym for old symbol using newname, optionally in a different package.
  Functions only."
