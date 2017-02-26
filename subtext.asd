@@ -26,7 +26,7 @@
 	       (:file "src/gtk/simplestream")
 	       (:file "src/gtk/echostream")
 	       (:file "src/gtk/termstream")
-	       (:file "src/gtk/pres")
+	       (:file "src/gtk/context")
 	       (:file "src/gtk/promises")
 	       
 	       (:file "src/gtk/prin")
