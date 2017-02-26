@@ -1,88 +1,96 @@
 (in-package :subtext)
 
 (defcontext pnormal (ctx) ())
-(defcontext psexp (ctx) (payload) :keymap t)
+
+(defcontext psexp (ctx)  (payload))
+(defkeymap psexp)
+;(defparameter keymap-psexp nil)
+;(defmethod keymap ((it psexp))  keymap-psexp)
+;; TODO: obviously, there should be a way to programmatically create context
+;; classes!  What does it entail?  It's harder than it seems, as defclass does
+;; weird things at weird times...
 
 ;;OK (ql:quickload :stext)(in-package :stext)
-;;;=============================================================================
-;;; Swank REPL buffer
-;;;
-(defclass buflisp (mark-out-stream)
-  ((level   :accessor level   :initform nil)
-   (parens  :accessor parens  :initform nil)
-   (pindex  :accessor pindex  :initform 0))
-  
-  (:metaclass gobject-class))
 
-(print (find-class 'buflisp))
+
 
 ;;==============================================================================
-;; Define presentation types.  ps are for parenthesized sexps
-(defcontext ps00 (psexp) (payload))
-(defcontext ps01 (psexp) (payload))
-(defcontext ps02 (psexp) (payload))
-(defcontext ps03 (psexp) (payload))
-(defcontext ps04 (psexp) (payload))
-(defcontext ps05 (psexp) (payload))
-(defcontext ps06 (psexp) (payload))
-(defcontext ps07 (psexp) (payload))
-(defcontext ps08 (psexp) (payload))
-(defcontext ps09 (psexp) (payload))
+;; Define 30 context types for  parenthesized sexp levels...
+(defmacro def-numbered-level (number)
+  (let* ((num number)
+	 (classname (intern (format nil "PS~A" num))))
+    `(defcontext ,classname (psexp) ((level :accessor level :initform ,num :allocation :class)))))
+
+
+(print (loop for i from 0 to 29 collect ( eval `(def-numbered-level ,i))))
+
+ 
 
 (defcontext p-atom (ctx) (payload))
 (defcontext p-unk  (ctx) (payload))
 
+;;;=============================================================================
+;;;
+(defclass buflisp (mark-out-stream)
+  ((level   :accessor level   :initform (make-array 30)) ;contains classes
+   (pindex  :accessor pindex  :initform 0))
+  (:metaclass gobject-class))
+
 (defmethod initialize-instance :after ((pbuf buflisp) &key )
   (print "initialize-instance: buflisp")
   (setf *pbuf* pbuf);***
-  ;; for now keep array of paren symbols.
-  (setf (parens pbuf)
-	(make-array 10 :initial-contents
-		    '(ps00 ps01 ps02 ps03 ps04 ps05 ps06 ps07 ps08 ps09)))
-	;;---------------------------------------------------------------------------
-	;; Associate presentations to this buffer.  Priority is important!
+  ;; for now keep array of sexp classes.  Some deep magic requires
+  ;; eval to be involved here... I wish I understood this better.
+  (setf (level pbuf)
+	(make-array 30 :initial-contents
+		    (loop for i from 0 to 29
+		       collect (eval `(def-numbered-level ,i)))))
+  ;;---------------------------------------------------------------------------
+  ;; Associate presentations to this buffer.  Priority is important!
+
   (pbuf-new-tag pbuf :name "normal"  :foreground "AntiqueWhite1" :editable t)
-  
-  (context-tag pbuf ps00  (:foreground "#FFCC33" :editable t) )
-  (context-tag pbuf ps01  (:foreground "#CCFF33" :editable t) )
-  (context-tag pbuf ps02  (:foreground "#33FF66" :editable t) )
-  (context-tag pbuf ps03  (:foreground "#FF6633" :editable t) )
-  (context-tag pbuf ps04  (:foreground "#33FFCC" :editable t) )
-  (context-tag pbuf ps05  (:foreground "#FF3366" :editable t) )
-  (context-tag pbuf ps06  (:foreground "#33CCFF" :editable t) )
-  (context-tag pbuf ps07  (:foreground "#FF33CC" :editable t) )
-  (context-tag pbuf ps08  (:foreground "#CC33FF" :editable t) )
-  (context-tag pbuf ps09  (:foreground "#3366FF" :editable t) )
-  
-  (context-tag pbuf p-unk   (:foreground "yellow" :editable t) (:left-gravity t))
+
+  (let ((colors
+	 (make-array 10 :initial-contents
+		     '("#FFCC33" "#CCFF33" "#FF6633" "#33FFCC" "#FF3366"
+		       "#33CCFF" "#FF33CC" "#CC33FF" "#3366FF" "#FFCC33" ))))
+    (loop for i from 0 to 29
+       for color = (aref colors (mod i 10))
+       for classname = (class-name (aref (level pbuf) i))
+       do(print (eval `(context-tag ,pbuf ,classname (:foreground ,color))))))
+  ;  (context-tag pbuf ps29  (:foreground "#3366FF" :editable t) )
+  ;; Technically, the following will never overlap, and therefore, priority should
+  ;; not matter...
   (context-tag pbuf p-atom  (:foreground "green" :editable t) )
+  (context-tag pbuf p-unk   (:foreground "yellow" :editable t) (:left-gravity t))
+ 
   ;;----------------------------------------------------------------------------
+
+
   (clrf keymap-psexp)
   (keymap-def keymap-psexp (kbd "C-x C-c") (lambda () (format t "YESSSSSS!!!!~&")) )
   
   (g-signal-connect
-     pbuf "notify::cursor-position"
-     (lambda (gobject gparamspec)
-       (terpri *standard-output*)
-     ;  (format t "NOTIFY:CURPOS Setting pos at ~A~&" (gtb-cursor-position pbuf))
-       (with-slots (mark iter) pbuf
-	 (pbuf-iter-to-cursor pbuf)
-	 (gtb-move-mark pbuf mark iter)
-	;; (bufstat pbuf)
-	 ))) 
-  (prin pbuf (pr 'p-unk () "  "))
-)
+   pbuf "notify::cursor-position"
+   (lambda (gobject gparamspec)
+     (terpri *standard-output*)
+					;  (format t "NOTIFY:CURPOS Setting pos at ~A~&" (gtb-cursor-position pbuf))
+     (with-slots (mark iter) pbuf
+       (pbuf-iter-to-cursor pbuf)
+       (gtb-move-mark pbuf mark iter)
+       ;; (bufstat pbuf)
+       ))) 
+  (prin pbuf (pr 'p-unk () "  ")))
+
 
 
 (defmethod -on-announce-eli :after ((pbuf buflisp) eli)
   (print "on-announce-eli")
-  (with-slots (pindex parens) pbuf
+  (with-slots (pindex level) pbuf
     (eli-def
      eli (kbd "(")
-     (lambda ()
-					; (format t ">..~A ~A~&" parens pindex)
-   
-       (prin pbuf (pr (aref parens pindex) ()  "()"))
+     (lambda (); (format t ">..~A ~A~&" parens pindex)
+       (prin pbuf (ctx (aref level pindex) ()  "()"))
        (incf pindex)
 
        t)))
@@ -114,8 +122,8 @@
       (-on-initial-display top)
       
       (format buffer "SHOWING~&")
-      (prin buffer "hello " (pr 'ps00 () "p0..." (pr 'ps01 () "p1...") "p0 again"
-				(pr 'ps02 () ".2.." (pr 'ps03 () "3/")) "and 0") "---")
+      (prin buffer "hello " (pr 'ps0 () "p0..." (pr 'ps1 () "p1...") "p0 again"
+				(pr 'ps2 () ".2.." (pr 'ps3 () "3/")) "and 0") "---")
 ))
   )
 ()

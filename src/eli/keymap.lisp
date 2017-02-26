@@ -21,7 +21,7 @@
 ;; match exists, the command must be canceled.
 (defun keymap-find (keymap keyseq &optional (partials 0))
   "try to find a binding for a keyseq.  If found, return binding; if not,
-return number of partial matches.  If no partials, return nil"
+increment the number of partial matches.  If no partials, return nil"
   (let ((len (length keyseq)))
     (labels
 	((findit (list keyseq)

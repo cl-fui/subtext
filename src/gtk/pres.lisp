@@ -173,14 +173,25 @@
   "in this buffer, associate a context with a realized tag."
   (let ((buf (gensym))
 	(ctx (gensym))
-	(tag (gensym)))
-    `(let ((,buf ,buffer)
-	   (,ctx (make-instance ',class ,@ctx-options))
-	   (,tag  (make-instance 'ptag-base ,@tag-options :mark-type ',class)))
+	(tag (gensym))
+	(cls (gensym)))
+    `(let* ((,buf ,buffer)
+	    (,cls ',class) ;evaluate once
+	    (,ctx (make-instance ,cls ,@ctx-options))
+	    (,tag  (make-instance 'ptag-base ,@tag-options :mark-type ,cls)))
        (setf (out ,ctx) ,buf
-	     (tag    ,ctx) ,tag)
+	     (tag  ,ctx) ,tag)
        (gttt-add (gtb-tag-table ,buffer) ,tag))))
 
+
+
+(defmacro defkeymap (classname)
+  (let ((keymap-sym 
+	 (intern (concatenate 'string "KEYMAP-" (symbol-name classname)))))
+    `(progn  (defparameter ,keymap-sym nil)
+	     (defmethod keymap ((context ,classname)) ,keymap-sym)))
+
+)
 ;;------------------------------------------------------------------------------
 ;; Defining context classes
 ;;
@@ -201,15 +212,17 @@
 	 (intern (concatenate 'string "KEYMAP-" (symbol-name name))))
 	(keystuff
 	 (and keymap
-	      `(progn (defparameter ,keymap-sym nil)
-		      (defmethod keymap ((context ,name)) ,keymap-sym)))))
-    `(progn
-       (defclass ,name ,direct-superclass
-	 (,@newslots
-	  (out :accessor out :initform nil :allocation :class)
-	  (tag :accessor tag :initform nil :allocation :class))
-	 (:metaclass gobject-class))
-       ,keystuff))
+	      `(progn  (defparameter ,keymap-sym nil)
+		       (defmethod keymap ((context ,name)) ,keymap-sym)))))
+    
+    `(eval-when (:compile-toplevel :load-toplevel :execute)
+       (prog1
+	   (defclass ,name ,direct-superclass
+	     (,@newslots
+	      (out :accessor out :initform nil :allocation :class)
+	      (tag :accessor tag :initform nil :allocation :class))
+	     (:metaclass gobject-class))
+	 ,keystuff)))
   )
 
 ;;------------------------------------------------------------------------------
