@@ -8,7 +8,8 @@
 ;;; Swank REPL buffer
 ;;;
 (defclass buflisp (mark-out-stream)
-  ((parens  :accessor parens  :initform nil)
+  ((level   :accessor level   :initform nil)
+   (parens  :accessor parens  :initform nil)
    (pindex  :accessor pindex  :initform 0))
   
   (:metaclass gobject-class))

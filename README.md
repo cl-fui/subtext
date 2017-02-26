@@ -2,11 +2,11 @@
 
 SubText is a Lispy, mostly-text-based user interface. 
 
-SubText 'entangles' CLOS objects with arbitrary pieces of text, enabling simple, flexible, and familiar ad-hoc user interfaces.  These entangled text/code entities (referred to as `'contexts'`) can bind keys, modify text, or run arbitrary code. 
+SubText 'entangles' CLOS objects with arbitrary pieces of text, enabling simple, flexible, and familiar ad-hoc user interfaces.  
 
-Contexts provide the setting for user interactions within the bounds of their range of text.  They can bind keys, accept mouse input, change the text at will, or even execute arbitrary code.  The class hierarchy of contexts, together with the runtime placement in other contexts provides useful defaults.
+These text/code entities (called `contexts`) provide the setting for user interaction within their bounds.  They can bind keys, visually modify their text, or execute arbitrary code.  The CLOS hierarchies, together with the runtime placement within other contexts, provide useful defaults.
 
-SubText provides the plumbing connecting the contexts to the GTK environment.
+SubText provides the plumbing connecting the contexts to the GTK environment and controls their interaction, largely by following the insertion point of the buffer and notifying the contexts involved.
 
 ## Demo and Screenshot
 
