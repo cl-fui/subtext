@@ -1,6 +1,6 @@
 (in-package :subtext)
 ;;TODO: this is kind of generic...
-(defpres button (pres) (code))
+(defcontext button (pres) (code))
 (defmethod -pres-on-button ((p button) button)
   (format t "Package ~A~&" *package*)
   (funcall (code p)))
@@ -40,7 +40,7 @@
 	     (lambda ();; (format t "~A ~A~&" (x eli) (y eli))
 	       (with-slots (x y) eli
 		 (let* ((iter (rview-iter-from-xy eli x y))
-			(presentations (presentations-at stream iter)))
+			(presentations (contexts-at stream iter)))
 		   (loop for pres in presentations
 		      until (-pres-on-button pres 1))))))
 	(eli-def eli (kbd "C-x C-c")
@@ -49,7 +49,7 @@
 			 (gtk-widget-destroy top)
 			 ))
 	
-	(pres-tag stream button (:foreground "DarkGoldenrod" :background "aquamarine" :editable nil)  )
+	(context-tag stream button (:foreground "DarkGoldenrod" :background "aquamarine" :editable nil)  )
 
 	(prin stream "Welcome to " (tg "bg-greenish" "SubText™") #\. #\newline
 	      "SubText is a Lispy, mostly-text-based user interface.

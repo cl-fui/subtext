@@ -15,10 +15,10 @@
 (defmethod initialize-instance :after ((sldb sldb) &key)
   (setf *pbuf* sldb);****
   ;; register presentation types with this buffer and tags
-  (pres-tag sldb pcondition (:foreground "plum" :editable nil))
-  (pres-tag sldb prestart   (:foreground "yellow" :editable nil))
-  (pres-tag sldb pframe     ())
-  (pres-tag sldb pframex    ())
+  (context-tag sldb pcondition (:foreground "plum" :editable nil))
+  (context-tag sldb prestart   (:foreground "yellow" :editable nil))
+  (context-tag sldb pframe     ())
+  (context-tag sldb pframex    ())
   
   
   (pbuf-new-tag sldb :name "grayish"     :foreground "gray"        :editable t)
@@ -40,7 +40,7 @@
 	     (lambda ();; (format t "~A ~A~&" (x eli) (y eli))
 	       (with-slots (x y) eli
 		 (let* ((iter (rview-iter-from-xy eli x y))
-			(presentations (presentations-at sldb iter)))
+			(presentations (contexts-at sldb iter)))
 		   (loop for pres in presentations
 		      until (-pres-on-button pres 1))))))
     (eli-def eli (kbd "q")
@@ -68,7 +68,7 @@
   (with-slots (eli conditio restarts frames continuations) out
  ;;   (format t "~A ~A ~A ~A~&" conditio restarts frames continuations)
     (with-tag ("enum" out) (format out "~A~&" (first conditio)))
-    (with-pres (pcondition) (format out "~A" (second conditio)))
+    (with-context (pcondition) (format out "~A" (second conditio)))
     (with-tag  ("label" out) (format out "~%Restarts:~&"))   
     (loop for restart in restarts
        for i from 0 do
@@ -104,14 +104,14 @@
 
 ;;===============================================================================
 ;;
-(defpres pcondition (pres) () )
+(defcontext pcondition (ctx) () )
 
 ;;===============================================================================
 ;; Restart
 ;;
 ;; Protocol: (RETRY "Retry SLIME REPL evaluation request.")
 ;;
-(defpres prestart (pres)
+(defcontext prestart (ctx)
   ((id :accessor id :initarg :id :initform 0)
    (info :accessor info :initarg :info :initform nil)))
 
@@ -125,7 +125,7 @@
 (defmethod  -pres-on-mouse ((pres prestart) flag)
   (with-slots (out) pres
     (with-slots (iter iter1) out
-      (pres-bounds out pres)
+      (context-bounds out pres)
       (if flag
 	  (gtb-apply-tag out "grhigh" iter iter1)
 	  (gtb-remove-tag out "grhigh" iter iter1)))))
@@ -141,14 +141,14 @@
 ;;
 ;; Exceptionally weird: starts out as a CR; when frame is pressed, it toggles.
 ;; between cr and a frame description obtained from the server.
-(defpres pframex (pres) (id))
+(defcontext pframex (ctx) (id))
 (defpresenter ((p pframex))
   (terpri (out p))) ;initial presentation is a lone CR!
 ;;
 ;; Note: it seems that tags have a right-gravity...
 ;;
 (defun pframex-toggle (stream pframex expanded)
-  (pres-bounds stream pframex)
+  (context-bounds stream pframex)
   (if expanded
       (with-slots (iter iter1) stream
 	(gti-backward-char iter1);leave the cr
@@ -165,7 +165,7 @@
 	     :proc
 	     (lambda (connection reply id)
 	       (gsafe
-		(pres-bounds stream pframex); it is much later, in lambda!
+		(context-bounds stream pframex); it is much later, in lambda!
 		(file-position stream (gti-offset (iter1 stream)))
 		(format t "TAG-FRAMEX ~A~&" (tag pframex))
 		(with-tag ((tag pframex) stream)
@@ -183,10 +183,10 @@
 	
 	t)))
 ;;===============================================================================
-;; frame
+;; 
 ;;
 ;; Protocol: (4 (SWANK-REPL::TRAC...) (RESTARTABLE T))
-(defpres pframe (pres)
+(defcontext pframe (ctx)
   (id desc restartable pframex (expanded :accessor expanded :initform nil)))
 
 (defpresenter ((p pframe))
@@ -207,7 +207,7 @@
 (defmethod  -pres-on-mouse ((pres pframe) flag)
   (with-slots (out) pres
     (with-slots (iter iter1) out
-      (pres-bounds out pres)
+      (context-bounds out pres)
       (if flag
 	  (gtb-apply-tag out "grhigh" iter iter1)
 	  (gtb-remove-tag out "grhigh" iter iter1)))))

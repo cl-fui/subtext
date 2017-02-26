@@ -36,21 +36,21 @@
 
 
 ;;;======================================
-(defpres p3 (pres) ())
-(defpres p4 (pres) ())
+(defcontext p3 (ctx) ())
+(defcontext p4 (ctx) ())
 (defmethod -pres-on-mouse ((pres p4) enterp)
   (with-slots (out) pres
-    (pres-bounds out pres)
+    (context-bounds out pres)
     (if enterp
 	(gtb-apply-tag out "bg-bluish" (iter out) (iter1 out) )
 	(gtb-remove-tag out "bg-bluish" (iter out) (iter1 out) ))))
 
-(defpres p5 (pres) ())
+(defcontext p5 (ctx) ())
 
 
 (defmethod -pres-on-mouse ((pres p5)  enterp)
   (with-slots (out) pres
-    (pres-bounds out pres)
+    (context-bounds out pres)
     (if enterp
 	(gtb-apply-tag out "bg-greenish" (iter out) (iter1 out) )
 	(gtb-remove-tag out "bg-greenish" (iter out) (iter1 out) ))))
@@ -152,7 +152,7 @@
       (gtk-widget-show-all window))))
 
 
-(defpres button (pres) (code))
+(defcontext button (ctx) (code))
 
 ;; A simple test for debugging eli
 (defun teli( &key (stdout *standard-output*) (package *package*))
@@ -168,7 +168,7 @@
 			    :kill t)))
            (setf *top* top)
 	   (eli-def *rview*  (kbd "C-x C-y") (lambda () (print "HELLO")))
-	   (pres-tag *pbuf* button (:foreground "DarkGoldenrod" :background "aquamarine" :editable nil)  )
+	   (context-tag *pbuf* button (:foreground "DarkGoldenrod" :background "aquamarine" :editable nil)  )
 
 	   (prin *pbuf* "Hello " (tg "error" "cruel") nil " Wrold" #\linefeed)
 	   (let ((p 'button))   (prin *pbuf* (pr p (:code (lambda () (format t "shid"))) "HOdamn")))
@@ -178,7 +178,7 @@
 ;;	   (prin-walk *pbuf* '("error" "hello" ("pres" " cruel") "world"))
 ;;	   (with-tag ("pres" *pbuf*) (princ "hello" *pbuf*)    (with-tag ("error" *pbuf*) (princ " cruel" *pbuf*))    (princ "world" *pbuf*))
 	   ;(print (promises *pbuf*))
-	   (promises-fulfill *pbuf* *pbuf*)
+	   (promises-fulfill *pbuf*)
 	   (gtk-widget-show-all top)
 	   (-on-initial-display top))))
 

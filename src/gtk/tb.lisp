@@ -57,7 +57,6 @@
 
 ;;
 (defun on-insert-text-after (buffer iter text len)
-  "update presentation bounds"
   (declare (ignore text len)
 	   (optimize (speed 2) (safety 0) (debug 0)))
   (let* ((offset (oldx buffer))
@@ -108,7 +107,7 @@ for all newly introduced ones, call entering.  Return new."
 (defmethod -on-motion ((tb tb) iter event)
   (with-slots (old-mouse) tb
     (setf old-mouse
-	  (presentations-on-motion tb old-mouse (presentations-at tb iter)))))
+	  (presentations-on-motion tb old-mouse (contexts-at tb iter)))))
 
 ;;===============================================================================
 ;; Mouse click handler
@@ -119,7 +118,7 @@ for all newly introduced ones, call entering.  Return new."
 
 (defmethod -on-button ((tb tb) iter event)
  ;; (print "ONBUG")
-  (let ((presentations (presentations-at tb iter))
+  (let ((presentations (contexts-at tb iter))
 	(times (gdk-event-get-click-count event))
 	(button (gdk-event-button-button event)))
     (loop for pres in presentations
@@ -198,7 +197,7 @@ for all newly introduced ones, call entering.  Return new."
 
       
       ;;(format t "~%Inside presentation: ~A" (gti-tags here))
-      (do-pres-at-off pbuf offset (lambda (pres)
+      (do-contexts-at-off pbuf offset (lambda (pres)
 				    (format t "~%Pres: ~A"pres)) )
 
       
@@ -257,7 +256,7 @@ for all newly introduced ones, call entering.  Return new."
     (format t "test:on-keyseq~%~A " keyseq)
     (let ((partials 0))
       (values
-       (do-pres-at ;search every presentation, keeping track of partials
+       (do-contexts-at ;search every presentation, keeping track of partials
 	   pbuf iter
 	   (lambda (pres)			; (format t "ON_KEYSEQ in tst: ~A ~A" pres keyseq)
 	     (mvb (f p) (keymap-find (keymap pres) keyseq partials)

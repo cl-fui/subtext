@@ -1,6 +1,6 @@
 (in-package :subtext)
 
-(defpres pedition (pres) 
+(defcontext pedition (ctx) 
   ((edition :accessor edition :initarg :edition)) )
 
 
@@ -16,7 +16,7 @@
 (defmethod  -pres-on-mouse ((pres pedition) flag)
   (with-slots (out) pres
     (with-slots (iter iter1) out
-      (pres-bounds out pres)
+      (context-bounds out pres)
       (if flag
 	  (progn
 	    (gtb-apply-tag  out "grhigh" iter iter1)
@@ -49,7 +49,7 @@
 					    (setf stream (make-instance 'mark-out-stream))))
 			      :title "NNTP News Demo"
 			      :kill t)))
-	(pres-tag stream pedition (:foreground "LightBlue" :editable nil)  )
+	(context-tag stream pedition (:foreground "LightBlue" :editable nil)  )
 	(pbuf-new-tag stream :name "incomplete"
 		      :foreground-rgba (gdk-rgba-parse "Black")
 		      :background-rgba (gdk-rgba-parse "Red"))

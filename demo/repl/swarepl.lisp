@@ -17,10 +17,10 @@
 
 ;;==============================================================================
 ;; Define presentation types
-(defpres p-entry (pres) ())
-(defpres p-pres (pres)
+(defcontext p-entry (ctx) ())
+(defcontext p-pres (ctx)
   ((id :accessor id :initarg :id)))
-(defpres p-input (pres) ())
+(defcontext p-input (ctx) ())
 
 (defmethod initialize-instance :after ((pbuf swarepl) &key (port 5000))
   (print "initialize-instance: swarepl")
@@ -28,9 +28,9 @@
   (setf *pbuf* pbuf);***
   ;;---------------------------------------------------------------------------
   ;; Associate presentations to this buffer
-  (pres-tag pbuf p-entry (:foreground "AntiqueWhite" :editable nil) )
-  (pres-tag pbuf p-pres  (:foreground "red" :editable nil));
-  (pres-tag pbuf p-input (:foreground "blue" :editable t))
+  (context-tag pbuf p-entry (:foreground "AntiqueWhite" :editable nil) )
+  (context-tag pbuf p-pres  (:foreground "red" :editable nil));
+  (context-tag pbuf p-input (:foreground "blue" :editable t))
 
   (g-signal-connect
      pbuf "notify::cursor-position"
@@ -52,7 +52,7 @@
 	 (if (zerop read-id)
 	     (let ((line (swarepl-parse-string string)))
 	       (when line
-		 ;; Convert entered text to 'entry presentation
+		 ;; Convert entered text to 'entry context
 		 (simple-input-promise si (make-instance 'p-entry ))
 		 (swa:eval swank line #'prompt-proc)))
 	     (progn; swank needs a newline!  A little ugly, but...

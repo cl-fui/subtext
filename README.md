@@ -2,8 +2,11 @@
 
 SubText is a Lispy, mostly-text-based user interface. 
 
-SubText 'entangles' CL code with arbitrary pieces of text, enabling simple, flexible, and familiar ad-hoc user interfaces (combined with an Emacs-inspired keyboard interface).  The entangled text/code entities (referred to as 'subtexts') can bind keys, modify text, or run arbitrary code.
+SubText 'entangles' CLOS objects with arbitrary pieces of text, enabling simple, flexible, and familiar ad-hoc user interfaces.  These entangled text/code entities (referred to as `'contexts'`) can bind keys, modify text, or run arbitrary code. 
 
+Contexts provide the setting for user interactions within the bounds of their range of text.  They can bind keys, accept mouse input, change the text at will, or even execute arbitrary code.  The class hierarchy of contexts, together with the runtime placement in other contexts provides useful defaults.
+
+SubText provides the plumbing connecting the contexts to the GTK environment.
 
 ## Demo and Screenshot
 
@@ -17,11 +20,11 @@ Fluid, loosey-goosey editable text augmented with code makes for very flexible a
 
 ## What's it like to work with it?
 
-SubText is built on top of GTK.  GTK text buffers already feature MARKS (locations in text that are preserved across edits) and TAGS (ranges of text with certain attributes).  Now we add the idea of a subtext, a piece of tagged text bound to a CLOS object.
+SubText is built on top of GTK.  GTK text buffers already feature MARKS (locations in text that are preserved across edits) and TAGS (ranges of text with certain attributes).  Now we add the idea of a context, a piece of tagged text bound to a CLOS object.
 
-Subtexts can be output to a stream, placed inside other subtexts, bind keys, and respond to user input at an incredibly fine level.  Alternatively, the class hierarchy of presentations - as well as physical position of instances inside other instances on the screen - can provide useful defaults. 
+Contexts can be output to a stream, placed inside other subtexts, bind keys, and respond to user input at an incredibly fine level.  Alternatively, the class hierarchy of contexts - as well as physical position of instances inside other instances on the screen - can provide useful defaults. 
 
-Subtexts may also programmatically alter the look or the content of the text they control, providing feedback, displaying up-to-date information.
+Contexts may also programmatically alter the look or the content of the text they control, providing feedback, displaying up-to-date information.
 
 The GTK buffer looks like a stream, so printing mostly works like it always does.  A [utility function `prin`](https://github.com/stacksmith/subtext/wiki/PRIN) is provided for bulk output of tagged text:
 

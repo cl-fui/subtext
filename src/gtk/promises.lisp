@@ -42,7 +42,7 @@
   (make-promise :start (file-position stream)
 	        :content content))
 ;;
-;; SYMBOL - we mean a presentation type!
+;; SYMBOL - we mean a context type!
 ;; 
 #||(defmethod tag-in (stream (content symbol))
   (declare (optimize (speed 3) (safety 0) (debug 0))
@@ -60,11 +60,10 @@
   (push promise (promises stream)))
 
 ;; this macro requires stream to be called out!
-;; Out is provided by with-pres and in-pres...
 ;; injects it for the thing promised...
 (defmacro with-tag ((tag stream) &body body)
   (let ((promise (gensym)))
-    `(let* ((it ,tag)		    ;anaphoric it for the presentation
+    `(let* ((it ,tag)		    ;anaphoric it for the tag
 	    (out ,stream)
 	    (,promise (tag-in out it)))
        ,@body
@@ -74,14 +73,14 @@
 
 ;; bind local symbols: presentation and out
 
-(defmacro with-pres ((prestype &optional presinit) &body body)
+(defmacro with-context ((contype &optional coninit) &body body)
   "Initially create a presentation and perform 'body' in its context"
-  `(let* ((presentation (make-instance ',prestype :left-gravity nil ,@presinit))
-	  (out (out presentation)))
-     (declare (ignorable presentation out))
+  `(let* ((context (make-instance ',contype :left-gravity nil ,@coninit))
+	  (out (out context)))
+     (declare (ignorable context out))
      ;;(format t "PRES ~A ~A~&" presentation  (gtk-text-mark-left-gravity presentation))
 
-     (with-tag (presentation out) ,@body)))
+     (with-tag (context out) ,@body)))
 
 (defmacro defpresenter (((name type)) &body body)
   "create a present method for a presentation type"
@@ -108,15 +107,15 @@
       (gtb-apply-tag-by-name stream tag iter iter1))))
 
 ;; presentation tags must be tags, not names of tags
-(defmethod promise-fulfill ((pres pres) promise stream)
+(defmethod promise-fulfill ((ctx ctx) promise stream)
   (with-slots (start end) promise
-    (with-slots (iter iter1 presarr) stream
+    (with-slots (iter iter1) stream
       (%gtb-get-iter-at-offset stream iter start)
       (%gtb-get-iter-at-offset stream iter1 end)
  ;;      (format t "~%TAG fulfill at ~A ~A pres ~A tag |~A|~A ~&" start end pres (tag pres)	      (gtk-text-tag-name (tag pres)))
-      (%gtb-apply-tag stream (tag pres) iter iter1)
+      (%gtb-apply-tag stream (tag ctx) iter iter1)
 					;(setf (stream pres) stream)
-      (pres-mark stream iter pres)
+      (context-mark stream iter ctx)
       nil)))
 
  
