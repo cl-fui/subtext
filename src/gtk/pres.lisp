@@ -187,40 +187,47 @@
 ;; slots can be either slotnames, in which case we make an accessor and an
 ;; initform, or whatever you want inside ()...
 ;;
-(defmacro defcontext (classname direct-superclass slots )
+(defmacro defcontext (classname direct-superclass slots &key (keymap nil)  )
   "Define a context class."
-  (let ((newslots
+  (let* ((name classname)
+	 (newslots
 	 (loop for slot in slots
 	    collect
 	      (typecase slot
 		(symbol (let ((keyname (intern (string-upcase slot) :keyword)))
 			  `(,slot :accessor ,slot :initarg ,keyname )) )
-		(t slot)))))
-    `(defclass ,classname ,direct-superclass
-       (,@newslots
-	(out :accessor out :initform nil :allocation :class)
-	(tag :accessor tag :initform nil :allocation :class))
-       (:metaclass gobject-class)))
+		(t slot))))
+	(keymap-sym 
+	 (intern (concatenate 'string "KEYMAP-" (symbol-name name))))
+	(keystuff
+	 (and keymap
+	      `(progn (defparameter ,keymap-sym nil)
+		      (defmethod keymap ((context ,name)) ,keymap-sym)))))
+    `(progn
+       (defclass ,name ,direct-superclass
+	 (,@newslots
+	  (out :accessor out :initform nil :allocation :class)
+	  (tag :accessor tag :initform nil :allocation :class))
+	 (:metaclass gobject-class))
+       ,keystuff))
   )
 
 ;;------------------------------------------------------------------------------
 ;; Keymapping contexts
-;; A little more complicated, since we want a keymap for a class of contexts.
-;; Unfortunately, :allocation :class does not work, since derived classes wind
-;; up sharing the same slot!
 ;;
-;; So we have to create a unique keymap, and an accessor specialized on the
-;; context type.
+;; Keymapping is not inherent in the class (for some good reasons), but is
+;; an addon to any context class.  Once initiated, all instances of that class
+;; share a common keymap.
 ;;
-
-(defmacro defcontextk(classname direct-superclass slots)
-  (let ((keymap-sym ;classname is 'name, which comes in as (quote name)
-	 (intern (concatenate 'string "KEYMAP-" (symbol-name classname)))))
-    `(progn (defcontext ,classname ,direct-superclass ,slots)
-	    (defparameter ,keymap-sym nil)
-	    (defmethod keymap ((context ,classname)) ,keymap-sym)
-	    ))
-  )
+;; The keymap is created as a KEYMAP-xxx parameter, and a (keymap ..) function
+;; specialized on the type is created for dynamic resolution.
+;;
+(defmacro keymapped-context (classname)
+  (let* ((name classname)
+	 (keymap-sym ;classname is 'name, which comes in as (quote name)
+	  (intern (concatenate 'string "KEYMAP-" (symbol-name name)))))
+    `(progn (defparameter ,keymap-sym nil)
+	    (defmethod keymap ((context ,name)) ,keymap-sym))) )
 
 
 

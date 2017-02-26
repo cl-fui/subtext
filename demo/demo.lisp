@@ -1,6 +1,6 @@
 (in-package :subtext)
 ;;TODO: this is kind of generic...
-(defcontext button (pres) (code))
+(defcontext button (ctx) (code))
 (defmethod -pres-on-button ((p button) button)
   (format t "Package ~A~&" *package*)
   (funcall (code p)))

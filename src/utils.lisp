@@ -6,6 +6,9 @@
 	    collect item collect nil)))
     `(setf ,@list)))
 
+(defmacro prog0 (&body body)
+  `(progn ,@body nil))
+
 (defun make-synonym (old newname &key (package (symbol-package old)) (overwrite nil))
   "make a synonym for old symbol using newname, optionally in a different package.
  Functions only."

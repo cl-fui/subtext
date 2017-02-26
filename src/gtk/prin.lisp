@@ -27,7 +27,7 @@
 (defun pr-output (stream list)
   ;;  (format t "~A~&" list)
   (labels ((prim (stream list)
-	     (let ((promise (make-promise
+	     (let ((promise (subtext::make-promise
 		  :start (file-position stream)
 		  :content (first list))))
 	       (loop for item in (cdr list) do
@@ -35,19 +35,25 @@
 		      (cons (prim stream item))
 		      (null)
 		      (t (princ item stream))))
-	       (setf (promise-end promise) (file-position stream))
-	       (push promise (promises stream)))))
+	       (setf (subtext::promise-end promise) (file-position stream))
+	       (push promise (subtext::promises stream)))))
     (prim stream list)
     (finish-output stream)))
 
+
+(defmacro prin (stream &rest rest)
+  (let ((params `(tg "normal" ,@rest)))
+    `(progn 
+       (pr-output ,stream ,params)
+       )))
+
 (defun tg (tag &rest rest)
   `(,tag ,@rest))
+
 (defmacro pr (class init &rest rest)
   (let ((cl class))
     `(list (make-instance ,cl ,@init) ,@rest)) )
-(defmacro prin (stream &rest rest)
-  (let ((params `(tg "normal" ,@rest)))
-    `(pr-output ,stream ,params)))
 
-(defmacro prog0 (&body body)
-  `(progn ,@body nil))
+(defmacro ctx (class init &rest rest)
+  (let ((cl class))
+    `(list (make-instance ,cl ,@init) ,@rest)) )
