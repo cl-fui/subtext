@@ -26,15 +26,15 @@ SubText is built on top of GTK.  GTK text buffers already feature MARKS (locatio
 
 Contexts are CLOS objects.  The class hierarchy, as well as their physical position within other contexts on the screen ultimately decide how they react to user 
 
-The GTK buffer looks like a stream, so printing mostly works like it always does.  A [utility function `prin`](https://github.com/stacksmith/subtext/wiki/PRIN) is provided for bulk output of tagged text:
+The subtext, a GTK buffer, looks like a stream, so printing mostly works like it always does.  In addition to plain text, you may output contexts or tagged text using the `prin` facility:
 
 ```lisp
 (prin out "Hello " (tg blue "Cruel ") "world")
 
-(prin out "Press " (pr button (:code (lambda () (...))) "HERE") " now!")
+(prin out "Press " (ctx button (:code (lambda () (...))) "HERE") " now!")
 
 ```
-Here, we output some tagged text, and create a button with a lambda for action.
+Here, we output some tagged text, and create an ad-hoc context on the fly, complete with a lambda to handle the action.
 
 ## And visually?
 
