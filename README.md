@@ -6,7 +6,9 @@ SubText 'entangles' CLOS objects with arbitrary pieces of text, enabling simple,
 
 These text/code entities, referred to as `contexts`, provide the setting for user interaction within their bounds.  They can bind keys, visually modify their text, or execute arbitrary code.  The CLOS hierarchies, together with the runtime placement within other contexts, provide useful defaults.
 
-SubText provides the plumbing connecting the contexts to the GTK environment and controls their interaction, largely by following the insertion point of the buffer and notifying the contexts involved.
+Contexts operate within a `subtext` - a text buffer which provides plumbing connecting the contexts to the GTK environment and controls their interaction.
+
+Consider the terminology: subtexts provide environments for contexts, and contexts change how user input is handled.
 
 ## Demo and Screenshot
 
