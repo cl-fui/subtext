@@ -170,6 +170,11 @@ for all newly introduced ones, call entering.  Return new."
     (gtb-remove-all-tags pbuf iter iter1)
     (%gtb-delete pbuf iter iter1)))
 
+;; subtext convenience
+(defmacro tag-apply (tag)
+  `(gtb-apply-tag subtext ,tag iter iter1))
+(defmacro tag-remove (tag)
+  `(gtb-remove-tag subtext ,tag iter iter1))
 
 ;;==============================================================================
 ;; Debugging tools

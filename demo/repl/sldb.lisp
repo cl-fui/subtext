@@ -122,17 +122,15 @@
     (with-tag  ("cyan" out)   (format out "~A" (first info)))
     (with-tag  ("normal" out) (format out "] ~A" (second info)))))
 
-(defmethod  -con-mouse-enter ((context prestart) flag)
-  (with-slots (out) context
-    (with-slots (iter iter1) out
-      (context-bounds out context)
-      (gtb-apply-tag out "grhigh" iter iter1))))
+(defmethod  -con-mouse-enter (subtext (context prestart) flag)
+  (with-subtext subtext
+    (with-context-bounds context
+      (tag-apply "grhigh"))))
 
-(defmethod  -con-mouse-exit ((context prestart) flag)
-  (with-slots (out) context
-    (with-slots (iter iter1) out
-      (context-bounds out context)
-      (gtb-remove-tag out "grhigh" iter iter1))))
+(defmethod  -con-mouse-exit (subtext (context prestart) flag)
+  (with-subtext subtext
+    (with-context-bounds context
+      (tag-remove "grhigh"))))
 
 
 
@@ -208,18 +206,16 @@
 
 ;;------------------------------------------------------------------------------
 ;; mouse
-(defmethod  -con-mouse-enter ((context pframe) flag)
-  (with-slots (out) context
-    (with-slots (iter iter1) out
-      (context-bounds out context)
-      (gtb-apply-tag out "grhigh" iter iter1))))
+(defmethod  -con-mouse-enter (subtext (context pframe) level)
+  (with-subtext subtext
+    (with-context-bounds context
+      (tag-apply "grhigh"))))
 
-(defmethod  -con-mouse-exit ((context pframe) flag)
-  (with-slots (out) context
-    (with-slots (iter iter1) out
-      (context-bounds out context)
-      (format t "iters ~A ~A ~&"iter iter1)
-      (gtb-remove-tag out "grhigh" iter iter1))))
+(defmethod  -con-mouse-exit (subtext (context pframe) level)
+  (with-subtext subtext
+    (with-context-bounds context
+      (tag-remove "grhigh"))))
+
 
 
 ;;------------------------------------------------------------------------------

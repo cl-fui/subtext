@@ -41,9 +41,9 @@ entered or exited contexts.  Return new context list"
 	 (in  (set-difference new same))) ; and these are newly introduced.
 	 (format t "NEW: ~A~&OLD:~A~&" new old)
     (loop for context in out
-       for i from 0 do (funcall fexit context i))
+       for i from 0 do (funcall fexit buffer context i))
     (loop for context in in
-       for i from 0 do (funcall fenter context i))
+       for i from 0 do (funcall fenter buffer context i))
     new))
 
 ;;------------------------------------------------------------------------------
@@ -69,11 +69,11 @@ entered or exited contexts.  Return new context list"
 
 
 
-(defmethod -con-enter ((ctx ctx) i)
+(defmethod -con-enter (subtext (ctx ctx) i)
   (format t "conbuf.lisp:-CON-ENTRY ~A ~A~&" ctx i))
-(defmethod -con-exit ((ctx ctx) i)
+(defmethod -con-exit (subtext (ctx ctx) i)
   (format t "conbuf.lisp:-CON-EXIT ~A ~A~&" ctx i))
-(defmethod -con-mouse-enter ((ctx ctx) i)
+(defmethod -con-mouse-enter (subtext (ctx ctx) i)
   (format t "conbuf.lisp:-CON-MOUSE-ENTRY ~A ~A~&" ctx i))
-(defmethod -con-mouse-exit ((ctx ctx) i)
+(defmethod -con-mouse-exit (subtext (ctx ctx) i)
   (format t "conbuf.lisp:-CON-MOUSE-EXIT ~A ~A~&" ctx i))

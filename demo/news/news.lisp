@@ -13,7 +13,7 @@
 	  (format out " ~A" (edition-name edition)) ))))
 
 ;;highlight pedition
-(defmethod -con-mouse-enter ((context pedition) priority)
+(defmethod -con-mouse-enter (subtext (context pedition) priority)
   (with-slots (out edition) context
     (with-slots (iter iter1) out
       (context-bounds out context)
@@ -30,7 +30,7 @@
 	(promises-fulfill *echo*);todo: clean up
 	  ))))
 
-(defmethod -con-mouse-exit ((context pedition) priority)
+(defmethod -con-mouse-exit (subtext (context pedition) priority)
   (with-slots (out edition) context
     (with-slots (iter iter1) out
       (context-bounds out context)

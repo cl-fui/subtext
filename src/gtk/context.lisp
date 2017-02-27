@@ -86,14 +86,6 @@
 (defun gti-pmarks (iter)
     (remove-if-not (lambda (val) (eq (type-of val) 'pmark)) (gti-marks iter)))
 
-(defun context-iters (ctx)
-  (declare (optimize (speed 3) (debug 0) (safety 0)))
-  (with-slots (out tag) ctx
-    (with-slots (iter iter1) out
-      (%gtb-get-iter-at-mark out iter ctx)
-      (%gtb-get-iter-at-mark out iter1 ctx)
-      (gti-forward-to-tag-toggle iter1 tag))))
-
 
 (defun context-tag-bounds (stream at ptag)
   "set iters to tag bounds of a tag; at is inside it"
@@ -154,12 +146,30 @@
 (defun contexts-at-off (stream off)
   (contexts-at stream (gtb-get-iter-at-offset stream off)))
 ;;------------------------------------------------------------------------------
+
 (defun context-bounds(stream ctx)
   (with-slots (iter iter1) stream
     (%gtb-get-iter-at-mark stream iter ctx)
     (%gtb-get-iter-at-mark stream iter1 ctx)
     ;; We know that tag begins here, and what kind of tag...
     (gti-forward-to-tag-toggle iter1 (tag ctx))))
+
+(defun %context-bounds (subtext context iter iter1)
+  (%gtb-get-iter-at-mark subtext iter context)
+  (%gtb-get-iter-at-mark subtext iter1 context)
+  (gti-forward-to-tag-toggle iter1 (tag context)))
+;; Convenience macro exposes subtext,iter and iter1.
+
+(defmacro with-subtext (stream &body body)
+  `(let ((subtext ,stream))
+     (with-slots (iter iter1) subtext
+       ,@body)))
+
+(defmacro with-context-bounds (context &body body)
+  "within a subtext, get bounds of a context into iters"
+  `(progn (%context-bounds subtext ,context iter iter1)
+	  ,@body))
+
 
 
 
