@@ -22,9 +22,7 @@ Fluid, loosey-goosey editable text augmented with code makes for very flexible a
 
 SubText is built on top of GTK.  GTK text buffers already feature MARKS (locations in text that are preserved across edits) and TAGS (ranges of text with certain attributes).  Now we add the idea of a context, a piece of tagged text bound to a CLOS object.
 
-Contexts can be output to a stream, placed inside other subtexts, bind keys, and respond to user input at an incredibly fine level.  Alternatively, the class hierarchy of contexts - as well as physical position of instances inside other instances on the screen - can provide useful defaults. 
-
-Contexts may also programmatically alter the look or the content of the text they control, providing feedback, displaying up-to-date information.
+Contexts are CLOS objects.  The class hierarchy, as well as their physical position within other contexts on the screen ultimately decide how they react to user 
 
 The GTK buffer looks like a stream, so printing mostly works like it always does.  A [utility function `prin`](https://github.com/stacksmith/subtext/wiki/PRIN) is provided for bulk output of tagged text:
 

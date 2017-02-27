@@ -7,7 +7,9 @@
 ;; Currently, a context consists of: a tag to indicate the range and type
 ;; of a context, and a mark to indicate the instance of a context.
 ;;
-;; Note: the same tag is used for all instances of a context of that type.
+;; Via some magic below, in addition to user-declared slots, all contexts
+;; have a class-allocated slot called 'out', containing the buffer/stream, and
+;; 'tag', containing the tag used to mark the context.
 ;;
 ;; FAQ:
 ;; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
