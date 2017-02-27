@@ -30,17 +30,15 @@ The two terms describe the situation aptly:
  - contexts dictate how text looks and user input is handled;
  - subtexts provide environments for contexts.
 
-Contexts are relatively light - the system works fine with tens of thousands of them.  They can be created on the fly and printed to a subtext stream much like ordinary text - or created in advanced and composed separately.  They can allow the user to edit them freely - or enforce specific rules and bind keys to commands.  Text around them can be likewise edited - think of a note-taking application or a spreadsheet, but more free-form.
+Contexts are relatively light - the system works fine with tens of thousands of them.  They can be created on the fly and printed to a subtext stream much like ordinary text - or created in advance and composed separately.  They can allow the user to edit them freely - or enforce specific rules and bind keys to commands.  They can be embedded inside other contexts.  Text around them can be likewise editable (or not) - think of a note-taking application or a spreadsheet, but more free-form.
 
 In practice, SubText may be used to create a simple screen with a couple of live 'buttons', like the demo front page, or a sophisticated system like a Lisp source editor, where contexts are directly bound to nested sexps.
 
+## Is it GTK only?
 
-## And visually?
+GTK was selected as the backbone of SubText (although it could be moved elsewhere) because it may be the easiest way to output decent-looking subpixel-antialiased type.  This works well for the desktop paradigm.
 
-GTK was selected as the backbone of SubText (although it could be moved elsewhere) because it may be the easiest way to output decent-looking subpixel-antialiased type.
-
-Since SubText is GTK, anything you can do with GTK you can do with SubText.  In fact, menus, buttons and other GTK widgets can be dropped right into the text buffer - although that may not be constructive!
-
+A lightweight console version is envisioned for embedded/minimal scenarios.
 
 ## Status
 
