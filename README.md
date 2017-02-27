@@ -24,13 +24,13 @@ SubText is built on top of GTK.  GTK text buffers already feature MARKS (locatio
 
 These text/code contexts provide the setting for user interaction within their bounds.  They can bind keys, visually modify their text, or execute arbitrary code.  The CLOS hierarchies, together with the runtime placement within other contexts, provide useful defaults.
 
-Contexts operate within a `subtext` - a text buffer which provides the plumbing connecting contexts to the GTK environment and controls their interaction.
+Contexts operate within a `subtext`- a text buffer which provides the plumbing connecting contexts to the GTK environment and controls their interaction.
 
 The two terms describe the situation aptly:
  - contexts dictate how text looks and user input is handled;
  - subtexts provide environments for contexts.
 
-Subtexts are relatively light - the system works fine with tens of thousands of them.  They can be created on the fly and printed to a subtext stream much like ordinary text - or created in advanced and composed separately.  They can allow the user to edit them freely - or enforce specific rules and bind keys to commands.  Text around them can be likewise edited - think of a note-taking application or a spreadsheet, but more free-form.
+Contexts are relatively light - the system works fine with tens of thousands of them.  They can be created on the fly and printed to a subtext stream much like ordinary text - or created in advanced and composed separately.  They can allow the user to edit them freely - or enforce specific rules and bind keys to commands.  Text around them can be likewise edited - think of a note-taking application or a spreadsheet, but more free-form.
 
 In practice, SubText may be used to create a simple screen with a couple of live 'buttons', like the demo front page, or a sophisticated system like a Lisp source editor, where contexts are directly bound to nested sexps.
 
