@@ -20,7 +20,7 @@ Fluid, loosey-goosey editable text augmented with code makes for very flexible a
 
 ## What the heck is it, really?
 
-SubText is built on top of GTK.  GTK text buffers already feature MARKS (locations in text that are preserved across edits) and TAGS (ranges of text with certain attributes).  Now we add the idea of a `context`, a piece of tagged text bound to a CLOS object.
+SubText is built on top of GTK.  GTK text buffers already feature MARKS (locations in text that are preserved across edits) and TAGS (ranges of text with certain attributes).  Now we add the idea of a `context`, a piece of tagged text bound to a CLOS instance.
 
 These text/code contexts provide the setting for user interaction within their bounds.  They can bind keys, visually modify their text, or execute arbitrary code.  The CLOS hierarchies, together with the runtime placement within other contexts, provide useful defaults.
 
