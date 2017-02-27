@@ -3,7 +3,7 @@
 ;; echostream - unbuffered gtk stream that erases itself on terpri.
 ;;
 
-(defclass echostream (mark-out-stream)
+(defclass echostream (conbuf)
   ()
   (:metaclass gobject-class))
 ;;==============================================================================

@@ -24,7 +24,7 @@
    ;; on-insert-text-before keeps insert start position prior to expansion
    (oldx   :accessor oldx   :initform 0   :type fixnum) ;insert-text position
 
-   (old-mouse :accessor old-mouse :initform nil );old mouse presentation-lists
+;;   (old-mouse :accessor old-mouse :initform nil );old mouse presentation-lists
    )
   
   (:metaclass gobject-class))
@@ -85,11 +85,11 @@
 ;;===============================================================================
 ;; Motion handler
 ;;
+;; TODO: this loses order!
+#||
 (defgeneric -pres-on-mouse (pres inp))
 
 (defmethod -pres-on-mouse ((pres t) inp))
-
-;; TODO: this loses order!
 
 (defun presentations-on-motion (tb old new)
   "scan the old and new lists of presentations, and note presentations that are
@@ -108,7 +108,7 @@ for all newly introduced ones, call entering.  Return new."
   (with-slots (old-mouse) tb
     (setf old-mouse
 	  (presentations-on-motion tb old-mouse (contexts-at tb iter)))))
-
+||#
 ;;===============================================================================
 ;; Mouse click handler
 ;;

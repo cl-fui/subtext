@@ -6,7 +6,7 @@
 ;;;=============================================================================
 ;;; Swank REPL buffer
 ;;;
-(defclass swarepl (mark-out-stream)
+(defclass swarepl (conbuf)
   ((swank :initform nil :accessor swank) ;swank communication channel
    (sldbs :accessor sldbs :initform (make-hash-table)) ; track debuggers by '
    (read-id :accessor read-id :initform 0) ;0=commandline, otherwise read-line

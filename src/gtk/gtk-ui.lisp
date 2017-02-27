@@ -154,35 +154,4 @@
 
 (defcontext button (ctx) (code))
 
-;; A simple test for debugging eli
-(defun teli( &key (stdout *standard-output*) (package *package*))
-  "final"
-  ;;(format t "AAA STANDARD OUTPUT?~A ~A ~&"*standard-output* *package*)
-  (within-main-loop
-    (setf *standard-output* stdout); Why can't I just bind it?
-    (let* ((*standard-output* stdout)
-	   (*package* package)			;re-enable output
-;;	   (ass  (format t "STANDARD OUTPUT?~A ~A ~&"*standard-output* *package*))
-	   (top (make-frame (make-window
-			     (print (setf *rview* (make-rview (setf *pbuf* (make-instance 'termstream)))))) 
-			    :kill t)))
-           (setf *top* top)
-	   (eli-def *rview*  (kbd "C-x C-y") (lambda () (print "HELLO")))
-	   (context-tag *pbuf* button (:foreground "DarkGoldenrod" :background "aquamarine" :editable nil)  )
 
-	   (prin *pbuf* "Hello " (tg "error" "cruel") nil " Wrold" #\linefeed)
-	   (let ((p 'button))   (prin *pbuf* (pr p (:code (lambda () (format t "shid"))) "HOdamn")))
-;	   (let ((tag "pres"))     (prin *pbuf* (tg tag "yo") " man"))
-;;	   (pr *pbuf* 1 #\space  (tg *pbuf* "error" "fuck") 3)
-;;	   (with-tag ("error" *pbuf*) (print "SHIT" *pbuf*) )
-;;	   (prin-walk *pbuf* '("error" "hello" ("pres" " cruel") "world"))
-;;	   (with-tag ("pres" *pbuf*) (princ "hello" *pbuf*)    (with-tag ("error" *pbuf*) (princ " cruel" *pbuf*))    (princ "world" *pbuf*))
-	   ;(print (promises *pbuf*))
-	   (promises-fulfill *pbuf*)
-	   (gtk-widget-show-all top)
-	   (-on-initial-display top))))
-
-
-(defun crap ()
-  (declare (optimize (speed 3) (safety 0) (debug 0)))
-  (pr *pbuf* "hello " (tg "error" "cruel") " world"))

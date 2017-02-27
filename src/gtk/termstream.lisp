@@ -2,7 +2,7 @@
 ;;------------------------------------------------------------------------------
 ;; gtbstream - streaming io, simple-input, promises
 ;;
-;; output at the end only!
+;; Relies on index, deprecated...
 
 (defclass termstream (tb
 		      trivial-gray-streams:fundamental-character-output-stream)

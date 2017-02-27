@@ -19,7 +19,7 @@
 	     ;;	   (ass  (format t "STANDARD OUTPUT?~A ~A ~&"*standard-output* *package*))
 	     (top (make-frame (make-window
 			       (setf eli (make-rview
-					  (setf stream (make-instance 'mark-out-stream))
+					  (setf stream (make-instance 'conbuf))
 					  :widget-defaults nil
 					  :wrap-mode :word
 					  :left-margin 30 :right-margin 20

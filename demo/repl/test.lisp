@@ -31,7 +31,7 @@
 
 ;;;=============================================================================
 ;;;
-(defclass buflisp (mark-out-stream)
+(defclass buflisp (conbuf)
   ((level   :accessor level   :initform (make-array 30)) ;contains classes
    (pindex  :accessor pindex  :initform 0))
   (:metaclass gobject-class))
@@ -70,16 +70,7 @@
   (clrf keymap-psexp)
   (keymap-def keymap-psexp (kbd "C-x C-c") (lambda () (format t "YESSSSSS!!!!~&")) )
   
-  (g-signal-connect
-   pbuf "notify::cursor-position"
-   (lambda (gobject gparamspec)
-     (terpri *standard-output*)
-					;  (format t "NOTIFY:CURPOS Setting pos at ~A~&" (gtb-cursor-position pbuf))
-     (with-slots (mark iter) pbuf
-       (pbuf-iter-to-cursor pbuf)
-       (gtb-move-mark pbuf mark iter)
-       ;; (bufstat pbuf)
-       ))) 
+   
   (prin pbuf (pr 'p-unk () "  ")))
 
 

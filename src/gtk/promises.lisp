@@ -52,7 +52,7 @@
 ||#
 (defun tag-out (stream promise)
   (declare (optimize (speed 3) (safety 0) (debug 0))
-	   (type termstream stream)
+	   ;(type termstream stream)
 	   (type promise promise))
   
   (setf (promise-end promise) (file-position stream))

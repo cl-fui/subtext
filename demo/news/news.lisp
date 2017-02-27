@@ -13,26 +13,30 @@
 	  (format out " ~A" (edition-name edition)) ))))
 
 ;;highlight pedition
-(defmethod  -pres-on-mouse ((pres pedition) flag)
-  (with-slots (out) pres
+(defmethod -con-mouse-enter ((context pedition) priority)
+  (with-slots (out edition) context
     (with-slots (iter iter1) out
-      (context-bounds out pres)
-      (if flag
-	  (progn
-	    (gtb-apply-tag  out "grhigh" iter iter1)
-	    (with-slots (edition) pres
-	      (-reset *echo*)
-	      (if (edition-full? edition)
-		  (format *echo* "All ~A parts" (edition-count-parts edition))
-		  (format *echo* "~A of ~A parts"
-			  (edition-count-parts edition)
-			  (length (edition-parts edition))))
-	      (format *echo* " posted by ")
-	      (with-tag ("prompt" *echo*) (princ (edition-poster edition) *echo*))
-	      (promises-fulfill *echo*);todo: clean up
-	      ))
-	  (gtb-remove-tag out "grhigh" iter iter1))))
-  t)
+      (context-bounds out context)
+      (progn
+	(gtb-apply-tag  out "grhigh" iter iter1)
+	(-reset *echo*)
+	(if (edition-full? edition)
+	    (format *echo* "All ~A parts" (edition-count-parts edition))
+	    (format *echo* "~A of ~A parts"
+		    (edition-count-parts edition)
+		    (length (edition-parts edition))))
+	(format *echo* " posted by ")
+	(with-tag ("prompt" *echo*) (princ (edition-poster edition) *echo*))
+	(promises-fulfill *echo*);todo: clean up
+	  ))))
+
+(defmethod -con-mouse-exit ((context pedition) priority)
+  (with-slots (out edition) context
+    (with-slots (iter iter1) out
+      (context-bounds out context)
+      (gtb-remove-tag out "grhigh" iter iter1))))
+
+
 
 (defun news ()
   (let ((so *standard-output*)
@@ -46,7 +50,7 @@
 	     (stream)
 	     ;;	   (ass  (format t "STANDARD OUTPUT?~A ~A ~&"*standard-output* *package*))
 	     (top (make-frame (make-window (make-rview
-					    (setf stream (make-instance 'mark-out-stream))))
+					    (setf stream (make-instance 'conbuf))))
 			      :title "NNTP News Demo"
 			      :kill t)))
 	(context-tag stream pedition (:foreground "LightBlue" :editable nil)  )

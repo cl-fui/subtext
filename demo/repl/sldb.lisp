@@ -1,7 +1,7 @@
 (in-package :subtext)
 
 
-(defclass sldb (mark-out-stream)
+(defclass sldb (conbuf)
   ((connection    :accessor connection    :initarg :connection    :initform nil )
    (thread        :accessor thread        :initarg :thread        :initform nil )
    (level         :accessor level         :initarg :level         :initform nil )
@@ -122,13 +122,17 @@
     (with-tag  ("cyan" out)   (format out "~A" (first info)))
     (with-tag  ("normal" out) (format out "] ~A" (second info)))))
 
-(defmethod  -pres-on-mouse ((pres prestart) flag)
-  (with-slots (out) pres
+(defmethod  -con-mouse-enter ((context prestart) flag)
+  (with-slots (out) context
     (with-slots (iter iter1) out
-      (context-bounds out pres)
-      (if flag
-	  (gtb-apply-tag out "grhigh" iter iter1)
-	  (gtb-remove-tag out "grhigh" iter iter1)))))
+      (context-bounds out context)
+      (gtb-apply-tag out "grhigh" iter iter1))))
+
+(defmethod  -con-mouse-exit ((context prestart) flag)
+  (with-slots (out) context
+    (with-slots (iter iter1) out
+      (context-bounds out context)
+      (gtb-remove-tag out "grhigh" iter iter1))))
 
 
 
@@ -204,13 +208,20 @@
 
 ;;------------------------------------------------------------------------------
 ;; mouse
-(defmethod  -pres-on-mouse ((pres pframe) flag)
-  (with-slots (out) pres
+(defmethod  -con-mouse-enter ((context pframe) flag)
+  (with-slots (out) context
     (with-slots (iter iter1) out
-      (context-bounds out pres)
-      (if flag
-	  (gtb-apply-tag out "grhigh" iter iter1)
-	  (gtb-remove-tag out "grhigh" iter iter1)))))
+      (context-bounds out context)
+      (gtb-apply-tag out "grhigh" iter iter1))))
+
+(defmethod  -con-mouse-exit ((context pframe) flag)
+  (with-slots (out) context
+    (with-slots (iter iter1) out
+      (context-bounds out context)
+      (format t "iters ~A ~A ~&"iter iter1)
+      (gtb-remove-tag out "grhigh" iter iter1))))
+
+
 ;;------------------------------------------------------------------------------
 (defmethod -pres-on-button ((pres pframe) button)
   (with-slots (out expanded pframex) pres

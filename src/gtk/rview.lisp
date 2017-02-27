@@ -68,6 +68,7 @@
     ;; Mouse motion.  We get pixel motion, but we are interested in much
     ;; coarser notification.  For now, ignore sub-character motions
     ;; and notify buffer of changes
+    ;; Note: we pull a new iter every time... Potential mature optimization
     (g-signal-connect
      rview "motion-notify-event" ;TODO: check widget
      (lambda (view event)
@@ -79,7 +80,9 @@
 	 (with-slots (last-motion-off) view 
 	   (when (/= last-motion-off (gti-offset iter)); interesting?
 	     (setf last-motion-off (gti-offset iter))
-	     (-on-motion buffer iter event))))))
+	     ;;(-on-motion buffer iter event)
+	     (on-mouse-motion buffer iter)
+	     )))))
    ))
 
 

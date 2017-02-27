@@ -25,15 +25,13 @@
 	       (:file "src/gtk/mark-out-stream")
 	       (:file "src/gtk/simplestream")
 	       (:file "src/gtk/echostream")
-	       (:file "src/gtk/termstream")
+;;	       (:file "src/gtk/termstream")
 	       (:file "src/gtk/context")
 	       (:file "src/gtk/promises")
 	       
 	       (:file "src/gtk/prin")
-
-
 	       (:file "src/eli/eli"); here because elie is now buffer...
-	       
+	       (:file "src/gtk/conbuf")
 
 	       
 	       (:file "src/gtk/rview")

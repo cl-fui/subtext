@@ -139,13 +139,13 @@
   "Return a list of every context that is bisected by iter"
   (with-slots (iter iter1) stream
     (loop for tag in (reverse (gti-tags xiter));TODO: is reverse good enough?
-       when (subtypep (type-of tag) 'ptag-base) ;only care about ptags!
-       ;; set iter to start of tag
+       when (subtypep (type-of tag) 'ptag-base)  ;only care about ptags!
+       unless (progn
+		(%gtb-get-iter-at-offset stream iter (gti-offset xiter));iter at ptag
+		(gti-begins-tag iter tag))
        collect
 	 (progn
-	   (%gtb-get-iter-at-offset stream iter (gti-offset xiter));iter at ptag
-	   (or ;(gti-begins-tag iter tag); either we start a tag
-	       (gti-backward-to-tag-toggle iter tag)); or move back to start
+	   (gti-backward-to-tag-toggle iter tag);  move back to start
 	   (find (mark-type tag) (gti-marks iter); find matching mark
 		       :test (lambda (key item)  (eq key (type-of item))))))))
 
@@ -185,20 +185,14 @@
 
 
 
-(defmacro defkeymap (classname)
-  (let ((keymap-sym 
-	 (intern (concatenate 'string "KEYMAP-" (symbol-name classname)))))
-    `(progn  (defparameter ,keymap-sym nil)
-	     (defmethod keymap ((context ,classname)) ,keymap-sym)))
 
-)
 ;;------------------------------------------------------------------------------
 ;; Defining context classes
 ;;
 ;; slots can be either slotnames, in which case we make an accessor and an
 ;; initform, or whatever you want inside ()...
 ;;
-(defmacro defcontext (classname direct-superclass slots &key (keymap nil)  )
+(defmacro defcontext (classname direct-superclass slots   )
   "Define a context class."
   (let* ((name classname)
 	 (newslots
@@ -207,23 +201,14 @@
 	      (typecase slot
 		(symbol (let ((keyname (intern (string-upcase slot) :keyword)))
 			  `(,slot :accessor ,slot :initarg ,keyname )) )
-		(t slot))))
-	(keymap-sym 
-	 (intern (concatenate 'string "KEYMAP-" (symbol-name name))))
-	(keystuff
-	 (and keymap
-	      `(progn  (defparameter ,keymap-sym nil)
-		       (defmethod keymap ((context ,name)) ,keymap-sym)))))
-    
+		(t slot)))))
     `(eval-when (:compile-toplevel :load-toplevel :execute)
        (prog1
 	   (defclass ,name ,direct-superclass
 	     (,@newslots
 	      (out :accessor out :initform nil :allocation :class)
 	      (tag :accessor tag :initform nil :allocation :class))
-	     (:metaclass gobject-class))
-	 ,keystuff)))
-  )
+	     (:metaclass gobject-class))))) )
 
 ;;------------------------------------------------------------------------------
 ;; Keymapping contexts
@@ -235,12 +220,13 @@
 ;; The keymap is created as a KEYMAP-xxx parameter, and a (keymap ..) function
 ;; specialized on the type is created for dynamic resolution.
 ;;
-(defmacro keymapped-context (classname)
+(defmacro defkeymap (classname)
   (let* ((name classname)
-	 (keymap-sym ;classname is 'name, which comes in as (quote name)
+	 (keymap-sym 
 	  (intern (concatenate 'string "KEYMAP-" (symbol-name name)))))
-    `(progn (defparameter ,keymap-sym nil)
-	    (defmethod keymap ((context ,name)) ,keymap-sym))) )
+    `(progn  (defparameter ,keymap-sym nil)
+	     (defmethod keymap ((context ,name)) ,keymap-sym))))
+
 
 
 
