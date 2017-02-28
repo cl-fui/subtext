@@ -87,21 +87,20 @@ starting with 'old-prefix' in :package.  Remember to capitalize "
 ;;==============================================================================
 ;; execute rest in idle thread, binding *package*
 (defmacro idly (&rest rest)
-  `(gdk-threads-add-idle (lambda ()
-			   (let ((*package* ,*package*))
-			     ,@rest))))
+  `(gdk-threads-add-idle (lambda () 
+			   ,@rest)))
 
 
 ;;==============================================================================
 ;; like the gtk one, but binding *package*
-(defmacro within-main-loop (&body body)
+#||(defmacro within-main-loop (&body body)
   `  (gtk::call-from-gtk-main-loop (lambda ()
 				     (let ((*package* ,*package*)
 					   ;(*standard-output*  ,*standard-output*)
 					   )
 				    ,@body))))
 
-
+||#
 (defun function-lambda-list (fn)
   "Return an argument list for the supplied function."
   (let ((arglist))
@@ -149,8 +148,7 @@ Note: a single underline in label will crate a 'mnemonic'; two __ is _"
 (defmacro bug (&rest rest)
   `(format t ,@rest))
 
-(defmacro bugx (&rest rest)
-  )
+
 
 
 #||

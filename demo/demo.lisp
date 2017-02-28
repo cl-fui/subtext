@@ -10,7 +10,11 @@
 
 
 (defun demo ()
-  (within-main-loop
+  (clrf bt:*default-special-bindings*)
+  (push (cons '*standard-output* *standard-output*) bt:*default-special-bindings*)
+  (push '(*package* find-package :subtext) bt:*default-special-bindings*)
+  (print bt:*default-special-bindings*)
+  (gtk::within-main-loop
     (let* (stream
 	   eli
 	   (top (make-frame (make-window
@@ -21,9 +25,9 @@
 					:left-margin 30 :right-margin 20
 					:pixels-above-lines 24
 					)))
-				   :width 640 :height 480
-				   :title "Welcome to SubText."
-				   :kill t)))
+			    :width 640 :height 480
+			    :title "Welcome to SubText."
+			    :kill t)))
       (pbuf-new-tag stream :name "small" :font "DejaVu Sans 10")
       (pbuf-new-tag stream :name "normal" :pixels-inside-wrap 8)
       (gtk-widget-modify-font eli  (pango-font-description-from-string "DejaVu Serif 12"))

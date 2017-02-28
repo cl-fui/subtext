@@ -70,8 +70,13 @@ entered or exited contexts.  Return new context list"
 ;;------------------------------------------------------------------------------
 ;; Keyseq (sent rview)
 ;;
-;; Process a keyseq: see if any of the contexts want it.  Contexts return
-;; nil if processed, or a number of partial hits.
+;; Process a keyseq: see if any of the contexts currently active (at cursor)
+;; want it, by calling method -con-keyseq usually created by defkeymap
+;; (see context.lisp).  Each one is expected to return nil if processed,
+;; or a number of partial hits.
+;; At the end, we return nil if executed, or sum of all partial hits for
+;; the current contexts at cursor.
+;;
 (defun on-keyseq (subtext keyseq)
   "process a keysequence. Return nil if done, or number of partial hits."
   (when keyseq; and it may be nil, in which case we are done.
