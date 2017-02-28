@@ -46,7 +46,7 @@
   (print "!!!!!!on-announce-eli")
   (eli-def
    eli (kbd "Return")
-   (lambda ()
+   (lambda (subtext context)
      (with-slots (swank read-id read-tag si) pbuf
        (let ((string (simple-input-get-text si)))
 	 (if (zerop read-id)
@@ -60,7 +60,7 @@
 		swank (concatenate 'string string '(#\newline))
 		read-id read-tag  )))))
      nil))
-  (eli-def eli (kbd "C-x C-y") (lambda () (format t "OK!!!!!~&") nil)))
+  (eli-def eli (kbd "C-x C-y") (lambda (subtext context) (format t "OK!!!!!~&") nil)))
 ;;------------------------------------------------------------------------------
 
 ;; view invokes this on destruction...
@@ -249,18 +249,13 @@
 
 
 ;;==============
-(defun repl( &key (stdout *standard-output*) (package *package*))
+(defun repl()
   "final"
-  ;;(format t "AAA STANDARD OUTPUT?~A ~A ~&"*standard-output* *package*)
   (within-main-loop
-    (setf *standard-output* stdout); Why can't I just bind it?
-    (let* ((*standard-output* stdout)
-	   (*package* package)			;re-enable output
-;;	   (ass  (format t "STANDARD OUTPUT?~A ~A ~&"*standard-output* *package*))
-	   (top (make-frame (make-window (make-rview (make-instance 'swarepl))
-					 :ml  "-:**- *slime repl*") 
-			    :title "Subtext REPL"
-			    :kill t)))
+    (let (   (top (make-frame (make-window (make-rview (make-instance 'swarepl))
+					   :ml  "-:**- *slime repl*") 
+			      :title "Subtext REPL"
+			      :kill t)))
      
       (princ "Take this REPL, brother! ..." *echo*)
       (gtk-widget-show-all top)

@@ -43,10 +43,14 @@ starting with 'old-prefix' in :package.  Remember to capitalize "
 (abbrev-symbols :gtk "GTK-TEXT-TAG-"       "GTT-")
 (abbrev-symbols :gtk "GTK-TEXT-TAG-TABLE-" "GTTT-")
 (abbrev-symbols :gtk "%GTK-TEXT-BUFFER-"   "%GTB-")
+
 (defmacro mvb (&rest rest)
   "synonym for multiple-value-bind"
   `(multiple-value-bind ,@rest))
 
+(defmacro mvs (&rest rest)
+  "synonym for multiple-value-setq"
+  `(multiple-value-setq ,@rest))
 ;;==============================================================================
 ;;  same as with-gdk-threads-lock!
 ;;
@@ -80,8 +84,22 @@ starting with 'old-prefix' in :package.  Remember to capitalize "
   (print-unreadable-object (iter out :type t)
     (format out "~s" (gtk:gtk-text-iter-get-offset iter))))
 
+;;==============================================================================
+;; execute rest in idle thread, binding *package*
 (defmacro idly (&rest rest)
-  `(gdk-threads-add-idle (lambda () ,@rest)))
+  `(gdk-threads-add-idle (lambda ()
+			   (let ((*package* ,*package*))
+			     ,@rest))))
+
+
+;;==============================================================================
+;; like the gtk one, but binding *package*
+(defmacro within-main-loop (&body body)
+  `  (gtk::call-from-gtk-main-loop (lambda ()
+				     (let ((*package* ,*package*)
+					   ;(*standard-output*  ,*standard-output*)
+					   )
+				    ,@body))))
 
 
 (defun function-lambda-list (fn)

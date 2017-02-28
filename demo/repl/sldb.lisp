@@ -1,6 +1,16 @@
 (in-package :subtext)
 
 
+(defcontext pframe (ctx)
+  (id desc restartable pframex (expanded :accessor expanded :initform nil)))
+(defkeymap pframe)
+
+(defcontext prestart (ctx)
+  ((id :accessor id :initarg :id :initform 0)
+   (info :accessor info :initarg :info :initform nil)))
+(defkeymap prestart)
+
+
 (defclass sldb (conbuf)
   ((connection    :accessor connection    :initarg :connection    :initform nil )
    (thread        :accessor thread        :initarg :thread        :initform nil )
@@ -36,23 +46,29 @@
 (defmethod -on-announce-eli ((sldb sldb) eli)
   (with-slots (connection thread level) sldb
     (setf (eli sldb) eli)
-    (eli-def eli (kbd "Mouse-1")
-	     (lambda ();; (format t "~A ~A~&" (x eli) (y eli))
-	       (with-slots (x y) eli
-		 (let* ((iter (rview-iter-from-xy eli x y))
-			(presentations (contexts-at sldb iter)))
-		   (loop for pres in presentations
-		      until (-pres-on-button pres 1))))))
     (eli-def eli (kbd "q")
-	     (lambda ()
+	     (lambda (subtext context)
 	       (swa:emacs-rex connection  "(swank:throw-to-toplevel)"
 			      :thread thread)))
     (eli-def eli (kbd "a")
-	     (lambda ()
+	     (lambda (subtext context)
 	       (swa:emacs-rex connection  "(swank:sldb-abort)"
-			      :thread thread))))
+			      :thread thread)))
+)
+					;  (clrf keymap-prestart keymap-pframe)
+  (setf keymap-prestart nil)
+  (setf keymap-pframe nil)
   
-  )
+  (keymap-def keymap-prestart (kbd "Mouse-1")
+	      (lambda (subtext prestart)
+		(sldb-invoke-restart subtext (id prestart))
+		nil))
+
+  (keymap-def keymap-pframe (kbd "Mouse-1")
+	      (lambda (subtext pframe)
+		(with-slots (expanded pframex) pframe
+		  (setf expanded (pframex-toggle subtext pframex expanded)))
+		nil)) )
 
 (defun sldb-invoke-restart (sldb id)
   (with-slots (connection level thread) sldb
@@ -73,7 +89,8 @@
     (loop for restart in restarts
        for i from 0 do
 	 (when (< i 10) ;bind numeric keys
-	   (eli-def eli (cons (+ i #x30) nil) (lambda () (sldb-invoke-restart out i))))
+	   (eli-def eli (cons (+ i #x30) nil)
+		    (lambda (subtext context) (sldb-invoke-restart out i))))
 	 (present (make-instance 'prestart :id i :info restart))
 	 (terpri out))
     ;;
@@ -111,9 +128,6 @@
 ;;
 ;; Protocol: (RETRY "Retry SLIME REPL evaluation request.")
 ;;
-(defcontext prestart (ctx)
-  ((id :accessor id :initarg :id :initform 0)
-   (info :accessor info :initarg :info :initform nil)))
 
 ;; defpresenter is a convenience method, 
 (defpresenter ((p prestart))
@@ -133,10 +147,6 @@
       (tag-remove "grhigh"))))
 
 
-
-(defmethod -pres-on-button ((pres prestart) button )
-  (with-slots (id (sldb out)) pres
-    (sldb-invoke-restart sldb id)))
 
 ;;===============================================================================
 ;; framex - expanded frame...
@@ -188,8 +198,6 @@
 ;; 
 ;;
 ;; Protocol: (4 (SWANK-REPL::TRAC...) (RESTARTABLE T))
-(defcontext pframe (ctx)
-  (id desc restartable pframex (expanded :accessor expanded :initform nil)))
 
 (defpresenter ((p pframe))
   (with-slots (id desc restartable pframex) p
@@ -219,7 +227,4 @@
 
 
 ;;------------------------------------------------------------------------------
-(defmethod -pres-on-button ((pres pframe) button)
-  (with-slots (out expanded pframex) pres
-    (setf expanded (pframex-toggle out pframex expanded)))
-  t)
+

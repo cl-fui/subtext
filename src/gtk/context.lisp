@@ -105,7 +105,7 @@
 ;; is called as (fun ctx), with iters set to range!  Normally returns nil
 ;; upon processing all contexts.  If loop is exited, ctx that triggered
 ;; the exit is returned.
-(defun do-contexts-at (stream xiter fun)
+(defun do-contexts-at (stream xiter  fun)
   "for every context at xiter, call (fun ctx).  If it returns t, stop"
   (with-slots (iter iter1) stream
     (loop for tag in (reverse (gti-tags xiter));TODO: is reverse good enough?
@@ -225,9 +225,10 @@
 ;;------------------------------------------------------------------------------
 ;; Keymapping contexts
 ;;
-;; Keymapping is not inherent in the class (for some good reasons), but is
-;; an addon to any context class.  Once initiated, all instances of that class
-;; share a common keymap.
+;; Keymapping is not inherent in the class.  Why?  If the keymap is in a slot,
+;; then every instance will have a different keymap.  If the keymap is in the
+;; class, all derived classes will have the same keymap.  Each derived class
+;; can add its own keymap slot, but that is a little hard to manage.
 ;;
 ;; The keymap is created as a KEYMAP-xxx parameter, and a (keymap ..) function
 ;; specialized on the type is created for dynamic resolution.
@@ -237,7 +238,8 @@
 	 (keymap-sym 
 	  (intern (concatenate 'string "KEYMAP-" (symbol-name name)))))
     `(progn  (defparameter ,keymap-sym nil)
-	     (defmethod keymap ((context ,name)) ,keymap-sym))))
+	     (defmethod -con-keyseq (subtext (context ,name) keyseq)
+	       (keymap-process ,keymap-sym keyseq subtext context)))))
 
 
 

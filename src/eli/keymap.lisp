@@ -38,5 +38,16 @@ increment the number of partial matches.  If no partials, return nil"
       (values (findit keymap keyseq) partials))))
 
 
+(defun keymap-process (keymap keyseq subtext context &optional (partials 0))
+  "try to find and execute a binding and return result.  If not found,
+return updated partials."
+  (mvb (found prt)
+       (keymap-find keymap keyseq partials)
+       (if found
+	   (funcall (cdr found) subtext context); should return nil if done or 0 
+	   prt))  )
+
+
+
 
 

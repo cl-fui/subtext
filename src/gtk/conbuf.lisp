@@ -4,7 +4,8 @@
 ;; Situated above the stream and the buffer, this class coordinates context
 ;; actions.
 ;;
-;;
+;; Interestingly, as the cursor moves, cursorcons is updated with a list of
+;; contexts that are currently active!
 (in-package :subtext)
 
 ;;;=============================================================================
@@ -14,7 +15,8 @@
   ((cursorcons  :accessor cursorcons :initform nil
 	        :documentation "contexts under cursor")
    (pointercons :accessor pointercons :initform nil
-		:documentation "contexts under pointer"))
+		:documentation "contexts under pointer")
+   (keymap      :accessor keymap      :initform nil))
   (:metaclass gobject-class))
 
 ;;------------------------------------------------------------------------------
@@ -39,7 +41,7 @@ entered or exited contexts.  Return new context list"
 	 (same (intersection old new)) ; these have not changed...
 	 (out (set-difference old same)); these are phased out.
 	 (in  (set-difference new same))) ; and these are newly introduced.
-	 (format t "NEW: ~A~&OLD:~A~&" new old)
+;;	 (format t "NEW: ~A~&OLD:~A~&" new old)
     (loop for context in out
        for i from 0 do (funcall fexit buffer context i))
     (loop for context in in
@@ -65,10 +67,27 @@ entered or exited contexts.  Return new context list"
 			   #'-con-mouse-exit
 			   #'-con-mouse-enter))))
 
+;;------------------------------------------------------------------------------
+;; Keyseq (sent rview)
+;;
+;; Process a keyseq: see if any of the contexts want it.  Contexts return
+;; nil if processed, or a number of partial hits.
+(defun on-keyseq (subtext keyseq)
+  "process a keysequence. Return nil if done, or number of partial hits."
+  (when keyseq; and it may be nil, in which case we are done.
+    (pbuf-iter-to-cursor subtext)
+      (if (cursorcons subtext)
+	(loop for context in (cursorcons subtext)
+	   for result = (-con-keyseq subtext context keyseq)
+	   if (null result) return nil
+	   summing result)
+	0)
+    )
+  )
 
-
-
-
+;;------------------------------------------------------------------------------
+;; default context processing
+;;
 (defmethod -con-enter (subtext (ctx ctx) i)
   (format t "conbuf.lisp:-CON-ENTRY ~A ~A~&" ctx i))
 (defmethod -con-exit (subtext (ctx ctx) i)
@@ -77,3 +96,6 @@ entered or exited contexts.  Return new context list"
   (format t "conbuf.lisp:-CON-MOUSE-ENTRY ~A ~A~&" ctx i))
 (defmethod -con-mouse-exit (subtext (ctx ctx) i)
   (format t "conbuf.lisp:-CON-MOUSE-EXIT ~A ~A~&" ctx i))
+(defmethod -con-keyseq (subtext (ctx ctx) keyseq)
+  0; which means "not found".  Nil means found and done!
+  )

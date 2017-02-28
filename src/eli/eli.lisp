@@ -26,20 +26,49 @@
 
 
 (defun eli-state-print(eli stream)
+  "print the state of our keyseq and return t"
   (terpri stream)
-  (keyseq-write (state eli) stream))
+  (keyseq-write (state eli) stream)
+  t)
 
 (defun eli-active (eli)
   "Return t if eli is in the middle of a search"
  ; (format t "ELI-ACTIVE: ~A~&" (fill-pointer (state eli)))
   (not (= 1 (fill-pointer (state eli)))))
 
-(defun eli-key-initial (eli key)
-  "Initial processing of a key.  Return T if processed, or nil to continue"
-  (with-slots (state) eli
-    (if (= key #x1000067); first, proces C-g
-	(eli-error eli :msg "Quit" :newline t)
-	(prog0 (vector-push key state)))))
+(defun eli-key-initial (eli gtkkey modifiers)
+  "Initial processing of a key.  Return nil if done, or keyseq to continue"
+  (if (key-is-modifier gtkkey)
+      nil
+      (let ((key (key-make gtkkey modifiers)))
+	(if (= key #x1000067); first, proces C-g
+	    (eli-error eli :msg "Quit" :newline t)
+	    (with-slots (state) eli
+	      (vector-push key state)
+	      state)))))
+
+;; keys here have to execute in a nil context...
+(defun eli-key-final (eli subtext result)
+  "process result of keyseq work.  Result is one of:
+nil     = done, no further processing required;
+integer = partials found"
+  (and result (setf result
+		    (keymap-process (keymap eli)
+				    (state eli)
+				    subtext
+				    nil
+				    result))) ; last-ditch
+  (if result
+      ;; result is the count of partial matches
+      (if (zerop result)
+	  ;;no match found! single key or a keyseq?
+	  (if (eli-active eli); for an active keyseq, error
+	      (eli-error eli :msg " NOT BOUND");T
+	      (eli-reset eli nil));NIL - single key, let GTK process.
+	  ;; partial match in any event means T and continue accumulating.
+	  (eli-state-print eli *echo*))
+      ;;nil result means we are done.
+      (eli-reset eli t)))
 
 (defun eli-process (eli found partials)
   "process a found binding"
@@ -65,6 +94,5 @@
 (defun eli-def (eli keyseq data)
   "bind a keyseq in eli"
   (keymap-def (keymap eli) keyseq data))
-
 
 
