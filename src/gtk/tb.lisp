@@ -2,7 +2,7 @@
 ;; TB - base textbuffer
 ;;
 ;; We start with a gtk-text-buffer.  We add a position-tracking system for
-;; pmarks. All inserts and deletes into the buffer cause transparent updates
+;; pmarks.   l inserts and deletes into the buffer cause transparent updates
 ;;
 ;; Buffered streaming support is provided 
 ;;
@@ -81,7 +81,7 @@
     ))
 
 (defmethod -on-announce-eli ((pbuf tb) eli)
-  (eli-def eli (kbd "F1") (lambda () (bufstat pbuf))))
+  (eli-def eli (kbd "F1") (lambda (subtext context) (bufstat pbuf))))
 ;;===============================================================================
 ;; Motion handler
 ;;
