@@ -268,3 +268,23 @@ for all newly introduced ones, call entering.  Return new."
 		  (setf partials p)
 		  f)))
        partials))))
+
+;;--------------------------------------------------------------
+;; A cursor manipulator, forwarding any operation on an iterator
+;; to the cursor.  Works with iterator moving operations, including
+;; ones that pass a value.
+(defun cursor-mover (pbuf lambda &optional val)
+  (with-subtext pbuf
+    (pbuf-iter-to-cursor subtext)
+    (if val
+	(funcall lambda iter val)
+	(funcall lambda iter))
+    (gtb-place-cursor subtext iter))  )
+
+(defun cursor-left (pbuf)
+  (cursor-mover pbuf #'gti-backward-char))
+
+(defun cursor-right (pbuf)
+  (cursor-mover pbuf #'gti-forward-char))
+
+

@@ -78,8 +78,10 @@
 (defmethod -on-announce-eli :after ((pbuf buflisp) eli)
   (print "on-announce-eli")
   (with-slots (pindex level) pbuf
-    (keys-eli eli"("
+    (keys-eli eli "("
+      (file-position subtext (gtb-cursor-position subtext))
       (prin pbuf (ctx (aref level pindex) ()  "()"))
+      (cursor-mover subtext #'gti-backward-char)
       (incf pindex)
       nil))
   
@@ -109,4 +111,5 @@
 				(pr 'ps2 () ".2.." (pr 'ps3 () "3/")) "and 0") "---")
 ))
   )
-()
+
+
