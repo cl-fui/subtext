@@ -93,14 +93,14 @@ starting with 'old-prefix' in :package.  Remember to capitalize "
 
 ;;==============================================================================
 ;; like the gtk one, but binding *package*
-#||(defmacro within-main-loop (&body body)
-  `  (gtk::call-from-gtk-main-loop (lambda ()
-				     (let ((*package* ,*package*)
-					   ;(*standard-output*  ,*standard-output*)
-					   )
-				    ,@body))))
+(defmacro subtext-loop (&body body)
+  `(progn
+     (clrf bt:*default-special-bindings*)
+     (push (cons '*standard-output* *standard-output*) bt:*default-special-bindings*)
+     (push '(*package* find-package :subtext) bt:*default-special-bindings*)
+     (within-main-loop ,@body)))
 
-||#
+
 (defun function-lambda-list (fn)
   "Return an argument list for the supplied function."
   (let ((arglist))

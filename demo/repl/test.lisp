@@ -68,7 +68,7 @@
 
 
   (clrf keymap-psexp)
-  (keymap-def keymap-psexp (kbd "C-x C-c") (lambda () (format t "YESSSSSS!!!!~&")) )
+  (keys-bind psexp "C-x C-c" (format t "YESSSSSS!!!!~&") )
   
    
   (prin pbuf (pr 'p-unk () "  ")))
@@ -78,22 +78,14 @@
 (defmethod -on-announce-eli :after ((pbuf buflisp) eli)
   (print "on-announce-eli")
   (with-slots (pindex level) pbuf
-    (eli-def
-     eli (kbd "(")
-     (lambda (); (format t ">..~A ~A~&" parens pindex)
-       (prin pbuf (ctx (aref level pindex) ()  "()"))
-       (incf pindex)
-
-       t)))
-   (eli-def
-    eli (kbd "F1")
-    (lambda ()
-      (bufstat pbuf)))
+    (keys-eli eli"("
+      (prin pbuf (ctx (aref level pindex) ()  "()"))
+      (incf pindex)
+      nil))
+  
+  (keys-eli eli "F1"   (bufstat pbuf) nil)
    
-  (eli-def
-   eli (kbd "Return")
-   (lambda ()
-     nil)))
+  (keys-eli eli "Return"  nil))
 ;;------------------------------------------------------------------------------
 
     ;(promises-free stream promises)
@@ -101,7 +93,7 @@
 (defun t4 ( &key (stdout *standard-output*) (package *package*))
   "final"
   ;;(format t "AAA STANDARD OUTPUT?~A ~A ~&"*standard-output* *package*)
-  (within-main-loop
+  (subtext-loop
     (setf *standard-output* stdout); Why can't I just bind it?
     (let* ((*standard-output* stdout)
 	   (*package* package)			;re-enable output

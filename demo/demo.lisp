@@ -10,10 +10,7 @@
 
 
 (defun demo ()
-  (clrf bt:*default-special-bindings*)
-  (push (cons '*standard-output* *standard-output*) bt:*default-special-bindings*)
-  (push '(*package* find-package :subtext) bt:*default-special-bindings*)
-  (within-main-loop
+  (subtext-loop
     (let* (stream
 	   eli
 	   (top (make-frame (make-window
