@@ -90,17 +90,3 @@ entered or exited contexts.  Return new context list"
     )
   )
 
-;;------------------------------------------------------------------------------
-;; default context processing
-;;
-(defmethod -con-enter (subtext (ctx ctx) i)
-  (format t "conbuf.lisp:-CON-ENTRY ~A ~A~&" ctx i))
-(defmethod -con-exit (subtext (ctx ctx) i)
-  (format t "conbuf.lisp:-CON-EXIT ~A ~A~&" ctx i))
-(defmethod -con-mouse-enter (subtext (ctx ctx) i)
-  (format t "conbuf.lisp:-CON-MOUSE-ENTRY ~A ~A~&" ctx i))
-(defmethod -con-mouse-exit (subtext (ctx ctx) i)
-  (format t "conbuf.lisp:-CON-MOUSE-EXIT ~A ~A~&" ctx i))
-(defmethod -con-keyseq (subtext (ctx ctx) keyseq)
-  0; which means "not found".  Nil means found and done!
-  )

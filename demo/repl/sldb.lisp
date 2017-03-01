@@ -46,29 +46,21 @@
 (defmethod -on-announce-eli ((sldb sldb) eli)
   (with-slots (connection thread level) sldb
     (setf (eli sldb) eli)
-    (eli-def eli (kbd "q")
-	     (lambda (subtext context)
-	       (swa:emacs-rex connection  "(swank:throw-to-toplevel)"
-			      :thread thread)))
-    (eli-def eli (kbd "a")
-	     (lambda (subtext context)
-	       (swa:emacs-rex connection  "(swank:sldb-abort)"
-			      :thread thread)))
-)
+    (keys-eli eli "q"
+      (swa:emacs-rex connection  "(swank:throw-to-toplevel)" :thread thread))
+    (keys-eli eli "a"
+      (swa:emacs-rex connection  "(swank:sldb-abort)"
+					   :thread thread)))
 					;  (clrf keymap-prestart keymap-pframe)
   (setf keymap-prestart nil)
-  (setf keymap-pframe nil)
-  
-  (keymap-def keymap-prestart (kbd "Mouse-1")
-	      (lambda (subtext prestart)
-		(sldb-invoke-restart subtext (id prestart))
-		nil))
+  (keys-bind prestart "Mouse-1"
+    (sldb-invoke-restart subtext (id context))  nil)
 
-  (keymap-def keymap-pframe (kbd "Mouse-1")
-	      (lambda (subtext pframe)
-		(with-slots (expanded pframex) pframe
-		  (setf expanded (pframex-toggle subtext pframex expanded)))
-		nil)) )
+  (setf keymap-pframe nil)
+  (keys-bind pframe  "Mouse-1"
+    (with-slots (expanded pframex) context
+      (setf expanded (pframex-toggle subtext pframex expanded))
+      nil)))
 
 (defun sldb-invoke-restart (sldb id)
   (with-slots (connection level thread) sldb
@@ -90,7 +82,9 @@
        for i from 0 do
 	 (when (< i 10) ;bind numeric keys
 	   (eli-def eli (cons (+ i #x30) nil)
-		    (lambda (subtext context) (sldb-invoke-restart out i))))
+		    (lambda (subtext context)
+		      (declare (ignore subtext context))
+		      (sldb-invoke-restart out i))))
 	 (present (make-instance 'prestart :id i :info restart))
 	 (terpri out))
     ;;
@@ -164,7 +158,7 @@
   (if expanded
       (with-slots (iter iter1) stream
 	(gti-backward-char iter1);leave the cr
-	(format t "DELETING ~A ~A~&" iter iter1)
+	;;	(format t "DELETING ~A ~A~&" iter iter1)
 	(%gtb-delete stream iter iter1)
 	nil)
       (let ((out stream))
@@ -179,7 +173,7 @@
 	       (gsafe
 		(context-bounds stream pframex); it is much later, in lambda!
 		(file-position stream (gti-offset (iter1 stream)))
-		(format t "TAG-FRAMEX ~A~&" (tag pframex))
+		;;(format t "TAG-FRAMEX ~A~&" (tag pframex))
 		(with-tag ((tag pframex) stream)
 		  (with-tag ("grayloc:" stream)
 		    (princ "Locals:" stream))

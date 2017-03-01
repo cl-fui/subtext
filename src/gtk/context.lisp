@@ -53,26 +53,6 @@
 (defmethod print-object ((tag ptag-base) out)
    (format out "<PTAG for '~A>"  (mark-type tag) ))
 
-;;------------------------------------------------------------------------------
-;; All context marks are instances of pmark.  They ref the context
-(defclass ctx (gtk-text-mark)
-  ()
-  (:metaclass gobject-class))
-
-;; default key processing: null keymap...
-(defmethod keymap ((ctx ctx))
-  nil)
-
-
-(defmethod print-object ((mark ctx) out1)
-  (print-unreadable-object (mark out1 :type t)
-    (with-slots (out) mark
- ;     (format t "OUT: ~A" out)
-					;
-      ;
-      
-      )
-))
 
 ;;------------------------------------------------------------------------------
 ;; This is a mark inserted by a promise with a context!!!
@@ -82,24 +62,6 @@
 ;;  (format t "ADDING MARK: ~A ~A~&" ctx (type-of ctx))
   (gtb-add-mark buffer ctx iter;(make-instance 'pmark :ctx ctx) iter
 		))
-
-(defun gti-pmarks (iter)
-    (remove-if-not (lambda (val) (eq (type-of val) 'pmark)) (gti-marks iter)))
-
-
-(defun context-tag-bounds (stream at ptag)
-  "set iters to tag bounds of a tag; at is inside it"
-   (with-slots (iter iter1) stream
-    (%gtb-get-iter-at-offset stream iter at)
-    (%gtb-get-iter-at-offset stream iter1 at)
-    (prog2
-	;(or (gti-begins-tag iter ptag))
-	(gti-backward-to-tag-toggle iter ptag)
-;;	(ctx-mark-for-ptag iter ptag)
-      (or (gti-ends-tag iter1 ptag)
-	  (gti-forward-to-tag-toggle iter1 ptag)))))
-
-
 ;;
 ;; Perform a function for each context at xiter.  Fuction
 ;; is called as (fun ctx), with iters set to range!  Normally returns nil
@@ -158,6 +120,7 @@
   (%gtb-get-iter-at-mark subtext iter context)
   (%gtb-get-iter-at-mark subtext iter1 context)
   (gti-forward-to-tag-toggle iter1 (tag context)))
+
 ;; Convenience macro exposes subtext,iter and iter1.
 
 (defmacro with-subtext (stream &body body)
@@ -233,14 +196,50 @@
 ;; The keymap is created as a KEYMAP-xxx parameter, and a (keymap ..) function
 ;; specialized on the type is created for dynamic resolution.
 ;;
+(defun make-keymap-name (sym-classname)
+  (concatenate 'string "KEYMAP-" (symbol-name sym-classname)))
 (defmacro defkeymap (classname)
   (let* ((name classname)
 	 (keymap-sym 
-	  (intern (concatenate 'string "KEYMAP-" (symbol-name name)))))
+	  (intern (make-keymap-name name))))
     `(progn  (defparameter ,keymap-sym nil)
 	     (defmethod -con-keyseq (subtext (context ,name) keyseq)
 	       (keymap-process ,keymap-sym keyseq subtext context)))))
 
 
+;; These are simplified macros for binding keyseqs.  Example
+;; (bindkeys button ("Mouse-1" (whatever) nil))
+(defmacro keys-bind (classname keystr &body body)
+  (let* ((sym-keymap-name (find-symbol (make-keymap-name classname))))
+    `(keymap-def ,sym-keymap-name (kbd ,keystr)
+		 (lambda (subtext context)
+		   (declare (ignorable subtext context))
+		   ,@body))))
 
 
+;; Simplified keyseq binding for elis.
+(defmacro keys-eli (eli keystr &body body)
+  `(keymap-def (keymap ,eli) (kbd ,keystr)
+	       (lambda (subtext context)
+		 (declare (ignorable subtext context))
+		 ,@body)))
+
+;;------------------------------------------------------------------------------
+;; All context marks are instances of pmark.  They ref the context
+(defclass ctx (gtk-text-mark)
+  ()
+  (:metaclass gobject-class))
+;;------------------------------------------------------------------------------
+;; default context processing
+;;
+(defmethod -con-enter (subtext (ctx ctx) i)
+  (format t "conbuf.lisp:-CON-ENTRY ~A ~A~&" ctx i))
+(defmethod -con-exit (subtext (ctx ctx) i)
+  (format t "conbuf.lisp:-CON-EXIT ~A ~A~&" ctx i))
+(defmethod -con-mouse-enter (subtext (ctx ctx) i)
+  (format t "conbuf.lisp:-CON-MOUSE-ENTRY ~A ~A~&" ctx i))
+(defmethod -con-mouse-exit (subtext (ctx ctx) i)
+  (format t "conbuf.lisp:-CON-MOUSE-EXIT ~A ~A~&" ctx i))
+(defmethod -con-keyseq (subtext (ctx ctx) keyseq)
+  0; which means "not found".  Nil means found and done!
+  )

@@ -13,8 +13,7 @@
   (clrf bt:*default-special-bindings*)
   (push (cons '*standard-output* *standard-output*) bt:*default-special-bindings*)
   (push '(*package* find-package :subtext) bt:*default-special-bindings*)
-  (print bt:*default-special-bindings*)
-  (gtk::within-main-loop
+  (within-main-loop
     (let* (stream
 	   eli
 	   (top (make-frame (make-window
@@ -34,12 +33,11 @@
       (gtk-widget-show-all top)
       (-on-initial-display top)
 
-      (eli-def eli (kbd "C-x C-c")
-	       (lambda (subtext context) (gtk-widget-destroy top)))
+      (keys-eli eli "C-x C-c"	(gtk-widget-destroy top))
       (clrf keymap-button)
-      (keymap-def keymap-button (kbd "Mouse-1") (lambda (subtext button)  (funcall (code button)) nil))
+      (keys-bind button "Mouse-1" (funcall (code context)) nil)
       (format t "FFF: OUTPUT ~A ~A~&" *standard-output* *package*)
-      
+     
       (context-tag stream button (:foreground "DarkGoldenrod" :background "aquamarine" :editable nil)  )
 
       (prin stream "Welcome to " (tg "bg-greenish" "SubText™") #\. #\newline
