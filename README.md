@@ -1,4 +1,4 @@
-# SUBTEXT (DEMO- SUBJECT TO CHANGE)
+# SUBTEXT (Demo - proof of concept - experiment))
 
 SubText is a Lispy, mostly-text-based user interface. 
 
